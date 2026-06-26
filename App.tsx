@@ -1,0 +1,156 @@
+import React, { useState, useEffect } from 'react';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import NewDashboardPage from './pages/NewDashboardPage';
+import NewChallengeDetailPage from './pages/NewChallengeDetailPage';
+import EnhancedChallengesPage from './pages/EnhancedChallengesPage';
+import CompetitionPage from './pages/CompetitionPage';
+import CompetitionDashboardPage from './pages/CompetitionDashboardPage';
+import CompetitionChallengeDetailPage from './pages/CompetitionChallengeDetailPage';
+import CompetitionLeaderboardPage from './pages/CompetitionLeaderboardPage';
+import GeneralLeaderboardPage from './pages/GeneralLeaderboardPage.tsx';
+import ProfilePage from './pages/ProfilePage';
+import PublicProfilePage from './pages/PublicProfilePage';
+import AnnouncementsPage from './pages/AnnouncementsPage';
+import CoursesPage from './pages/CoursesPage';
+import LinuxCoursePage from './pages/LinuxCoursePage';
+import AppLayout from './components/AppLayout';
+import AdminLayout from './components/AdminLayout';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminChallengesPage from './pages/admin/AdminChallengesPage';
+import AdminAnnouncementsPage from './pages/admin/AdminAnnouncementsPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminCompetitionsPage from './pages/admin/AdminCompetitionsPage';
+import CompetitionMonitoringPage from './pages/admin/CompetitionMonitoringPage';
+import SuperAdminPage from './pages/admin/SuperAdminPage';
+import Loader from './components/ui/Loader';
+import { ConfirmationProvider } from './src/contexts/ConfirmationContext';
+import { SocketProvider } from './src/contexts/SocketContext';
+import { SocketToast } from './src/components/SocketToast';
+
+const App: React.FC = () => {
+  const [user, setUser] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+
+    if (token && userData) {
+      setUser(JSON.parse(userData));
+    }
+
+    setTimeout(() => setIsLoading(false), 1000);
+
+    // Listen for user updates to sync across components
+    const handleUserUpdate = (e: CustomEvent) => {
+      setUser(e.detail);
+    };
+
+    window.addEventListener('userUpdate', handleUserUpdate as EventListener);
+
+    return () => {
+      window.removeEventListener('userUpdate', handleUserUpdate as EventListener);
+    };
+  }, []);
+
+  const handleLogin = (userData: any) => {
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    window.location.href = '/';
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#050505]">
+        <Loader />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <HashRouter>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+          <Route path="/register" element={<RegisterPage onRegister={handleLogin} />} />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </HashRouter>
+    );
+  }
+
+  return (
+    <ConfirmationProvider>
+      <SocketProvider user={user}>
+        <SocketToast />
+        <HashRouter>
+        <Routes>
+          <Route path="/login" element={<Navigate to="/dashboard" />} />
+
+          {user.role === 'super-admin' && (
+            <Route path="/" element={<AdminLayout onLogout={handleLogout} />}>
+              <Route index element={<Navigate to="/admin/super" />} />
+              <Route path="admin" element={<SuperAdminPage />} />
+              <Route path="admin/super" element={<SuperAdminPage />} />
+              <Route path="admin/dashboard" element={<AdminDashboardPage />} />
+              <Route path="admin/challenges" element={<AdminChallengesPage />} />
+              <Route path="admin/competitions" element={<AdminCompetitionsPage />} />
+              <Route path="admin/competitions/:id/monitor" element={<CompetitionMonitoringPage />} />
+              <Route path="admin/announcements" element={<AdminAnnouncementsPage />} />
+              <Route path="admin/users" element={<AdminUsersPage />} />
+              <Route path="*" element={<Navigate to="/admin/super" />} />
+            </Route>
+          )}
+
+          {user.role === 'admin' && (
+            <Route path="/" element={<AdminLayout onLogout={handleLogout} />}>
+              <Route index element={<Navigate to="/admin" />} />
+              <Route path="admin" element={<AdminDashboardPage />} />
+              <Route path="admin/dashboard" element={<AdminDashboardPage />} />
+              <Route path="admin/challenges" element={<AdminChallengesPage />} />
+              <Route path="admin/competitions" element={<AdminCompetitionsPage />} />
+              <Route path="admin/competitions/:id/monitor" element={<CompetitionMonitoringPage />} />
+              <Route path="admin/announcements" element={<AdminAnnouncementsPage />} />
+              <Route path="admin/users" element={<AdminUsersPage />} />
+              <Route path="*" element={<Navigate to="/admin" />} />
+            </Route>
+          )}
+
+          {user.role === 'user' && (
+            <Route path="/" element={<AppLayout onLogout={handleLogout} />}>
+              <Route index element={<Navigate to="/dashboard" />} />
+              <Route path="dashboard" element={<NewDashboardPage />} />
+              <Route path="challenges" element={<EnhancedChallengesPage />} />
+              <Route path="challenges/:id" element={<NewChallengeDetailPage />} />
+              <Route path="competition" element={<CompetitionPage />} />
+              <Route path="competition/:id" element={<CompetitionDashboardPage />} />
+              <Route path="competition/:id/challenge/:challengeId" element={<CompetitionChallengeDetailPage />} />
+              <Route path="competition/:id/leaderboard" element={<CompetitionLeaderboardPage />} />
+              <Route path="announcements" element={<AnnouncementsPage />} />
+              <Route path="leaderboard" element={<GeneralLeaderboardPage />} />
+              <Route path="courses" element={<CoursesPage />} />
+              <Route path="courses/linux" element={<LinuxCoursePage />} />
+              <Route path="profile" element={<ProfilePage />} />
+              <Route path="profile/:userId" element={<PublicProfilePage />} />
+              <Route path="*" element={<Navigate to="/dashboard" />} />
+            </Route>
+          )}
+
+          <Route path="*" element={<Navigate to="/dashboard" />} />
+        </Routes>
+      </HashRouter>
+      </SocketProvider>
+    </ConfirmationProvider>
+  );
+};
+
+export default App;
