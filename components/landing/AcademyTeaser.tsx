@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { ExternalLink } from 'lucide-react';
 
 import { useLang } from './LangContext';
+
+const ACADEMY_URL = 'https://academy.cyberkhana.tech';
 
 const bulletKeys = [
   'academy.bullet1',
@@ -81,12 +83,15 @@ const AcademyTeaser = () => {
             {t('academy.arabicCallout')}
           </p>
 
-          <Link
-            to="/register"
-            className="mt-8 inline-flex items-center justify-center rounded-lg bg-[#9fef00] px-6 py-3 font-bold text-[#0d1117] transition-all hover:bg-[#b8ff3a]"
+          <a
+            href={ACADEMY_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-[#9fef00] px-6 py-3 font-bold text-[#0d1117] transition-all hover:bg-[#b8ff3a]"
           >
             {t('academy.cta')}
-          </Link>
+            <ExternalLink size={18} />
+          </a>
 
         </motion.div>
 

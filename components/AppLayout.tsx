@@ -11,12 +11,11 @@ interface AppLayoutProps {
 const AppLayout: React.FC<AppLayoutProps> = ({ onLogout }) => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const location = useLocation();
-  const isLinuxRoomRoute = location.pathname.startsWith('/courses/linux');
-  const isEdgeToEdge = location.pathname.match(/^\/(courses(\/linux)?|challenges|dashboard)/);
+  const isEdgeToEdge = location.pathname.match(/^\/(challenges|dashboard)/);
 
   return (
     <div className="flex h-screen text-[#d2d7e3] bg-[#0d1117]">
-      {!isLinuxRoomRoute && <Sidebar />}
+      <Sidebar />
       <div className="flex flex-col flex-1 overflow-hidden">
         <Header user={user} onLogout={onLogout} />
         <main className={`flex-1 overflow-y-auto ${isEdgeToEdge ? 'p-0' : 'p-4 sm:p-6 md:p-8'}`}>

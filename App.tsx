@@ -14,8 +14,6 @@ import GeneralLeaderboardPage from './pages/GeneralLeaderboardPage.tsx';
 import ProfilePage from './pages/ProfilePage';
 import PublicProfilePage from './pages/PublicProfilePage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
-import CoursesPage from './pages/CoursesPage';
-import LinuxCoursePage from './pages/LinuxCoursePage';
 import AppLayout from './components/AppLayout';
 import AdminLayout from './components/AdminLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -137,8 +135,6 @@ const App: React.FC = () => {
               <Route path="competition/:id/leaderboard" element={<CompetitionLeaderboardPage />} />
               <Route path="announcements" element={<AnnouncementsPage />} />
               <Route path="leaderboard" element={<GeneralLeaderboardPage />} />
-              <Route path="courses" element={<CoursesPage />} />
-              <Route path="courses/linux" element={<LinuxCoursePage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="profile/:userId" element={<PublicProfilePage />} />
               <Route path="*" element={<Navigate to="/dashboard" />} />

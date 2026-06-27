@@ -11,7 +11,8 @@ import {
   ArrowRight,
   TerminalSquare,
   Activity,
-  Award
+  Award,
+  ExternalLink
 } from 'lucide-react';
 import { userService } from '../services/userService';
 import { activityService } from '../services/activityService';
@@ -23,10 +24,6 @@ interface UserStats {
   totalUsers?: number;
   streak?: number;
   favoriteCategory?: string;
-  academyProgress?: {
-    completedLectures: number;
-    totalLectures: number;
-  }
 }
 
 interface RecentActivity {
@@ -66,16 +63,11 @@ const NewDashboardPage: React.FC = () => {
         const parsedUser = JSON.parse(userData);
         setUser(parsedUser);
         
-        // Fetch Profile, Activity, and Academy Progress in parallel
-        const [profile, activityData, academyData] = await Promise.all([
+        // Fetch Profile and Activity in parallel
+        const [profile, activityData] = await Promise.all([
           userService.getUserProfile(),
           activityService.getRecentActivity(),
-          userService.getLinuxCourseProgress().catch(() => ({ completedLectures: [] }))
         ]);
-
-        const completedLecsCount = Array.isArray(academyData?.completedLectures) 
-          ? new Set(academyData.completedLectures).size 
-          : 0;
 
         setStats({
           points: profile.points || 0,
@@ -84,10 +76,6 @@ const NewDashboardPage: React.FC = () => {
           totalUsers: profile.totalUsers,
           streak: profile.streak || 0,
           favoriteCategory: profile.favoriteCategory || 'Web Exploitation',
-          academyProgress: {
-            completedLectures: completedLecsCount,
-            totalLectures: 34 // from Linux course
-          }
         });
         setRecentActivity(activityData);
       }
@@ -112,9 +100,6 @@ const NewDashboardPage: React.FC = () => {
   }
 
   const displayName = user?.fullName || user?.displayName || user?.username || 'Operator';
-  const academyProgressPct = stats.academyProgress 
-    ? Math.round((stats.academyProgress.completedLectures / stats.academyProgress.totalLectures) * 100) 
-    : 0;
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#d2d7e3] pb-24 px-4 sm:px-6 lg:px-8 py-8">
@@ -157,7 +142,7 @@ const NewDashboardPage: React.FC = () => {
           {[
             { label: 'Flags Captured', value: stats.solvedCount, icon: <Flag className="w-5 h-5 text-[#60a5fa]" />, bg: 'bg-[#60a5fa]/10', border: 'border-[#60a5fa]/20' },
             { label: 'Active Streak', value: `${stats.streak} Days`, icon: <Activity className="w-5 h-5 text-[#a855f7]" />, bg: 'bg-[#a855f7]/10', border: 'border-[#a855f7]/20' },
-            { label: 'Academy Modules', value: stats.academyProgress?.completedLectures || 0, icon: <BookOpen className="w-5 h-5 text-[#9fef00]" />, bg: 'bg-[#9fef00]/10', border: 'border-[#9fef00]/20' },
+            { label: 'Global Rank', value: stats.rank ? `#${stats.rank}` : 'Unranked', icon: <Trophy className="w-5 h-5 text-[#9fef00]" />, bg: 'bg-[#9fef00]/10', border: 'border-[#9fef00]/20' },
             { label: 'Focus Area', value: stats.favoriteCategory?.split(' ')[0] || 'N/A', icon: <Target className="w-5 h-5 text-[#f3a43a]" />, bg: 'bg-[#f3a43a]/10', border: 'border-[#f3a43a]/20' },
           ].map((stat, i) => (
             <motion.div 
@@ -182,45 +167,37 @@ const NewDashboardPage: React.FC = () => {
           {/* LEFT COLUMN: Main Focus */}
           <div className="space-y-6">
             
-            {/* Academy Training Pipeline Widget */}
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-[#121a2a] border border-[#263248] rounded-2xl overflow-hidden relative group">
+            {/* CyberKhana Academy — external */}
+            <motion.a
+              href="https://academy.cyberkhana.tech"
+              target="_blank"
+              rel="noopener noreferrer"
+              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+              className="block bg-[#121a2a] border border-[#263248] rounded-2xl overflow-hidden relative group hover:border-[#9fef00]/40 transition-colors"
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-[#9fef00]/5 to-transparent pointer-events-none" />
               <div className="p-6 relative z-10 flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
-                
+
                 <div className="flex-1 w-full text-center sm:text-left">
                   <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
                     <TerminalSquare className="w-5 h-5 text-[#9fef00]" />
-                    <h2 className="text-sm font-black uppercase tracking-widest text-[#f3f6ff]">Active Training Pipeline</h2>
+                    <h2 className="text-sm font-black uppercase tracking-widest text-[#f3f6ff]">CyberKhana Academy</h2>
                   </div>
-                  <h3 className="text-2xl font-black text-[#9fef00]">Linux Security Operations</h3>
-                  <p className="text-sm text-[#9aa5bf] mt-2 mb-6 max-w-md">Master the Linux environment to build a strong foundation for advanced offensive and defensive operations.</p>
-                  
-                  <div className="w-full">
-                    <div className="flex justify-between text-xs font-bold mb-2">
-                      <span className="text-[#a8b3cf] uppercase tracking-wider">Course Progress</span>
-                      <span className="text-[#9fef00]">{academyProgressPct}%</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-[#1e293b] overflow-hidden border border-[#334155]">
-                      <div className="h-full bg-[#9fef00]" style={{ width: `${academyProgressPct}%` }} />
-                    </div>
-                  </div>
+                  <h3 className="text-2xl font-black text-[#9fef00]">Structured Learning Paths</h3>
+                  <p className="text-sm text-[#9aa5bf] mt-2 mb-6 max-w-md">Go deeper with guided theory and hands-on labs on the CyberKhana Academy — build the foundations behind every flag you capture.</p>
+
+                  <span className="inline-flex items-center gap-2 px-6 py-2 rounded border border-[#9fef00]/50 text-[#9fef00] group-hover:bg-[#9fef00]/10 text-xs font-bold uppercase tracking-widest transition-colors">
+                    Open Academy
+                    <ExternalLink size={14} />
+                  </span>
                 </div>
 
-                <div className="flex-shrink-0 flex flex-col items-center">
-                  <div className="w-24 h-24 rounded-full border-[4px] border-[#1e293b] flex items-center justify-center bg-[#0f172a] shadow-xl relative mb-4">
-                    <svg className="absolute inset-0 w-full h-full -rotate-90">
-                      <circle cx="44" cy="44" r="44" fill="none" stroke="#1e293b" strokeWidth="8" transform="translate(4,4)" />
-                      <circle cx="44" cy="44" r="44" fill="none" stroke="#9fef00" strokeWidth="8" transform="translate(4,4)" strokeLinecap="round" style={{ strokeDasharray: 276, strokeDashoffset: 276 - (276 * academyProgressPct) / 100 }} />
-                    </svg>
-                    <span className="text-xl font-black text-[#f3f6ff] z-10">{stats.academyProgress?.completedLectures}</span>
-                  </div>
-                  <button onClick={() => navigate('/courses/linux')} className="px-6 py-2 rounded border border-[#9fef00]/50 text-[#9fef00] hover:bg-[#9fef00]/10 text-xs font-bold uppercase tracking-widest transition-colors w-full sm:w-auto">
-                    Resume Training
-                  </button>
+                <div className="flex-shrink-0 hidden sm:flex w-24 h-24 rounded-2xl border border-[#263248] bg-[#0f172a] items-center justify-center shadow-xl">
+                  <BookOpen className="w-10 h-10 text-[#9fef00]" />
                 </div>
 
               </div>
-            </motion.div>
+            </motion.a>
 
             {/* Platform Quick Actions */}
             <div className="grid sm:grid-cols-2 gap-4">

@@ -8,15 +8,26 @@ import {
   Target,
   BookOpen,
   ChevronRight,
+  ExternalLink,
 } from 'lucide-react';
 import BrandLogo from './ui/BrandLogo';
 
-const navItems = [
+const ACADEMY_URL = 'https://academy.cyberkhana.tech';
+
+type NavItem = {
+  icon: React.ElementType;
+  label: string;
+  to?: string;
+  href?: string;
+  external?: boolean;
+};
+
+const navItems: NavItem[] = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/competition', icon: Target, label: 'Competitions' },
   { to: '/challenges', icon: Code, label: 'Challenges' },
   { to: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
-  { to: '/courses', icon: BookOpen, label: 'Academy' },
+  { href: ACADEMY_URL, external: true, icon: BookOpen, label: 'Academy' },
   { to: '/profile', icon: UserCircle, label: 'Profile' },
 ];
 
@@ -39,37 +50,63 @@ const Sidebar: React.FC = () => {
         <p className="px-3 mb-3 text-[10px] font-bold tracking-[0.15em] text-[#6e7a94] uppercase">
           Navigation
         </p>
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              [
-                'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
-                isActive
-                  ? 'bg-[#00a859]/12 text-[#00a859] border border-[#00a859]/20'
-                  : 'text-[#9aa5bf] hover:bg-[#182235] hover:text-[#d2d7e3] border border-transparent',
-              ].join(' ')
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {/* Active left accent line */}
-                {isActive && (
-                  <span className="absolute left-0 w-0.5 h-6 bg-[#00a859] rounded-r" />
-                )}
+        {navItems.map((item) => {
+          const Icon = item.icon;
+
+          if (item.external) {
+            return (
+              <a
+                key={item.label}
+                href={item.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-[#9aa5bf] hover:bg-[#182235] hover:text-[#d2d7e3] border border-transparent"
+              >
                 <Icon
-                  className={`w-4.5 h-4.5 flex-shrink-0 transition-colors ${
-                    isActive ? 'text-[#00a859]' : 'text-[#6e7a94] group-hover:text-[#9aa5bf]'
-                  }`}
+                  className="w-4.5 h-4.5 flex-shrink-0 text-[#6e7a94] group-hover:text-[#9aa5bf] transition-colors"
                   size={17}
                 />
-                <span className="flex-1">{label}</span>
-                {isActive && <ChevronRight size={13} className="text-[#00a859]/60" />}
-              </>
-            )}
-          </NavLink>
-        ))}
+                <span className="flex-1">{item.label}</span>
+                <ExternalLink
+                  size={13}
+                  className="text-[#6e7a94] group-hover:text-[#9aa5bf] transition-colors"
+                />
+              </a>
+            );
+          }
+
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to!}
+              className={({ isActive }) =>
+                [
+                  'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
+                  isActive
+                    ? 'bg-[#00a859]/12 text-[#00a859] border border-[#00a859]/20'
+                    : 'text-[#9aa5bf] hover:bg-[#182235] hover:text-[#d2d7e3] border border-transparent',
+                ].join(' ')
+              }
+            >
+              {({ isActive }) => (
+                <>
+                  {/* Active left accent line */}
+                  {isActive && (
+                    <span className="absolute left-0 w-0.5 h-6 bg-[#00a859] rounded-r" />
+                  )}
+                  <Icon
+                    className={`w-4.5 h-4.5 flex-shrink-0 transition-colors ${
+                      isActive ? 'text-[#00a859]' : 'text-[#6e7a94] group-hover:text-[#9aa5bf]'
+                    }`}
+                    size={17}
+                  />
+                  <span className="flex-1">{item.label}</span>
+                  {isActive && <ChevronRight size={13} className="text-[#00a859]/60" />}
+                </>
+              )}
+            </NavLink>
+          );
+        })}
       </nav>
 
       {/* User mini-card */}

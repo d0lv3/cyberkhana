@@ -10,9 +10,20 @@ import {
   Menu,
   X,
   LogOut,
+  ExternalLink,
 } from 'lucide-react';
 import Button from './EnhancedButton';
 import BrandLogo from './BrandLogo';
+
+const ACADEMY_URL = 'https://academy.cyberkhana.tech';
+
+type MobileNavItem = {
+  icon: React.ElementType;
+  label: string;
+  to?: string;
+  href?: string;
+  external?: boolean;
+};
 
 interface MobileNavigationProps {
   user: any;
@@ -21,12 +32,12 @@ interface MobileNavigationProps {
 
 const MobileNavigation: React.FC<MobileNavigationProps> = ({ user, onLogout }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const navItems = [
+  const navItems: MobileNavItem[] = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/competition', icon: Target, label: 'Competitions' },
     { to: '/challenges', icon: Code, label: 'Challenges' },
     { to: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
-    { to: '/courses', icon: BookOpen, label: 'Courses' },
+    { href: ACADEMY_URL, external: true, icon: BookOpen, label: 'Academy' },
     { to: '/profile', icon: UserCircle, label: 'Profile' },
   ];
 
@@ -86,10 +97,26 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({ user, onLogout }) =
           <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
             {navItems.map((item) => {
               const Icon = item.icon;
+              if (item.external) {
+                return (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleLinkClick}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                  >
+                    <Icon size={20} />
+                    <span className="font-medium flex-1">{item.label}</span>
+                    <ExternalLink size={16} className="text-zinc-500" />
+                  </a>
+                );
+              }
               return (
                 <NavLink
                   key={item.to}
-                  to={item.to}
+                  to={item.to!}
                   onClick={handleLinkClick}
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
@@ -120,10 +147,27 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({ user, onLogout }) =
         <div className="grid grid-cols-6 gap-1 p-2">
           {navItems.map((item) => {
             const Icon = item.icon;
+            if (item.external) {
+              return (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative flex flex-col items-center justify-center p-2 rounded-lg transition-colors text-zinc-400 hover:text-zinc-100"
+                >
+                  <span className="relative">
+                    <Icon size={20} />
+                    <ExternalLink size={9} className="absolute -top-1 -right-1.5 text-zinc-500" />
+                  </span>
+                  <span className="text-xs mt-1 font-medium">{item.label}</span>
+                </a>
+              );
+            }
             return (
               <NavLink
                 key={item.to}
-                to={item.to}
+                to={item.to!}
                 className={({ isActive }) =>
                   `flex flex-col items-center justify-center p-2 rounded-lg transition-colors ${
                     isActive
