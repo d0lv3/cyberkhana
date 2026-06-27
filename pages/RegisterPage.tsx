@@ -101,7 +101,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
       <ContainerScroll
         titleComponent={
           <div className="flex flex-col items-center gap-5">
-            <BrandLogo variant="academy" loading="eager" className="h-14 md:h-20 w-auto object-contain" />
+            <BrandLogo variant="text" loading="eager" className="h-14 md:h-20 w-auto object-contain" />
             <h1 className="text-4xl font-bold text-zinc-100 md:text-6xl tracking-tight">
               Build Your Security Skills
             </h1>
