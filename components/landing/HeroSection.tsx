@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowDown, ExternalLink } from "lucide-react";
+import { ArrowDown, ExternalLink, Flag } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLang } from "./LangContext";
 import BrandLogo from "../ui/BrandLogo";
@@ -57,6 +57,25 @@ function useTypewriter(words: readonly string[], typingSpeed = 100, deletingSpee
 
   return text;
 }
+
+/** Animated rotating gradient-border wrapper (React-Bits "Star Border" style). */
+const GradientBorder: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <span className="relative inline-flex overflow-hidden rounded-xl bg-[#263248] p-[1.5px]">
+    <motion.span
+      aria-hidden
+      className="absolute left-1/2 top-1/2 h-[280%] w-[280%] -translate-x-1/2 -translate-y-1/2"
+      style={{
+        background:
+          "conic-gradient(from 0deg, transparent 0deg, #00a859 50deg, #9fef00 95deg, transparent 150deg, transparent 360deg)",
+      }}
+      animate={{ rotate: 360 }}
+      transition={{ repeat: Infinity, duration: 5, ease: "linear" }}
+    />
+    <span className="relative z-[1] inline-flex h-14 items-center justify-center gap-2.5 rounded-[10.5px] bg-[#0b0f16] px-7">
+      {children}
+    </span>
+  </span>
+);
 
 const HeroSection: React.FC = () => {
   const typedText = useTypewriter(TYPEWRITER_WORDS);
@@ -130,18 +149,25 @@ const HeroSection: React.FC = () => {
           >
             <Link
               to="/register"
-              className="bg-[#9fef00] text-[#0d1117] font-bold px-8 py-4 rounded-lg hover:bg-[#b8ff3a] transition-all"
+              aria-label="CyberKhana Main — register or sign in"
+              className="inline-flex rounded-xl transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_0_26px_rgba(0,168,89,0.4)]"
             >
-              CyberKhana Main
+              <GradientBorder>
+                <Flag className="w-5 h-5 text-[#9fef00]" />
+                <span className="font-bold text-[#f3f6ff]">CyberKhana Main</span>
+              </GradientBorder>
             </Link>
             <a
               href="https://academy.cyberkhana.tech"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 border border-[#263248] text-[#d2d7e3] font-bold px-8 py-4 rounded-lg hover:border-[#00a859] hover:text-[#00a859] transition-all"
+              aria-label="CyberKhana Academy (opens in a new tab)"
+              className="inline-flex rounded-xl transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_0_26px_rgba(0,168,89,0.4)]"
             >
-              CyberKhana Academy
-              <ExternalLink size={18} />
+              <GradientBorder>
+                <BrandLogo variant="academy" alt="CyberKhana Academy" className="h-7 w-auto object-contain" />
+                <ExternalLink className="w-4 h-4 text-[#9aa5bf]" />
+              </GradientBorder>
             </a>
           </motion.div>
         </div>
