@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLang } from "./LangContext";
 import BrandLogo from "../ui/BrandLogo";
@@ -132,14 +132,17 @@ const HeroSection: React.FC = () => {
               to="/register"
               className="bg-[#9fef00] text-[#0d1117] font-bold px-8 py-4 rounded-lg hover:bg-[#b8ff3a] transition-all"
             >
-              {t('hero.cta.enter')}
+              CyberKhana Main
             </Link>
-            <Link
-              to="/login"
-              className="border border-[#263248] text-[#d2d7e3] px-8 py-4 rounded-lg hover:border-[#00a859] hover:text-[#00a859] transition-all"
+            <a
+              href="https://academy.cyberkhana.tech"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 border border-[#263248] text-[#d2d7e3] font-bold px-8 py-4 rounded-lg hover:border-[#00a859] hover:text-[#00a859] transition-all"
             >
-              {t('hero.cta.login')}
-            </Link>
+              CyberKhana Academy
+              <ExternalLink size={18} />
+            </a>
           </motion.div>
         </div>
       </div>
