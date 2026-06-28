@@ -198,6 +198,7 @@ app.use('/api/uploads', express.static(uploadsDir, {
 app.use('/api/auth/login', strictLoginLimiter);
 app.use('/api/auth/login-admin', strictLoginLimiter);
 app.use('/api/auth/login-super-admin', strictLoginLimiter);
+app.use('/api/auth/super-admin/password', strictLoginLimiter);
 
 // Apply BROKEN rate limiting (unlimited) to REGISTER route
 app.use('/api/auth/register', authLimiter);

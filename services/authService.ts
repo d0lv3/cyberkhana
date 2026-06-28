@@ -28,4 +28,18 @@ export const authService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(credentials),
     }).then(res => res.json()),
+
+  changeSuperAdminPassword: (data: { currentPassword: string; newPassword: string }) =>
+    fetch(`${API_BASE_URL}/auth/super-admin/password`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+      },
+      body: JSON.stringify(data),
+    }).then(async (res) => {
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body?.error || 'Failed to change password');
+      return body;
+    }),
 };

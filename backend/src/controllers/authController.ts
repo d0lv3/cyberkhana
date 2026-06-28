@@ -5,6 +5,7 @@ import SuperAdmin from '../models/SuperAdmin';
 import University from '../models/University';
 import { generateToken, hashPassword, comparePassword } from '../utils/auth';
 import { IJWTPayload } from '../types';
+import { AuthRequest } from '../middleware/auth';
 
 // Helper to calculate general stats consistently
 // Note: This logic duplicates userController.ts to ensure consistency on login
@@ -340,5 +341,54 @@ export const loginSuperAdmin = async (req: Request, res: Response) => {
     });
   } catch (error) {
     res.status(500).json({ error: 'Server error during super admin login' });
+  }
+};
+
+export const changeSuperAdminPasswordValidation = [
+  body('currentPassword').isString().notEmpty().withMessage('Current password is required'),
+  body('newPassword')
+    .isString()
+    .isLength({ min: 10, max: 200 })
+    .withMessage('New password must be at least 10 characters'),
+];
+
+/**
+ * Lets a signed-in super admin rotate their own password.
+ * Security: super-admin role only; the target account is resolved from the
+ * JWT (userId), the current password is verified, and the new one is bcrypt-hashed.
+ */
+export const changeSuperAdminPassword = async (req: AuthRequest, res: Response) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ error: errors.array()[0].msg });
+    }
+
+    if (req.user?.role !== 'super-admin') {
+      return res.status(403).json({ error: 'Super admin access required' });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    const superAdmin = await SuperAdmin.findById(req.user.userId);
+    if (!superAdmin) {
+      return res.status(404).json({ error: 'Super admin not found' });
+    }
+
+    const isMatch = await comparePassword(currentPassword, superAdmin.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ error: 'New password must be different from the current password' });
+    }
+
+    superAdmin.password = await hashPassword(newPassword);
+    await superAdmin.save();
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error while changing password' });
   }
 };

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { challengeService } from '../../services/challengeService';
 import { universityService } from '../../services/universityService';
+import { authService } from '../../services/authService';
 import Card from '../../components/ui/card';
 import Button from '../../components/ui/button';
 import Input from '../../components/ui/input';
-import { Plus, Building2, Trash2, Copy, CheckCircle, ArrowRight, X, Search } from 'lucide-react';
+import { Plus, Building2, Trash2, Copy, CheckCircle, ArrowRight, X, Search, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useConfirmation } from '../../src/contexts/ConfirmationContext';
 import { useToast } from '../../src/hooks/useToast.tsx';
@@ -56,6 +57,35 @@ const SuperAdminPage: React.FC = () => {
   const [copyProgress, setCopyProgress] = useState(0);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastCopiedCount, setLastCopiedCount] = useState(0);
+
+  // Change-password (super admin) state
+  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
+  const [pwSaving, setPwSaving] = useState(false);
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (pwForm.next.length < 10) {
+      toast('error', 'New password must be at least 10 characters');
+      return;
+    }
+    if (pwForm.next !== pwForm.confirm) {
+      toast('error', 'New passwords do not match');
+      return;
+    }
+    setPwSaving(true);
+    try {
+      await authService.changeSuperAdminPassword({
+        currentPassword: pwForm.current,
+        newPassword: pwForm.next,
+      });
+      setPwForm({ current: '', next: '', confirm: '' });
+      toast('success', 'Password changed successfully');
+    } catch (err: any) {
+      toast('error', err?.message || 'Failed to change password');
+    } finally {
+      setPwSaving(false);
+    }
+  };
 
   useEffect(() => {
     fetchUniversities();
@@ -500,6 +530,54 @@ const SuperAdminPage: React.FC = () => {
           <p className="text-zinc-500">Choose a university from the dropdown above to view and copy its challenges</p>
         </div>
       )}
+      </Card>
+
+      {/* Account Security */}
+      <Card className="p-6 mt-8">
+        <div className="flex items-center gap-3 mb-4">
+          <Lock className="w-6 h-6 text-purple-400" />
+          <h2 className="text-2xl font-bold text-zinc-100">Account Security</h2>
+        </div>
+        <p className="text-zinc-400 mb-4">Change the super-admin password.</p>
+        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+          <div>
+            <label className="block text-zinc-300 text-sm font-medium mb-2">Current password</label>
+            <Input
+              type="password"
+              value={pwForm.current}
+              onChange={(e) => setPwForm((f) => ({ ...f, current: e.target.value }))}
+              autoComplete="current-password"
+              disabled={pwSaving}
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-zinc-300 text-sm font-medium mb-2">New password</label>
+            <Input
+              type="password"
+              value={pwForm.next}
+              onChange={(e) => setPwForm((f) => ({ ...f, next: e.target.value }))}
+              autoComplete="new-password"
+              disabled={pwSaving}
+              className="w-full"
+            />
+            <p className="text-zinc-500 text-xs mt-1">At least 10 characters.</p>
+          </div>
+          <div>
+            <label className="block text-zinc-300 text-sm font-medium mb-2">Confirm new password</label>
+            <Input
+              type="password"
+              value={pwForm.confirm}
+              onChange={(e) => setPwForm((f) => ({ ...f, confirm: e.target.value }))}
+              autoComplete="new-password"
+              disabled={pwSaving}
+              className="w-full"
+            />
+          </div>
+          <Button type="submit" disabled={pwSaving} className="bg-purple-600 hover:bg-purple-700">
+            {pwSaving ? 'Saving...' : 'Change password'}
+          </Button>
+        </form>
       </Card>
 
       {/* Copy Modal */}

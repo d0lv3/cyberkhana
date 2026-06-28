@@ -29,13 +29,18 @@ const setupDatabase = async () => {
     console.log(`✅ Created ${universities.length} universities`);
 
     console.log('\n🔐 Creating super admin...');
-    const superAdmin = await SuperAdmin.create({
-      username: 'admin',
-      password: '$2a$12$8iusqeYEszun07Cz9JPSDe68a1PTgyGnHZMsl.AH1cabg..6f8hou'
+    const superAdminUsername = process.env.SUPER_ADMIN_USERNAME || 'admin';
+    const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+    if (!superAdminPassword || superAdminPassword.length < 10) {
+      console.error('❌ Set SUPER_ADMIN_PASSWORD (min 10 chars) in the environment before seeding.');
+      process.exit(1);
+    }
+    await SuperAdmin.create({
+      username: superAdminUsername,
+      password: await bcrypt.hash(superAdminPassword, 12)
     });
     console.log('✅ Created super admin');
-    console.log('   Username: admin');
-    console.log('   Password: OurSecurePlatform@d0mv6p');
+    console.log('   Username:', superAdminUsername);
 
     console.log('\n👨‍💼 Creating university admins...');
     const adminPassword = await bcrypt.hash('admin123', 10);
@@ -108,9 +113,8 @@ const setupDatabase = async () => {
     console.log('\n✨ Database setup completed successfully!');
     console.log('\n📝 Login Credentials:');
     console.log('\n🔴 Super Admin:');
-    console.log('   URL: http://localhost:5173');
-    console.log('   Username: superadmin');
-    console.log('   Password: OurSecurePlatform@d0mv6p');
+    console.log('   Username:', superAdminUsername);
+    console.log('   Password: (the SUPER_ADMIN_PASSWORD you provided)');
     console.log('   Role: Super Admin');
     console.log('\n🔵 University Admin (MIT):');
     console.log('   URL: http://localhost:5173');
