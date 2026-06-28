@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { challengeService } from '../services/challengeService';
 import { userService } from '../services/userService';
+import { universityService } from '../services/universityService';
 import { Challenge } from '../types';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import Button from '../components/ui/EnhancedButton';
@@ -54,15 +55,48 @@ const EnhancedChallengesPage: React.FC = () => {
   
   const { toast } = useToast();
 
-  useEffect(() => {
-    fetchData();
+  const me = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || '{}');
+    } catch {
+      return {};
+    }
   }, []);
+  const isSuperAdmin = me?.role === 'super-admin';
+
+  // Super-admin only: choose which university's challenges to view.
+  const [universities, setUniversities] = useState<Array<{ code: string; name: string }>>([]);
+  const [selectedUniversity, setSelectedUniversity] = useState('');
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    let cancelled = false;
+    universityService
+      .getUniversities()
+      .then((list: any) => {
+        if (cancelled) return;
+        const arr = Array.isArray(list) ? list : [];
+        setUniversities(arr);
+        if (arr.length) setSelectedUniversity((prev) => prev || arr[0].code);
+      })
+      .catch(() => {
+        /* non-fatal: the dropdown just stays empty */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isSuperAdmin]);
 
   const fetchData = async () => {
+    // Super-admin must pick a university first — their own code ('SUPER') has no challenges.
+    if (isSuperAdmin && !selectedUniversity) {
+      setChallenges([]);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
-      const userData = localStorage.getItem('user');
-      const universityCode = userData ? JSON.parse(userData).universityCode : undefined;
+      const universityCode = isSuperAdmin ? selectedUniversity : me?.universityCode;
 
       const [challengesData, profileData] = await Promise.all([
         challengeService.getChallenges(universityCode),
@@ -78,6 +112,12 @@ const EnhancedChallengesPage: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // (Re)fetch on mount and whenever the super-admin switches university.
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedUniversity, isSuperAdmin]);
 
   const isSolved = (challengeId: string) => solvedChallenges.includes(challengeId);
 
@@ -208,6 +248,23 @@ const EnhancedChallengesPage: React.FC = () => {
                 className="w-full bg-[#0e1522] border border-[#263248] rounded-lg py-2 pl-9 pr-4 text-sm text-[#f3f6ff] focus:outline-none focus:border-[#9fef00]"
               />
             </div>
+
+            {/* Super-admin: choose which university's challenges to view */}
+            {isSuperAdmin && (
+              <select
+                value={selectedUniversity}
+                onChange={(e) => setSelectedUniversity(e.target.value)}
+                title="University"
+                className="bg-[#0e1522] border border-[#263248] text-sm font-bold text-[#d2d7e3] rounded-lg px-3 py-2 outline-none focus:border-[#9fef00]"
+              >
+                {universities.length === 0 && <option value="">No universities</option>}
+                {universities.map((u) => (
+                  <option key={u.code} value={u.code}>
+                    {u.name} ({u.code})
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="flex w-full lg:w-auto items-center gap-3 overflow-x-auto pb-2 lg:pb-0">
