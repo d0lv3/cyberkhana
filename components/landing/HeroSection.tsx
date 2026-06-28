@@ -173,10 +173,10 @@ const HeroSection: React.FC = () => {
             >
               <SpotlightButton>
                 <img
-                  src="/assets/brand/cyberkhana-mark.png"
+                  src="/assets/brand/cyberkhana-mark-sq.png"
                   alt=""
                   aria-hidden="true"
-                  className="h-6 w-auto object-contain"
+                  className="h-7 w-auto object-contain"
                 />
                 <span className="font-bold text-[#f3f6ff]">CyberKhana Main</span>
               </SpotlightButton>
