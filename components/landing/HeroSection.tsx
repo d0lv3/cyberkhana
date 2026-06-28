@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowDown, ExternalLink, Flag } from "lucide-react";
+import { ArrowDown, ExternalLink } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLang } from "./LangContext";
 import BrandLogo from "../ui/BrandLogo";
@@ -58,22 +58,20 @@ function useTypewriter(words: readonly string[], typingSpeed = 100, deletingSpee
   return text;
 }
 
-/** Animated rotating gradient-border wrapper (React-Bits "Star Border" style). */
-const GradientBorder: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span className="relative inline-flex overflow-hidden rounded-xl bg-[#263248] p-[1.5px]">
+/** Frosted-glass button with a slow shine sweep. Parent must carry `group`. */
+const GlassButton: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <span className="relative inline-flex h-14 items-center justify-center gap-2.5 overflow-hidden rounded-xl border border-white/15 bg-white/[0.06] px-7 backdrop-blur-md transition-all duration-300 group-hover:border-[#9fef00]/45 group-hover:bg-white/[0.1] group-hover:shadow-[0_0_30px_rgba(0,168,89,0.28)]">
+    {/* top glass sheen */}
+    <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/15 to-transparent" />
+    {/* slow shine sweep */}
     <motion.span
       aria-hidden
-      className="absolute left-1/2 top-1/2 h-[280%] w-[280%] -translate-x-1/2 -translate-y-1/2"
-      style={{
-        background:
-          "conic-gradient(from 0deg, transparent 0deg, #00a859 50deg, #9fef00 95deg, transparent 150deg, transparent 360deg)",
-      }}
-      animate={{ rotate: 360 }}
-      transition={{ repeat: Infinity, duration: 5, ease: "linear" }}
+      className="pointer-events-none absolute top-0 h-full w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+      initial={{ left: "-40%" }}
+      animate={{ left: ["-40%", "150%"] }}
+      transition={{ duration: 2.6, repeat: Infinity, repeatDelay: 1.8, ease: "easeInOut" }}
     />
-    <span className="relative z-[1] inline-flex h-14 items-center justify-center gap-2.5 rounded-[10.5px] bg-[#0b0f16] px-7">
-      {children}
-    </span>
+    <span className="relative z-[1] inline-flex items-center gap-2.5">{children}</span>
   </span>
 );
 
@@ -150,24 +148,29 @@ const HeroSection: React.FC = () => {
             <Link
               to="/register"
               aria-label="CyberKhana Main — register or sign in"
-              className="inline-flex rounded-xl transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_0_26px_rgba(0,168,89,0.4)]"
+              className="group inline-flex rounded-xl transition-transform duration-200 hover:scale-[1.03]"
             >
-              <GradientBorder>
-                <Flag className="w-5 h-5 text-[#9fef00]" />
+              <GlassButton>
+                <img
+                  src="/assets/brand/cyberkhana-mark.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-6 w-auto object-contain"
+                />
                 <span className="font-bold text-[#f3f6ff]">CyberKhana Main</span>
-              </GradientBorder>
+              </GlassButton>
             </Link>
             <a
               href="https://academy.cyberkhana.tech"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="CyberKhana Academy (opens in a new tab)"
-              className="inline-flex rounded-xl transition-all duration-200 hover:scale-[1.03] hover:shadow-[0_0_26px_rgba(0,168,89,0.4)]"
+              className="group inline-flex rounded-xl transition-transform duration-200 hover:scale-[1.03]"
             >
-              <GradientBorder>
+              <GlassButton>
                 <BrandLogo variant="academy" alt="CyberKhana Academy" className="h-7 w-auto object-contain" />
                 <ExternalLink className="w-4 h-4 text-[#9aa5bf]" />
-              </GradientBorder>
+              </GlassButton>
             </a>
           </motion.div>
         </div>
