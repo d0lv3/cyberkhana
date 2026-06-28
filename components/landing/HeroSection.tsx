@@ -58,6 +58,44 @@ function useTypewriter(words: readonly string[], typingSpeed = 100, deletingSpee
   return text;
 }
 
+/** Spotlight-border button — mirrors the Academy login card container:
+ *  a dark rounded panel with a green radial glow that tracks the cursor. */
+const SpotlightButton: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [spot, setSpot] = useState({ x: 50, y: 50, active: false });
+  const onMove = (e: React.MouseEvent<HTMLSpanElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setSpot({
+      x: ((e.clientX - r.left) / r.width) * 100,
+      y: ((e.clientY - r.top) / r.height) * 100,
+      active: true,
+    });
+  };
+  return (
+    <span
+      onMouseMove={onMove}
+      onMouseLeave={() => setSpot((s) => ({ ...s, active: false }))}
+      className="relative inline-flex rounded-2xl p-px transition-all duration-300"
+      style={{
+        background: spot.active
+          ? `radial-gradient(140px circle at ${spot.x}% ${spot.y}%, rgba(159,239,0,0.6), rgba(38,50,72,0.65) 70%)`
+          : "rgba(38,50,72,0.65)",
+      }}
+    >
+      <span className="relative inline-flex h-14 items-center justify-center gap-2.5 overflow-hidden rounded-[15px] bg-[#0f1624]/95 px-7 backdrop-blur-sm">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+          style={{
+            opacity: spot.active ? 1 : 0,
+            background: `radial-gradient(190px circle at ${spot.x}% ${spot.y}%, rgba(0,168,89,0.14), transparent 65%)`,
+          }}
+        />
+        <span className="relative z-[1] inline-flex items-center gap-2.5">{children}</span>
+      </span>
+    </span>
+  );
+};
+
 const HeroSection: React.FC = () => {
   const typedText = useTypewriter(TYPEWRITER_WORDS);
   const { t, isArabic } = useLang();
@@ -131,29 +169,29 @@ const HeroSection: React.FC = () => {
             <Link
               to="/register"
               aria-label="CyberKhana Main — register or sign in"
-              className="inline-flex items-center gap-2.5 rounded-full bg-white px-7 py-3.5 font-bold text-[#1f2937] shadow-md transition-all duration-200 hover:bg-[#f1f3f7] hover:shadow-lg active:scale-[0.98]"
+              className="inline-flex transition-transform duration-200 hover:scale-[1.02]"
             >
-              <img
-                src="/assets/brand/cyberkhana-mark-green.png"
-                alt=""
-                aria-hidden="true"
-                className="h-6 w-auto object-contain"
-              />
-              CyberKhana Main
+              <SpotlightButton>
+                <img
+                  src="/assets/brand/cyberkhana-mark.png"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-6 w-auto object-contain"
+                />
+                <span className="font-bold text-[#f3f6ff]">CyberKhana Main</span>
+              </SpotlightButton>
             </Link>
             <a
               href="https://academy.cyberkhana.tech"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="CyberKhana Academy (opens in a new tab)"
-              className="inline-flex items-center gap-2.5 rounded-full bg-white px-7 py-3.5 font-bold text-[#1f2937] shadow-md transition-all duration-200 hover:bg-[#f1f3f7] hover:shadow-lg active:scale-[0.98]"
+              className="inline-flex transition-transform duration-200 hover:scale-[1.02]"
             >
-              <img
-                src="/assets/brand/cyberkhana-academy-dark.png"
-                alt="CyberKhana Academy"
-                className="h-6 w-auto object-contain"
-              />
-              <ExternalLink className="w-4 h-4 text-[#6e7a94]" />
+              <SpotlightButton>
+                <BrandLogo variant="academy" alt="CyberKhana Academy" className="h-7 w-auto object-contain" />
+                <ExternalLink className="w-4 h-4 text-[#9aa5bf]" />
+              </SpotlightButton>
             </a>
           </motion.div>
         </div>
