@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { userService } from '../services/userService';
+import { universityService } from '../services/universityService';
 import UnifiedLeaderboard, { UnifiedLeaderboardEntry } from '../components/leaderboard/UnifiedLeaderboard';
 import ProfileSlidePanel from '../components/ui/ProfileSlidePanel';
 import { useSocket } from '../src/contexts/SocketContext';
@@ -35,18 +36,50 @@ const GeneralLeaderboardPage: React.FC = () => {
   } | null>(null);
   const { socket, isConnected } = useSocket();
 
-  const currentUsername = useMemo(() => {
+  const me = useMemo(() => {
     try {
-      return JSON.parse(localStorage.getItem('user') || '{}')?.username || '';
+      return JSON.parse(localStorage.getItem('user') || '{}');
     } catch {
-      return '';
+      return {};
     }
   }, []);
+  const currentUsername = me?.username || '';
+  const isSuperAdmin = me?.role === 'super-admin';
+
+  // Super-admin only: choose which university's leaderboard to view.
+  const [universities, setUniversities] = useState<Array<{ code: string; name: string }>>([]);
+  const [selectedUniversity, setSelectedUniversity] = useState('');
+
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    let cancelled = false;
+    universityService
+      .getUniversities()
+      .then((list: any) => {
+        if (cancelled) return;
+        const arr = Array.isArray(list) ? list : [];
+        setUniversities(arr);
+        if (arr.length) setSelectedUniversity((prev) => prev || arr[0].code);
+      })
+      .catch(() => {
+        /* non-fatal: the dropdown just stays empty */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isSuperAdmin]);
 
   const fetchLeaderboard = async () => {
+    // A super-admin must pick a university first — their own code ('SUPER') has no board.
+    if (isSuperAdmin && !selectedUniversity) {
+      setRows([]);
+      setTotalChallenges(0);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
-      const response = await userService.getLeaderboard();
+      const response = await userService.getLeaderboard(isSuperAdmin ? selectedUniversity : undefined);
       const leaderboard = Array.isArray(response) ? response : response?.leaderboard || [];
       const analysis = Array.isArray(response) ? undefined : response?.analysis;
 
@@ -60,9 +93,11 @@ const GeneralLeaderboardPage: React.FC = () => {
     }
   };
 
+  // (Re)fetch on mount and whenever the super-admin switches university.
   useEffect(() => {
     fetchLeaderboard();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedUniversity, isSuperAdmin]);
 
   useEffect(() => {
     if (!socket || !isConnected) return;
@@ -78,7 +113,8 @@ const GeneralLeaderboardPage: React.FC = () => {
       socket.off('leaderboardUpdate', refresh);
       socket.off('flagSubmitted', refresh);
     };
-  }, [socket, isConnected]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket, isConnected, selectedUniversity, isSuperAdmin]);
 
   const entries: UnifiedLeaderboardEntry[] = useMemo(
     () =>
@@ -93,11 +129,37 @@ const GeneralLeaderboardPage: React.FC = () => {
     [rows, currentUsername]
   );
 
+  const selectedUniName = universities.find((u) => u.code === selectedUniversity)?.name;
+
   return (
     <>
+      {isSuperAdmin && (
+        <div className="mb-5 flex flex-col sm:flex-row sm:items-center gap-3">
+          <label className="text-xs font-bold uppercase tracking-wider text-[#8390ac]">University</label>
+          <select
+            value={selectedUniversity}
+            onChange={(e) => setSelectedUniversity(e.target.value)}
+            className="bg-[#141c2b] border border-[#2a3346] rounded-lg px-3 py-2 text-sm text-[#d2d7e3] focus:outline-none focus:border-[#00a859]/50 transition-colors"
+          >
+            {universities.length === 0 && <option value="">No universities</option>}
+            {universities.map((u) => (
+              <option key={u.code} value={u.code}>
+                {u.name} ({u.code})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <UnifiedLeaderboard
         title="General Leaderboard"
-        subtitle={`${entries.length} solo players ranked by points and flags`}
+        subtitle={
+          isSuperAdmin
+            ? selectedUniName
+              ? `${selectedUniName} · ${entries.length} players`
+              : 'Select a university to view its leaderboard'
+            : `${entries.length} solo players ranked by points and flags`
+        }
         entries={entries}
         totalFlags={totalChallenges}
         loading={loading}
