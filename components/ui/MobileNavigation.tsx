@@ -11,6 +11,7 @@ import {
   X,
   LogOut,
   ExternalLink,
+  ShieldCheck,
 } from 'lucide-react';
 import Button from './EnhancedButton';
 import BrandLogo from './BrandLogo';
@@ -32,11 +33,13 @@ interface MobileNavigationProps {
 
 const MobileNavigation: React.FC<MobileNavigationProps> = ({ user, onLogout }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const isManager = user?.role === 'admin' || user?.role === 'super-admin';
   const navItems: MobileNavItem[] = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/competition', icon: Target, label: 'Competitions' },
     { to: '/challenges', icon: Code, label: 'Challenges' },
     { to: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
+    ...(isManager ? [{ to: '/admin', icon: ShieldCheck, label: 'Manage' }] : []),
     { href: ACADEMY_URL, external: true, icon: BookOpen, label: 'Academy' },
     { to: '/profile', icon: UserCircle, label: 'Profile' },
   ];
@@ -144,7 +147,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({ user, onLogout }) =
 
       {/* Bottom Navigation for Mobile */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-black/95 backdrop-blur-md border-t border-zinc-800">
-        <div className="grid grid-cols-6 gap-1 p-2">
+        <div className="grid gap-1 p-2" style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}>
           {navItems.map((item) => {
             const Icon = item.icon;
             if (item.external) {

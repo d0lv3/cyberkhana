@@ -9,6 +9,7 @@ import {
   BookOpen,
   ChevronRight,
   ExternalLink,
+  ShieldCheck,
 } from 'lucide-react';
 import BrandLogo from './ui/BrandLogo';
 
@@ -22,17 +23,19 @@ type NavItem = {
   external?: boolean;
 };
 
-const navItems: NavItem[] = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/competition', icon: Target, label: 'Competitions' },
-  { to: '/challenges', icon: Code, label: 'Challenges' },
-  { to: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
-  { href: ACADEMY_URL, external: true, icon: BookOpen, label: 'Academy' },
-  { to: '/profile', icon: UserCircle, label: 'Profile' },
-];
-
 const Sidebar: React.FC = () => {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isManager = user?.role === 'admin' || user?.role === 'super-admin';
+
+  const navItems: NavItem[] = [
+    { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/competition', icon: Target, label: 'Competitions' },
+    { to: '/challenges', icon: Code, label: 'Challenges' },
+    { to: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
+    ...(isManager ? [{ to: '/admin', icon: ShieldCheck, label: 'Management' }] : []),
+    { href: ACADEMY_URL, external: true, icon: BookOpen, label: 'Academy' },
+    { to: '/profile', icon: UserCircle, label: 'Profile' },
+  ];
 
   return (
     <aside className="w-60 flex-shrink-0 flex flex-col hidden md:flex h-screen sticky top-0 bg-[#0d1117] border-r border-[#1e293b]">

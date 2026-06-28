@@ -15,12 +15,13 @@ import ProfilePage from './pages/ProfilePage';
 import PublicProfilePage from './pages/PublicProfilePage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
 import AppLayout from './components/AppLayout';
-import AdminLayout from './components/AdminLayout';
+import ManagementLayout, { ManagementGate } from './components/ManagementLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminChallengesPage from './pages/admin/AdminChallengesPage';
 import AdminAnnouncementsPage from './pages/admin/AdminAnnouncementsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminCompetitionsPage from './pages/admin/AdminCompetitionsPage';
+import AdminUniversityPage from './pages/admin/AdminUniversityPage';
 import CompetitionMonitoringPage from './pages/admin/CompetitionMonitoringPage';
 import SuperAdminPage from './pages/admin/SuperAdminPage';
 import Loader from './components/ui/Loader';
@@ -86,44 +87,18 @@ const App: React.FC = () => {
     );
   }
 
+  const isSuperAdmin = user.role === 'super-admin';
+
   return (
     <ConfirmationProvider>
       <SocketProvider user={user}>
         <SocketToast />
         <HashRouter>
-        <Routes>
-          <Route path="/login" element={<Navigate to="/dashboard" />} />
+          <Routes>
+            <Route path="/login" element={<Navigate to="/dashboard" />} />
 
-          {user.role === 'super-admin' && (
-            <Route path="/" element={<AdminLayout onLogout={handleLogout} />}>
-              <Route index element={<Navigate to="/admin/super" />} />
-              <Route path="admin" element={<SuperAdminPage />} />
-              <Route path="admin/super" element={<SuperAdminPage />} />
-              <Route path="admin/dashboard" element={<AdminDashboardPage />} />
-              <Route path="admin/challenges" element={<AdminChallengesPage />} />
-              <Route path="admin/competitions" element={<AdminCompetitionsPage />} />
-              <Route path="admin/competitions/:id/monitor" element={<CompetitionMonitoringPage />} />
-              <Route path="admin/announcements" element={<AdminAnnouncementsPage />} />
-              <Route path="admin/users" element={<AdminUsersPage />} />
-              <Route path="*" element={<Navigate to="/admin/super" />} />
-            </Route>
-          )}
-
-          {user.role === 'admin' && (
-            <Route path="/" element={<AdminLayout onLogout={handleLogout} />}>
-              <Route index element={<Navigate to="/admin" />} />
-              <Route path="admin" element={<AdminDashboardPage />} />
-              <Route path="admin/dashboard" element={<AdminDashboardPage />} />
-              <Route path="admin/challenges" element={<AdminChallengesPage />} />
-              <Route path="admin/competitions" element={<AdminCompetitionsPage />} />
-              <Route path="admin/competitions/:id/monitor" element={<CompetitionMonitoringPage />} />
-              <Route path="admin/announcements" element={<AdminAnnouncementsPage />} />
-              <Route path="admin/users" element={<AdminUsersPage />} />
-              <Route path="*" element={<Navigate to="/admin" />} />
-            </Route>
-          )}
-
-          {user.role === 'user' && (
+            {/* One shell for every role — learner experience for all, plus a
+                role-gated Management area nested in the same layout. */}
             <Route path="/" element={<AppLayout onLogout={handleLogout} />}>
               <Route index element={<Navigate to="/dashboard" />} />
               <Route path="dashboard" element={<NewDashboardPage />} />
@@ -137,13 +112,38 @@ const App: React.FC = () => {
               <Route path="leaderboard" element={<GeneralLeaderboardPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="profile/:userId" element={<PublicProfilePage />} />
+
+              {/* Management — admins & super-admins only */}
+              <Route
+                path="admin"
+                element={
+                  <ManagementGate>
+                    <ManagementLayout />
+                  </ManagementGate>
+                }
+              >
+                <Route index element={isSuperAdmin ? <SuperAdminPage /> : <AdminDashboardPage />} />
+                <Route
+                  path="super"
+                  element={isSuperAdmin ? <SuperAdminPage /> : <Navigate to="/admin" replace />}
+                />
+                <Route path="dashboard" element={<AdminDashboardPage />} />
+                <Route path="challenges" element={<AdminChallengesPage />} />
+                <Route path="competitions" element={<AdminCompetitionsPage />} />
+                <Route path="competitions/:id/monitor" element={<CompetitionMonitoringPage />} />
+                <Route path="announcements" element={<AdminAnnouncementsPage />} />
+                <Route path="users" element={<AdminUsersPage />} />
+                <Route
+                  path="university"
+                  element={!isSuperAdmin ? <AdminUniversityPage /> : <Navigate to="/admin" replace />}
+                />
+                <Route path="*" element={<Navigate to="/admin" />} />
+              </Route>
+
               <Route path="*" element={<Navigate to="/dashboard" />} />
             </Route>
-          )}
-
-          <Route path="*" element={<Navigate to="/dashboard" />} />
-        </Routes>
-      </HashRouter>
+          </Routes>
+        </HashRouter>
       </SocketProvider>
     </ConfirmationProvider>
   );

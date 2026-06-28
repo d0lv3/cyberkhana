@@ -9,4 +9,11 @@ export const universityService = {
 
   deleteUniversity: (id: string) =>
     apiService.delete(`/universities/${id}`),
+
+  // Admin: read/update only their OWN university (resolved server-side from the token).
+  getMyUniversity: () =>
+    apiService.get('/universities/mine'),
+
+  updateMyUniversity: (data: { name?: string; description?: string; website?: string }) =>
+    apiService.patch('/universities/mine', data),
 };
