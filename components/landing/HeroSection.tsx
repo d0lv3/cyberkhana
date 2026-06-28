@@ -58,23 +58,6 @@ function useTypewriter(words: readonly string[], typingSpeed = 100, deletingSpee
   return text;
 }
 
-/** Frosted-glass button with a slow shine sweep. Parent must carry `group`. */
-const GlassButton: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span className="relative inline-flex h-14 items-center justify-center gap-2.5 overflow-hidden rounded-xl border border-white/15 bg-white/[0.06] px-7 backdrop-blur-md transition-all duration-300 group-hover:border-[#9fef00]/45 group-hover:bg-white/[0.1] group-hover:shadow-[0_0_30px_rgba(0,168,89,0.28)]">
-    {/* top glass sheen */}
-    <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/15 to-transparent" />
-    {/* slow shine sweep */}
-    <motion.span
-      aria-hidden
-      className="pointer-events-none absolute top-0 h-full w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-      initial={{ left: "-40%" }}
-      animate={{ left: ["-40%", "150%"] }}
-      transition={{ duration: 2.6, repeat: Infinity, repeatDelay: 1.8, ease: "easeInOut" }}
-    />
-    <span className="relative z-[1] inline-flex items-center gap-2.5">{children}</span>
-  </span>
-);
-
 const HeroSection: React.FC = () => {
   const typedText = useTypewriter(TYPEWRITER_WORDS);
   const { t, isArabic } = useLang();
@@ -148,29 +131,29 @@ const HeroSection: React.FC = () => {
             <Link
               to="/register"
               aria-label="CyberKhana Main — register or sign in"
-              className="group inline-flex rounded-xl transition-transform duration-200 hover:scale-[1.03]"
+              className="inline-flex items-center gap-2.5 rounded-full bg-white px-7 py-3.5 font-bold text-[#1f2937] shadow-md transition-all duration-200 hover:bg-[#f1f3f7] hover:shadow-lg active:scale-[0.98]"
             >
-              <GlassButton>
-                <img
-                  src="/assets/brand/cyberkhana-mark.png"
-                  alt=""
-                  aria-hidden="true"
-                  className="h-6 w-auto object-contain"
-                />
-                <span className="font-bold text-[#f3f6ff]">CyberKhana Main</span>
-              </GlassButton>
+              <img
+                src="/assets/brand/cyberkhana-mark-green.png"
+                alt=""
+                aria-hidden="true"
+                className="h-6 w-auto object-contain"
+              />
+              CyberKhana Main
             </Link>
             <a
               href="https://academy.cyberkhana.tech"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="CyberKhana Academy (opens in a new tab)"
-              className="group inline-flex rounded-xl transition-transform duration-200 hover:scale-[1.03]"
+              className="inline-flex items-center gap-2.5 rounded-full bg-white px-7 py-3.5 font-bold text-[#1f2937] shadow-md transition-all duration-200 hover:bg-[#f1f3f7] hover:shadow-lg active:scale-[0.98]"
             >
-              <GlassButton>
-                <BrandLogo variant="academy" alt="CyberKhana Academy" className="h-7 w-auto object-contain" />
-                <ExternalLink className="w-4 h-4 text-[#9aa5bf]" />
-              </GlassButton>
+              <img
+                src="/assets/brand/cyberkhana-academy-dark.png"
+                alt="CyberKhana Academy"
+                className="h-6 w-auto object-contain"
+              />
+              <ExternalLink className="w-4 h-4 text-[#6e7a94]" />
             </a>
           </motion.div>
         </div>
