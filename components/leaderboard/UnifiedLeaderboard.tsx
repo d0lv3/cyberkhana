@@ -2,17 +2,13 @@ import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Crown, Medal, Search, Shield } from 'lucide-react';
 
-export type LeaderboardTier = 'Holo' | 'Silver' | 'Bronze';
-
 export interface UnifiedLeaderboardEntry {
   id: string;
   username: string;
   player: string;
-  country: string;
   playerTag?: string;
   points: number | string;
   flagsPwned: number | string;
-  tier?: string;
   avatarUrl?: string;
   isCurrentUser?: boolean;
 }
@@ -35,28 +31,11 @@ const rankIcon = (rank: number) => {
   return <span className="text-sm font-semibold text-[#9aa5bf]">{rank}</span>;
 };
 
-const tierMeta: Record<LeaderboardTier, { text: string; badge: string; border: string; frame: string; icon: string }> = {
-  Holo: {
-    text: 'text-[#d8b4fe]',
-    badge: 'bg-[#231f3a] text-[#d8b4fe] border-[#6f56d9]/50',
-    border: 'border-[#6f56d9]/55',
-    frame: 'bg-[#6f56d9]/75',
-    icon: 'from-[#60a5fa] via-[#d8b4fe] to-[#9fef00]',
-  },
-  Silver: {
-    text: 'text-[#cbd5e1]',
-    badge: 'bg-[#1f2937] text-[#cbd5e1] border-[#64748b]/55',
-    border: 'border-[#64748b]/50',
-    frame: 'bg-[#94a3b8]/75',
-    icon: 'from-[#cbd5e1] to-[#94a3b8]',
-  },
-  Bronze: {
-    text: 'text-[#d6a55a]',
-    badge: 'bg-[#2b2318] text-[#d6a55a] border-[#d6a55a]/45',
-    border: 'border-[#d6a55a]/45',
-    frame: 'bg-[#d6a55a]/70',
-    icon: 'from-[#e5b970] to-[#a46b28]',
-  },
+/* Podium framing by finishing position (gold / silver / bronze) — no tiers. */
+const podiumAccent: Record<number, { frame: string; border: string }> = {
+  1: { frame: 'bg-[#f3c84b]/75', border: 'border-[#f3c84b]/55' },
+  2: { frame: 'bg-[#94a3b8]/75', border: 'border-[#64748b]/50' },
+  3: { frame: 'bg-[#d6a55a]/70', border: 'border-[#d6a55a]/45' },
 };
 
 const toNumber = (value: unknown): number => {
@@ -69,48 +48,30 @@ const toNumber = (value: unknown): number => {
   return 0;
 };
 
-const resolveTier = (_tier: string | undefined, _points: number, _maxPoints: number, position: number): LeaderboardTier | null => {
-  if (position === 0) return 'Holo';
-  if (position === 1) return 'Silver';
-  if (position === 2) return 'Bronze';
-  return null;
-};
-
 const podiumFireParticles = [
-  { left: '16%', bottom: 24, delay: 0.0, duration: 1.2, size: 'w-1.5 h-1.5', color: 'from-[#f97316] via-[#fb923c] to-[#c084fc]' },
-  { left: '28%', bottom: 18, delay: 0.15, duration: 1.35, size: 'w-2 h-2', color: 'from-[#c084fc] via-[#d946ef] to-[#fb923c]' },
-  { left: '40%', bottom: 22, delay: 0.3, duration: 1.15, size: 'w-1 h-1', color: 'from-[#f97316] via-[#facc15] to-[#d946ef]' },
-  { left: '56%', bottom: 20, delay: 0.45, duration: 1.25, size: 'w-2 h-2', color: 'from-[#a855f7] via-[#d946ef] to-[#fb923c]' },
-  { left: '70%', bottom: 26, delay: 0.6, duration: 1.4, size: 'w-1.5 h-1.5', color: 'from-[#fb923c] via-[#f97316] to-[#c084fc]' },
-  { left: '82%', bottom: 18, delay: 0.75, duration: 1.1, size: 'w-1 h-1', color: 'from-[#c084fc] via-[#f472b6] to-[#f97316]' },
+  { left: '16%', bottom: 24, delay: 0.0, duration: 1.2, size: 'w-1.5 h-1.5', color: 'from-[#f59e0b] via-[#fde68a] to-[#9fef00]' },
+  { left: '28%', bottom: 18, delay: 0.15, duration: 1.35, size: 'w-2 h-2', color: 'from-[#9fef00] via-[#fde68a] to-[#f59e0b]' },
+  { left: '40%', bottom: 22, delay: 0.3, duration: 1.15, size: 'w-1 h-1', color: 'from-[#f59e0b] via-[#facc15] to-[#9fef00]' },
+  { left: '56%', bottom: 20, delay: 0.45, duration: 1.25, size: 'w-2 h-2', color: 'from-[#facc15] via-[#9fef00] to-[#f59e0b]' },
+  { left: '70%', bottom: 26, delay: 0.6, duration: 1.4, size: 'w-1.5 h-1.5', color: 'from-[#fbbf24] via-[#f59e0b] to-[#9fef00]' },
+  { left: '82%', bottom: 18, delay: 0.75, duration: 1.1, size: 'w-1 h-1', color: 'from-[#9fef00] via-[#fde68a] to-[#f59e0b]' },
 ];
 
 const podiumInnerParticles = [
-  { left: '18%', top: '62%', delay: 0.1, duration: 1.2, size: 'w-1 h-1', color: 'from-[#fb923c] to-[#c084fc]' },
-  { left: '33%', top: '58%', delay: 0.25, duration: 1.35, size: 'w-1.5 h-1.5', color: 'from-[#a855f7] to-[#fb923c]' },
-  { left: '48%', top: '66%', delay: 0.4, duration: 1.15, size: 'w-1 h-1', color: 'from-[#f97316] to-[#d946ef]' },
-  { left: '62%', top: '60%', delay: 0.55, duration: 1.3, size: 'w-1.5 h-1.5', color: 'from-[#c084fc] to-[#fb923c]' },
-  { left: '77%', top: '64%', delay: 0.7, duration: 1.2, size: 'w-1 h-1', color: 'from-[#d946ef] to-[#f97316]' },
+  { left: '18%', top: '62%', delay: 0.1, duration: 1.2, size: 'w-1 h-1', color: 'from-[#f59e0b] to-[#9fef00]' },
+  { left: '33%', top: '58%', delay: 0.25, duration: 1.35, size: 'w-1.5 h-1.5', color: 'from-[#9fef00] to-[#f59e0b]' },
+  { left: '48%', top: '66%', delay: 0.4, duration: 1.15, size: 'w-1 h-1', color: 'from-[#facc15] to-[#9fef00]' },
+  { left: '62%', top: '60%', delay: 0.55, duration: 1.3, size: 'w-1.5 h-1.5', color: 'from-[#9fef00] to-[#facc15]' },
+  { left: '77%', top: '64%', delay: 0.7, duration: 1.2, size: 'w-1 h-1', color: 'from-[#fbbf24] to-[#9fef00]' },
 ];
-
-const TierPill: React.FC<{ tier: LeaderboardTier }> = ({ tier }) => {
-  const meta = tierMeta[tier];
-  return (
-    <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded border ${meta.badge}`}>
-      <span className={`w-2 h-2 rotate-45 rounded-[2px] bg-gradient-to-r ${meta.icon}`} />
-      {tier}
-    </span>
-  );
-};
 
 const PodiumCard: React.FC<{
   rank: number;
   entry: UnifiedLeaderboardEntry;
-  tier: LeaderboardTier;
   highlight?: boolean;
   onSelect?: () => void;
-}> = ({ rank, entry, tier, highlight, onSelect }) => {
-  const meta = tierMeta[tier];
+}> = ({ rank, entry, highlight, onSelect }) => {
+  const accent = podiumAccent[rank] ?? podiumAccent[3];
   const baseHeight = highlight ? 'h-[17.5rem] md:h-[19rem]' : 'h-[15rem] md:h-[16.5rem]';
   const points = toNumber(entry.points);
   const shapePath = 'polygon(4% 0%,96% 0%,100% 8%,100% 84%,50% 100%,0% 84%,0% 8%)';
@@ -149,7 +110,7 @@ const PodiumCard: React.FC<{
         className={`relative w-full ${baseHeight} ${onSelect ? 'cursor-pointer' : ''} drop-shadow-[0_10px_28px_rgba(0,0,0,0.38)]`}
         onClick={onSelect}
       >
-        <div className={`absolute inset-0 ${meta.frame}`} style={{ clipPath: shapePath }} />
+        <div className={`absolute inset-0 ${accent.frame}`} style={{ clipPath: shapePath }} />
 
         <div className="absolute inset-[1.5px] overflow-hidden bg-[#1a2332]" style={{ clipPath: shapePath }}>
           {rank === 1 && (
@@ -176,7 +137,7 @@ const PodiumCard: React.FC<{
           )}
 
           <div className="relative z-20 h-full flex flex-col items-center justify-center px-4 text-center">
-            <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full border ${meta.border} bg-[#121a2a] flex items-center justify-center overflow-hidden`}>
+            <div className={`w-16 h-16 md:w-20 md:h-20 rounded-full border ${accent.border} bg-[#121a2a] flex items-center justify-center overflow-hidden`}>
               {entry.avatarUrl ? (
                 <img src={entry.avatarUrl} alt={entry.player} className="w-full h-full object-cover" />
               ) : (
@@ -193,9 +154,6 @@ const PodiumCard: React.FC<{
               </span>
             ) : null}
             <p className="text-sm text-[#9aa5bf] mt-1">{points} pts</p>
-            <div className="mt-2">
-              <TierPill tier={tier} />
-            </div>
           </div>
         </div>
       </div>
@@ -214,8 +172,6 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
   onSelectEntry,
 }) => {
   const [search, setSearch] = useState('');
-  const [countryFilter, setCountryFilter] = useState('ALL');
-  const [tierFilter, setTierFilter] = useState<'ALL' | LeaderboardTier>('ALL');
 
   const sortedEntries = useMemo(
     () =>
@@ -225,35 +181,23 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
     [entries]
   );
 
-  const maxPoints = toNumber(sortedEntries[0]?.points);
-
   const normalizedEntries = useMemo(
     () =>
-      sortedEntries.map((entry, index) => ({
+      sortedEntries.map((entry) => ({
         ...entry,
         points: toNumber(entry.points),
         flagsPwned: toNumber(entry.flagsPwned),
-        normalizedTier: resolveTier(entry.tier, toNumber(entry.points), maxPoints, index),
       })),
-    [sortedEntries, maxPoints]
-  );
-
-  const countries = useMemo(
-    () => ['ALL', ...Array.from(new Set(normalizedEntries.map((item) => item.country).filter(Boolean)))],
-    [normalizedEntries]
+    [sortedEntries]
   );
 
   const filteredEntries = useMemo(() => {
     const term = search.trim().toLowerCase();
-
-    return normalizedEntries.filter((item) => {
-      const matchesSearch =
-        !term || item.player.toLowerCase().includes(term) || item.username.toLowerCase().includes(term);
-      const matchesCountry = countryFilter === 'ALL' || item.country === countryFilter;
-      const matchesTier = tierFilter === 'ALL' || item.normalizedTier === tierFilter;
-      return matchesSearch && matchesCountry && matchesTier;
-    });
-  }, [normalizedEntries, search, countryFilter, tierFilter]);
+    return normalizedEntries.filter(
+      (item) =>
+        !term || item.player.toLowerCase().includes(term) || item.username.toLowerCase().includes(term)
+    );
+  }, [normalizedEntries, search]);
 
   const podium = normalizedEntries.slice(0, 3);
   const currentPlayer = normalizedEntries.find((entry) => entry.isCurrentUser) || null;
@@ -295,9 +239,9 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
         {podium.length > 0 && (
           <section className="mb-8 pt-2 overflow-visible">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-              <div className="md:order-1">{podium[1] ? <PodiumCard rank={2} entry={podium[1]} tier={podium[1].normalizedTier} onSelect={onSelectEntry ? () => onSelectEntry(podium[1], 2) : undefined} /> : <div />}</div>
-              <div className="md:order-2">{podium[0] ? <PodiumCard rank={1} entry={podium[0]} tier={podium[0].normalizedTier} highlight onSelect={onSelectEntry ? () => onSelectEntry(podium[0], 1) : undefined} /> : <div />}</div>
-              <div className="md:order-3">{podium[2] ? <PodiumCard rank={3} entry={podium[2]} tier={podium[2].normalizedTier} onSelect={onSelectEntry ? () => onSelectEntry(podium[2], 3) : undefined} /> : <div />}</div>
+              <div className="md:order-1">{podium[1] ? <PodiumCard rank={2} entry={podium[1]} onSelect={onSelectEntry ? () => onSelectEntry(podium[1], 2) : undefined} /> : <div />}</div>
+              <div className="md:order-2">{podium[0] ? <PodiumCard rank={1} entry={podium[0]} highlight onSelect={onSelectEntry ? () => onSelectEntry(podium[0], 1) : undefined} /> : <div />}</div>
+              <div className="md:order-3">{podium[2] ? <PodiumCard rank={3} entry={podium[2]} onSelect={onSelectEntry ? () => onSelectEntry(podium[2], 3) : undefined} /> : <div />}</div>
             </div>
           </section>
         )}
@@ -314,47 +258,21 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
                   className="w-full bg-[#141c2b] border border-[#2a3346] rounded px-9 py-2 text-sm text-[#e2e8f6] placeholder:text-[#6e7a94] focus:outline-none focus:border-[#3a4864]"
                 />
               </div>
-
-              <select
-                value={countryFilter}
-                onChange={(event) => setCountryFilter(event.target.value)}
-                className="bg-[#141c2b] border border-[#2a3346] rounded px-3 py-2 text-sm text-[#d2d7e3] focus:outline-none focus:border-[#3a4864]"
-              >
-                {countries.map((country) => (
-                  <option key={country} value={country}>
-                    {country === 'ALL' ? 'GLOBAL' : country}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={tierFilter}
-                onChange={(event) => setTierFilter(event.target.value as 'ALL' | LeaderboardTier)}
-                className="bg-[#141c2b] border border-[#2a3346] rounded px-3 py-2 text-sm text-[#d2d7e3] focus:outline-none focus:border-[#3a4864]"
-              >
-                <option value="ALL">ALL TIERS</option>
-                <option value="Holo">HOLO</option>
-                <option value="Silver">SILVER</option>
-                <option value="Bronze">BRONZE</option>
-              </select>
             </div>
 
             <div className="rounded-xl border border-[#263248] bg-[#131b2a] overflow-x-auto">
-              <table className="w-full min-w-[760px]">
+              <table className="w-full min-w-[560px]">
                 <thead className="border-b border-[#263248] bg-[#111a29]">
                   <tr>
                     <th className="text-left px-4 py-3 text-xs tracking-wider text-[#8390ac]">RANK</th>
                     <th className="text-left px-4 py-3 text-xs tracking-wider text-[#8390ac]">PLAYER</th>
-                    <th className="text-left px-4 py-3 text-xs tracking-wider text-[#8390ac]">COUNTRY</th>
                     <th className="text-left px-4 py-3 text-xs tracking-wider text-[#8390ac]">POINTS</th>
                     <th className="text-left px-4 py-3 text-xs tracking-wider text-[#8390ac]">FLAGS PWNED</th>
-                    <th className="text-left px-4 py-3 text-xs tracking-wider text-[#8390ac]">TIER</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredEntries.map((entry, index) => {
                     const rank = index + 1;
-                    const tier = entry.normalizedTier;
                     const isCurrent = !!entry.isCurrentUser;
 
                     return (
@@ -384,12 +302,8 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-[#9aa5bf]">{entry.country || 'N/A'}</td>
                         <td className="px-4 py-3 text-[#dce5f9] font-semibold">{entry.points}</td>
                         <td className="px-4 py-3 text-[#dce5f9]">{entry.flagsPwned}/{flagsTarget}</td>
-                        <td className="px-4 py-3">
-                          {tier ? <TierPill tier={tier} /> : <span className="text-[#7d8aa5]">-</span>}
-                        </td>
                       </tr>
                     );
                   })}
@@ -409,7 +323,7 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
             </div>
 
             <div className="rounded-xl border border-[#263248] bg-[#1a2332] p-4 text-center">
-              <p className="text-xs tracking-wider text-[#8390ac] mb-3">YOUR TIER</p>
+              <p className="text-xs tracking-wider text-[#8390ac] mb-3">YOUR RANK</p>
 
               <div className="mx-auto w-28 h-28 border border-[#354562] bg-[#121a2a] flex items-center justify-center"
                 style={{ clipPath: 'polygon(25% 6%,75% 6%,94% 25%,94% 75%,75% 94%,25% 94%,6% 75%,6% 25%)' }}>
@@ -417,9 +331,9 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
               </div>
 
               <p className="mt-3 text-2xl font-black text-[#f3f6ff]">
-                {currentPlayer ? resolveTier(currentPlayer.tier, toNumber(currentPlayer.points), maxPoints, Math.max(0, currentPlayerRank - 1)) || 'UNRANKED' : 'UNRANKED'}
+                {currentPlayerRank ? `#${currentPlayerRank}` : 'UNRANKED'}
               </p>
-              <p className="text-xs text-[#7d8aa5] mt-1">RANK {currentPlayerRank ? `#${currentPlayerRank}` : '-'}</p>
+              <p className="text-xs text-[#7d8aa5] mt-1">{currentPlayer ? `${currentPlayer.points} pts` : ''}</p>
             </div>
           </aside>
         </section>

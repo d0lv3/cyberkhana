@@ -113,10 +113,8 @@ const CompetitionLeaderboardPage: React.FC = () => {
         username: row.username,
         player: row.displayName || row.fullName || row.username,
         playerTag: isSharedCompetition ? row.universityName || row.universityCode : undefined,
-        country: row.country || row.universityCode || row.universityName || 'GLOBAL',
         points: Number(row.points || 0),
         flagsPwned: Number(row.solvedChallenges || 0),
-        tier: row.tier,
         isCurrentUser: currentUsername ? row.username?.toLowerCase() === currentUsername.toLowerCase() : false,
       })),
     [rows, currentUsername, isSharedCompetition]
