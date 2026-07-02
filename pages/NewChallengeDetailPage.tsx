@@ -593,7 +593,7 @@ const NewChallengeDetailPage: React.FC = () => {
                       <Target size={24} className="text-[#9aa5bf]" />
                     </div>
                     <p className="text-[#9aa5bf] font-bold mb-1">No Solutions Yet</p>
-                    <p className="text-[#64748b] text-xs font-medium">Be the first to breach this challenge.</p>
+                    <p className="text-[#6e7a94] text-xs font-medium">Be the first to breach this challenge.</p>
                   </div>
                 )}
               </div>

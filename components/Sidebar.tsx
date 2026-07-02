@@ -23,8 +23,13 @@ type NavItem = {
   external?: boolean;
 };
 
-const Sidebar: React.FC = () => {
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+interface SidebarProps {
+  /** Live user from App state; falls back to localStorage if not passed. */
+  user?: any;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ user: userProp }) => {
+  const user = userProp ?? JSON.parse(localStorage.getItem('user') || '{}');
   const isManager = user?.role === 'admin' || user?.role === 'super-admin';
 
   const navItems: NavItem[] = [
@@ -66,7 +71,7 @@ const Sidebar: React.FC = () => {
                 className="group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 text-[#9aa5bf] hover:bg-[#182235] hover:text-[#d2d7e3] border border-transparent"
               >
                 <Icon
-                  className="w-4.5 h-4.5 flex-shrink-0 text-[#6e7a94] group-hover:text-[#9aa5bf] transition-colors"
+                  className="flex-shrink-0 text-[#6e7a94] group-hover:text-[#9aa5bf] transition-colors"
                   size={17}
                 />
                 <span className="flex-1">{item.label}</span>
@@ -84,7 +89,7 @@ const Sidebar: React.FC = () => {
               to={item.to!}
               className={({ isActive }) =>
                 [
-                  'group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
+                  'group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150',
                   isActive
                     ? 'bg-[#00a859]/12 text-[#00a859] border border-[#00a859]/20'
                     : 'text-[#9aa5bf] hover:bg-[#182235] hover:text-[#d2d7e3] border border-transparent',
@@ -98,7 +103,7 @@ const Sidebar: React.FC = () => {
                     <span className="absolute left-0 w-0.5 h-6 bg-[#00a859] rounded-r" />
                   )}
                   <Icon
-                    className={`w-4.5 h-4.5 flex-shrink-0 transition-colors ${
+                    className={`flex-shrink-0 transition-colors ${
                       isActive ? 'text-[#00a859]' : 'text-[#6e7a94] group-hover:text-[#9aa5bf]'
                     }`}
                     size={17}

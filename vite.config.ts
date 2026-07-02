@@ -21,6 +21,12 @@ export default defineConfig(({ mode }) => {
         },
       },
       plugins: [react()],
+      // Skip the gzip-size report — it buffers every chunk through gzip and can
+      // OOM the shared Coolify build box (the Academy deploy failed the same way
+      // at "computing gzip size").
+      build: {
+        reportCompressedSize: false,
+      },
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)

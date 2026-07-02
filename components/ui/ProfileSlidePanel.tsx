@@ -155,7 +155,7 @@ const ProfileSlidePanel: React.FC<ProfileSlidePanelProps> = ({ isOpen, onClose, 
               <div className="grid grid-cols-2 gap-3">
                 <div className="rounded-xl border border-[#263248] bg-[#1a2332] p-3">
                   <div className="flex items-center gap-2 mb-2">
-                    <Shield className="w-4 h-4 text-[#d8b4fe]" />
+                    <Shield className="w-4 h-4 text-[#a855f7]" />
                     <span className="text-[#8390ac] text-xs">Rank</span>
                   </div>
                   <div className="text-xl font-black text-[#f3f6ff]">#{rank || '-'}</div>

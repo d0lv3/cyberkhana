@@ -44,6 +44,24 @@ const categoryColors: Record<string, string> = {
   Miscellaneous: '#9aa5bf',
 };
 
+/** Most-frequent category across recent solves — the real "focus area". */
+const computeFavoriteCategory = (activities: RecentActivity[]): string | undefined => {
+  if (!activities || activities.length === 0) return undefined;
+  const counts: Record<string, number> = {};
+  for (const a of activities) {
+    if (a.category) counts[a.category] = (counts[a.category] || 0) + 1;
+  }
+  let best: string | undefined;
+  let bestN = 0;
+  for (const [cat, n] of Object.entries(counts)) {
+    if (n > bestN) {
+      best = cat;
+      bestN = n;
+    }
+  }
+  return best;
+};
+
 const NewDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<any>(null);
@@ -69,15 +87,30 @@ const NewDashboardPage: React.FC = () => {
           activityService.getRecentActivity(),
         ]);
 
+        // Derive the focus area from real recent activity rather than a placeholder.
+        const favoriteCategory = computeFavoriteCategory(activityData);
+
         setStats({
           points: profile.points || 0,
           solvedCount: profile.solvedChallenges?.length || 0,
           rank: profile.rank,
           totalUsers: profile.totalUsers,
-          streak: profile.streak || 0,
-          favoriteCategory: profile.favoriteCategory || 'Web Exploitation',
+          favoriteCategory,
         });
         setRecentActivity(activityData);
+
+        // Keep the cached user.points (shown in the sidebar/header) in sync with
+        // the authoritative recomputed value so they don't disagree with this page.
+        try {
+          const stored = JSON.parse(localStorage.getItem('user') || '{}');
+          if (stored && stored.points !== (profile.points || 0)) {
+            const merged = { ...stored, points: profile.points || 0 };
+            localStorage.setItem('user', JSON.stringify(merged));
+            window.dispatchEvent(new CustomEvent('userUpdate', { detail: merged }));
+          }
+        } catch {
+          /* non-fatal */
+        }
       }
     } catch (err) {
       console.error('Error fetching user data:', err);
@@ -101,8 +134,25 @@ const NewDashboardPage: React.FC = () => {
 
   const displayName = user?.fullName || user?.displayName || user?.username || 'Operator';
 
+  // Real percentile from rank/total (e.g. rank 3 of 60 → "Top 5%").
+  const topPercent =
+    stats.rank && stats.totalUsers && stats.totalUsers > 0
+      ? Math.max(1, Math.round((stats.rank / stats.totalUsers) * 100))
+      : null;
+  const rankBarPct = topPercent !== null ? Math.min(100, Math.max(4, 100 - topPercent)) : 0;
+
+  // Specialization = share of the focus category among recent solves.
+  const specializationPct =
+    stats.favoriteCategory && recentActivity.length > 0
+      ? Math.round(
+          (recentActivity.filter((a) => a.category === stats.favoriteCategory).length /
+            recentActivity.length) *
+            100
+        )
+      : 0;
+
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#d2d7e3] pb-24 px-4 sm:px-6 lg:px-8 py-8">
+    <div className="text-[#d2d7e3] pb-24 px-4 sm:px-6 lg:px-8 py-8">
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* ── COMMAND CENTER HERO ── */}
@@ -141,9 +191,9 @@ const NewDashboardPage: React.FC = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: 'Flags Captured', value: stats.solvedCount, icon: <Flag className="w-5 h-5 text-[#60a5fa]" />, bg: 'bg-[#60a5fa]/10', border: 'border-[#60a5fa]/20' },
-            { label: 'Active Streak', value: `${stats.streak} Days`, icon: <Activity className="w-5 h-5 text-[#a855f7]" />, bg: 'bg-[#a855f7]/10', border: 'border-[#a855f7]/20' },
+            { label: 'Percentile', value: topPercent !== null ? `Top ${topPercent}%` : '—', icon: <Activity className="w-5 h-5 text-[#a855f7]" />, bg: 'bg-[#a855f7]/10', border: 'border-[#a855f7]/20' },
             { label: 'Global Rank', value: stats.rank ? `#${stats.rank}` : 'Unranked', icon: <Trophy className="w-5 h-5 text-[#9fef00]" />, bg: 'bg-[#9fef00]/10', border: 'border-[#9fef00]/20' },
-            { label: 'Focus Area', value: stats.favoriteCategory?.split(' ')[0] || 'N/A', icon: <Target className="w-5 h-5 text-[#f3a43a]" />, bg: 'bg-[#f3a43a]/10', border: 'border-[#f3a43a]/20' },
+            { label: 'Focus Area', value: stats.favoriteCategory ? stats.favoriteCategory.split(' ')[0] : '—', icon: <Target className="w-5 h-5 text-[#f3a43a]" />, bg: 'bg-[#f3a43a]/10', border: 'border-[#f3a43a]/20' },
           ].map((stat, i) => (
             <motion.div 
               key={stat.label}
@@ -192,7 +242,7 @@ const NewDashboardPage: React.FC = () => {
                   </span>
                 </div>
 
-                <div className="flex-shrink-0 hidden sm:flex w-24 h-24 rounded-2xl border border-[#263248] bg-[#0f172a] items-center justify-center shadow-xl">
+                <div className="flex-shrink-0 hidden sm:flex w-24 h-24 rounded-2xl border border-[#263248] bg-[#0e1522] items-center justify-center shadow-xl">
                   <BookOpen className="w-10 h-10 text-[#9fef00]" />
                 </div>
 
@@ -204,10 +254,10 @@ const NewDashboardPage: React.FC = () => {
               <motion.button 
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4 }}
                 onClick={() => navigate('/competition')}
-                className="group relative p-6 rounded-2xl border border-[#263248] bg-[#121a2a] hover:bg-[#1e293b] transition-colors text-left overflow-hidden"
+                className="group relative p-6 rounded-2xl border border-[#263248] bg-[#121a2a] hover:bg-[#182235] transition-colors text-left overflow-hidden"
               >
-                <div className="absolute right-0 top-0 w-32 h-32 bg-[#ff3366]/5 rounded-bl-full pointer-events-none group-hover:bg-[#ff3366]/10 transition-colors" />
-                <Target className="w-8 h-8 text-[#ff3366] mb-4" />
+                <div className="absolute right-0 top-0 w-32 h-32 bg-[#f43f5e]/5 rounded-bl-full pointer-events-none group-hover:bg-[#f43f5e]/10 transition-colors" />
+                <Target className="w-8 h-8 text-[#f43f5e] mb-4" />
                 <h3 className="text-lg font-black text-[#f3f6ff] mb-1">Live Competitions</h3>
                 <p className="text-xs text-[#9aa5bf]">Join active CTF tournaments</p>
               </motion.button>
@@ -215,7 +265,7 @@ const NewDashboardPage: React.FC = () => {
               <motion.button 
                 initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.45 }}
                 onClick={() => navigate('/challenges')}
-                className="group relative p-6 rounded-2xl border border-[#263248] bg-[#121a2a] hover:bg-[#1e293b] transition-colors text-left overflow-hidden"
+                className="group relative p-6 rounded-2xl border border-[#263248] bg-[#121a2a] hover:bg-[#182235] transition-colors text-left overflow-hidden"
               >
                 <div className="absolute right-0 top-0 w-32 h-32 bg-[#60a5fa]/5 rounded-bl-full pointer-events-none group-hover:bg-[#60a5fa]/10 transition-colors" />
                 <Code className="w-8 h-8 text-[#60a5fa] mb-4" />
@@ -232,25 +282,26 @@ const NewDashboardPage: React.FC = () => {
             {/* Operator Assessment profile snippet */}
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }} className="bg-[#121a2a] border border-[#263248] rounded-2xl p-5">
               <div className="flex items-center gap-2 mb-4 border-b border-[#263248] pb-3">
-                <Award className="w-4 h-4 text-[#d8b4fe]" />
+                <Award className="w-4 h-4 text-[#a855f7]" />
                 <h3 className="text-xs font-black uppercase tracking-widest text-[#f3f6ff]">Operator Assessment</h3>
               </div>
               <div className="space-y-4">
                 <div>
                   <div className="flex justify-between text-[10px] uppercase font-bold text-[#8390ac] mb-1">
                     <span>Rank Progression</span>
-                    <span className="text-[#f3a43a]">Top 15%</span>
+                    <span className="text-[#f3a43a]">{topPercent !== null ? `Top ${topPercent}%` : 'Unranked'}</span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-[#1e293b] overflow-hidden">
-                    <div className="h-full bg-[#f3a43a] w-[85%]" />
+                  <div className="h-1.5 rounded-full bg-[#0e1522] overflow-hidden">
+                    <div className="h-full bg-[#f3a43a] transition-all" style={{ width: `${rankBarPct}%` }} />
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-[10px] uppercase font-bold text-[#8390ac] mb-1">
-                    <span>Specialization: {stats.favoriteCategory}</span>
+                    <span>Specialization: {stats.favoriteCategory || '—'}</span>
+                    {stats.favoriteCategory && <span className="text-[#60a5fa]">{specializationPct}%</span>}
                   </div>
-                  <div className="h-1.5 rounded-full bg-[#1e293b] overflow-hidden">
-                    <div className="h-full bg-[#60a5fa] w-[60%]" />
+                  <div className="h-1.5 rounded-full bg-[#0e1522] overflow-hidden">
+                    <div className="h-full bg-[#60a5fa] transition-all" style={{ width: `${specializationPct}%` }} />
                   </div>
                 </div>
               </div>
@@ -258,7 +309,7 @@ const NewDashboardPage: React.FC = () => {
 
             {/* Recent Activity Log */}
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6 }} className="bg-[#121a2a] border border-[#263248] rounded-2xl overflow-hidden flex flex-col h-[320px]">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-[#263248] bg-[#0d1422]">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[#263248] bg-[#0e1522]">
                 <div className="flex items-center gap-2">
                   <Activity className="w-4 h-4 text-[#9fef00]" />
                   <h3 className="text-xs font-black uppercase tracking-widest text-[#f3f6ff]">Activity Log</h3>
@@ -268,21 +319,21 @@ const NewDashboardPage: React.FC = () => {
                 {recentActivity.length > 0 ? (
                   <div className="space-y-1">
                     {recentActivity.slice(0, 5).map((activity) => (
-                      <div key={activity.id} className="p-3 rounded-lg hover:bg-[#1e293b] transition-colors border border-transparent hover:border-[#334155]">
+                      <div key={activity.id} className="p-3 rounded-lg hover:bg-[#182235] transition-colors border border-transparent hover:border-[#263248]">
                         <div className="flex items-center justify-between mb-1">
                           <p className="text-sm font-bold text-[#f3f6ff] truncate mr-4">{activity.challengeTitle}</p>
                           <span className="text-xs font-black text-[#9fef00] shrink-0">+{activity.points}</span>
                         </div>
                         <div className="flex items-center justify-between text-[10px]">
                           <span className="text-[#8390ac] uppercase tracking-wider">{activity.category}</span>
-                          <span className="text-[#64748b]">{activity.solvedAt}</span>
+                          <span className="text-[#6e7a94]">{activity.solvedAt}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="h-full flex flex-col items-center justify-center text-center p-6 opacity-60">
-                    <Flag className="w-8 h-8 text-[#64748b] mb-2" />
+                    <Flag className="w-8 h-8 text-[#6e7a94] mb-2" />
                     <p className="text-sm font-medium text-[#9aa5bf]">No recent activity</p>
                   </div>
                 )}

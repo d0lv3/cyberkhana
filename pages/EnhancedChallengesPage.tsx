@@ -7,30 +7,43 @@ import { Challenge } from '../types';
 import Breadcrumbs from '../components/ui/Breadcrumbs';
 import Button from '../components/ui/EnhancedButton';
 import EmptyState from '../components/ui/EmptyState';
+import Toast, { ToastType } from '../components/ui/Toast';
 import { Search, Target, Award, Rocket, CheckCircle2, ChevronDown, Flag, Skull, Shield, Monitor, Layers } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const useToast = () => ({ toast: (type: string, msg: string) => console.log(msg) });
+interface ActiveToast { id: string; type: ToastType; message: string }
+
+/** Minimal, self-contained toast queue backed by the shared <Toast> component. */
+const useToast = () => {
+  const [toasts, setToasts] = useState<ActiveToast[]>([]);
+  const toast = (type: string, message: string) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const safeType = (['success', 'error', 'info', 'warning'].includes(type) ? type : 'info') as ToastType;
+    setToasts((prev) => [...prev, { id, type: safeType, message }]);
+  };
+  const removeToast = (id: string) => setToasts((prev) => prev.filter((t) => t.id !== id));
+  return { toast, toasts, removeToast };
+};
 
 const CATEGORIES = [
   { label: 'All Challenges', value: 'all', customIcon: '/assets/icons/icon_all.png', mascotBg: 'from-gray-900 to-[#121a2a]', bgImage: '/assets/academy/Gemini_Generated_Image_fwektofwektofwek.jpg' },
   { label: 'Web', value: 'Web Exploitation', color: '#60a5fa', customIcon: '/assets/icons/icon_web.png', mascotBg: 'from-[#60a5fa]/20 to-[#121a2a]', bgImage: '/assets/academy/Gemini_Generated_Image_cx4kdzcx4kdzcx4k.jpg' },
   { label: 'Pwn', value: 'Binary Exploitation', color: '#f43f5e', customIcon: '/assets/icons/icon_pwn.png', mascotBg: 'from-[#f43f5e]/20 to-[#121a2a]', bgImage: '/assets/academy/Gemini_Generated_Image_93kgsv93kgsv93kg.jpg' },
   { label: 'Crypto', value: 'Cryptography', color: '#f3a43a', customIcon: '/assets/icons/icon_crypto.png', mascotBg: 'from-[#f3a43a]/20 to-[#121a2a]', bgImage: '/assets/academy/Gemini_Generated_Image_xonlj2xonlj2xonl.jpg' },
-  { label: 'Reversing', value: 'Reverse Engineering', color: '#a855f7', customIcon: '/assets/icons/icon_forensics.png', mascotBg: 'from-[#a855f7]/20 to-[#121a2a]', bgImage: '/assets/academy/Gemini_Generated_Image_ijgy1cijgy1cijgy.jpg' },
-  { label: 'Forensics', value: 'Forensics', color: '#34d399', customIcon: '/assets/icons/icon_reversing.png', mascotBg: 'from-[#34d399]/20 to-[#121a2a]', bgImage: '/assets/academy/Gemini_Generated_Image_454bls454bls454b.jpg' },
+  { label: 'Reversing', value: 'Reverse Engineering', color: '#a855f7', customIcon: '/assets/icons/icon_reversing.png', mascotBg: 'from-[#a855f7]/20 to-[#121a2a]', bgImage: '/assets/academy/Gemini_Generated_Image_ijgy1cijgy1cijgy.jpg' },
+  { label: 'Forensics', value: 'Forensics', color: '#34d399', customIcon: '/assets/icons/icon_forensics.png', mascotBg: 'from-[#34d399]/20 to-[#121a2a]', bgImage: '/assets/academy/Gemini_Generated_Image_454bls454bls454b.jpg' },
 ];
 
 const HERO_CATEGORY_ICONS = CATEGORIES
   .filter((category) => category.value !== 'all')
   .map((category) => ({ label: category.label, icon: category.customIcon }));
 
-const DIFFICULTY_COlORS: Record<string, string> = {
+const DIFFICULTY_COLORS: Record<string, string> = {
   'Very Easy': '#34d399',
   'Easy': '#00a859',
   'Medium': '#f3a43a',
   'Hard': '#f43f5e',
-  'Expert': '#9fef00',
+  'Expert': '#a855f7',
 };
 
 const DIFFICULTY_OPTIONS = ['all', 'Very Easy', 'Easy', 'Medium', 'Hard', 'Expert'];
@@ -53,7 +66,7 @@ const EnhancedChallengesPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'completed' | 'uncompleted'>('all');
   const [sortBy, setSortBy] = useState('points-desc');
   
-  const { toast } = useToast();
+  const { toast, toasts, removeToast } = useToast();
 
   const me = useMemo(() => {
     try {
@@ -160,8 +173,17 @@ const EnhancedChallengesPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#d2d7e3] pb-24">
-      
+    <div className="text-[#d2d7e3] pb-24">
+
+      {/* Toast queue */}
+      {toasts.length > 0 && (
+        <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 w-80 max-w-[calc(100vw-2rem)]">
+          {toasts.map((t) => (
+            <Toast key={t.id} id={t.id} type={t.type} message={t.message} onClose={removeToast} />
+          ))}
+        </div>
+      )}
+
       {/* ── TOP HERO BANNERS & MASCOTS ── */}
       <div 
         className={`pt-20 pb-10 border-b border-[#263248] relative overflow-hidden transition-colors duration-500 min-h-[340px] flex items-end`}
@@ -232,7 +254,7 @@ const EnhancedChallengesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* ── SUB-NAVBART: FILTERS & SEARCH ── */}
+      {/* ── SUB-NAVBAR: FILTERS & SEARCH ── */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
         <div className="bg-[#121a2a] border border-[#263248] rounded-xl p-4 flex flex-col lg:flex-row gap-4 items-center justify-between">
           
@@ -297,7 +319,7 @@ const EnhancedChallengesPage: React.FC = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="bg-[#1e293b] border border-[#263248] text-[#9fef00] text-sm font-bold rounded-lg px-3 py-2 outline-none uppercase tracking-wider"
+              className="bg-[#0e1522] border border-[#263248] text-[#d2d7e3] text-sm font-bold rounded-lg px-3 py-2 outline-none focus:border-[#9fef00] uppercase tracking-wider"
             >
               {SORT_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
@@ -323,7 +345,7 @@ const EnhancedChallengesPage: React.FC = () => {
             <div className="bg-[#121a2a] border border-[#263248] rounded-xl overflow-hidden">
               {filteredAndSortedChallenges.map((challenge, index) => {
                 const solved = isSolved(challenge._id);
-                const diffColor = DIFFICULTY_COlORS[challenge.difficulty] || '#9aa5bf';
+                const diffColor = DIFFICULTY_COLORS[challenge.difficulty] || '#9aa5bf';
                 
                 return (
                   <motion.div
@@ -338,7 +360,7 @@ const EnhancedChallengesPage: React.FC = () => {
                     {/* Left: Status & Identity */}
                     <div className="flex items-center gap-4 flex-1">
                       <div className={`w-12 h-12 mt-1 rounded-lg flex items-center justify-center border overflow-hidden shrink-0 transition-colors ${
-                        solved ? 'bg-[#152015] border-[#9fef00]/30' : 'bg-[#0E1522] border-[#263248] group-hover:border-[#60a5fa]'
+                        solved ? 'bg-[#9fef00]/10 border-[#9fef00]/30' : 'bg-[#0e1522] border-[#263248] group-hover:border-[#60a5fa]'
                       }`}>
                         {solved ? (
                           <div className="relative w-full h-full flex items-center justify-center">

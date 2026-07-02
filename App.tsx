@@ -99,7 +99,7 @@ const App: React.FC = () => {
 
             {/* One shell for every role — learner experience for all, plus a
                 role-gated Management area nested in the same layout. */}
-            <Route path="/" element={<AppLayout onLogout={handleLogout} />}>
+            <Route path="/" element={<AppLayout onLogout={handleLogout} user={user} />}>
               <Route index element={<Navigate to="/dashboard" />} />
               <Route path="dashboard" element={<NewDashboardPage />} />
               <Route path="challenges" element={<EnhancedChallengesPage />} />
