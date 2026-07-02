@@ -208,13 +208,6 @@ const CompetitionMonitoringPage: React.FC = () => {
   const totalPages = Math.ceil(filteredLeaderboard.length / itemsPerPage);
   const isSharedCompetition = (competition?.universityCodes?.length || 0) > 1;
 
-  const getTierDetails = (rank: number) => {
-    if (rank === 1) return { tier: 'Holo', frame: 'bg-[#6f56d9]/75', border: 'border-[#6f56d9]/55', text: 'text-[#d8b4fe]', color: 'from-[#60a5fa] via-[#d8b4fe] to-[#9fef00]' };
-    if (rank === 2) return { tier: 'Silver', frame: 'bg-[#94a3b8]/75', border: 'border-[#64748b]/50', text: 'text-[#cbd5e1]', color: 'from-[#cbd5e1] to-[#94a3b8]' };
-    if (rank === 3) return { tier: 'Bronze', frame: 'bg-[#d6a55a]/70', border: 'border-[#d6a55a]/45', text: 'text-[#d6a55a]', color: 'from-[#e5b970] to-[#a46b28]' };
-    return { tier: 'Player', frame: 'bg-[#2a3346]/50', border: 'border-[#263248]', text: 'text-[#9aa5bf]', color: 'from-[#3a4864] to-[#263248]' };
-  };
-
   const handleViewUser = (user: any) => {
     setSelectedUser(user);
   };
@@ -383,7 +376,6 @@ const CompetitionMonitoringPage: React.FC = () => {
                     <tbody>
                       {paginatedLeaderboard.map((user, index) => {
                         const globalRank = (currentPage - 1) * itemsPerPage + index + 1;
-                        const { text, frame, border } = getTierDetails(globalRank);
                         return (
                           <tr
                             key={user._id}
@@ -397,7 +389,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                             </td>
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded border ${border} ${frame} flex items-center justify-center text-xs font-black text-[#f3f6ff]`}>
+                                <div className="w-8 h-8 rounded border border-[#263248] bg-[#1a2332] flex items-center justify-center text-xs font-black text-[#f3f6ff]">
                                   {user.username?.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
