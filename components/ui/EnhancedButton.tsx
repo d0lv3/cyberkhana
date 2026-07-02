@@ -24,7 +24,7 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   const baseClasses = [
     'relative inline-flex items-center justify-center font-semibold transition-all duration-200',
-    'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0d1117]',
+    'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-base',
     'disabled:opacity-50 disabled:cursor-not-allowed',
     'active:scale-95',
     'select-none',
@@ -39,33 +39,33 @@ const Button: React.FC<ButtonProps> = ({
 
   const variantClasses = {
     primary: [
-      'bg-[#00a859] text-white',
-      'hover:bg-[#007a42]',
-      'focus:ring-[#00a859]',
+      'bg-brand text-white',
+      'hover:bg-brand-deep',
+      'focus:ring-brand',
       'shadow-md hover:shadow-[0_0_16px_rgba(0,168,89,0.35)]',
     ].join(' '),
     neon: [
-      'bg-[#9fef00] text-[#0d1117]',
+      'bg-brand-neon text-base',
       'hover:bg-[#8dd900]',
-      'focus:ring-[#9fef00]',
+      'focus:ring-brand-neon',
       'font-black shadow-md hover:shadow-[0_0_16px_rgba(159,239,0,0.4)]',
     ].join(' '),
     secondary: [
-      'bg-[#1a2332] text-[#d2d7e3]',
-      'hover:bg-[#182235]',
-      'focus:ring-[#263248]',
-      'border border-[#263248] hover:border-[#354562]',
+      'bg-surface text-fg-soft',
+      'hover:bg-surface-hover',
+      'focus:ring-edge',
+      'border border-edge hover:border-edge-light',
     ].join(' '),
     ghost: [
-      'text-[#9aa5bf]',
-      'hover:bg-[#182235] hover:text-[#d2d7e3]',
-      'focus:ring-[#263248]',
+      'text-muted',
+      'hover:bg-surface-hover hover:text-fg-soft',
+      'focus:ring-edge',
     ].join(' '),
     outline: [
-      'bg-transparent text-[#d2d7e3]',
-      'border border-[#263248]',
-      'hover:border-[#00a859] hover:text-[#00a859]',
-      'focus:ring-[#00a859]',
+      'bg-transparent text-fg-soft',
+      'border border-edge',
+      'hover:border-brand hover:text-brand',
+      'focus:ring-brand',
     ].join(' '),
     danger: [
       'bg-red-500/90 text-white',

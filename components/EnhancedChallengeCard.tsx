@@ -42,10 +42,10 @@ const EnhancedChallengeCard: React.FC<EnhancedChallengeCardProps> = ({
   return (
     <motion.div whileHover={{ y: -3 }} transition={{ type: 'spring', stiffness: 400 }}>
       <div
-        className={`group relative h-full rounded-xl border bg-[#121a2a] overflow-hidden transition-all duration-200
+        className={`group relative h-full rounded-xl border bg-panel overflow-hidden transition-all duration-200
           ${isSolved
-            ? 'border-[#00a859]/30 hover:border-[#00a859]/50'
-            : 'border-[#263248] hover:border-[#354562] hover:bg-[#182235]'
+            ? 'border-brand/30 hover:border-brand/50'
+            : 'border-edge hover:border-edge-light hover:bg-surface-hover'
           }`}
       >
         {/* Subtle glow on hover */}
@@ -56,13 +56,13 @@ const EnhancedChallengeCard: React.FC<EnhancedChallengeCardProps> = ({
 
         {/* Solved left accent */}
         {isSolved && (
-          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[#00a859]" />
+          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-brand" />
         )}
 
         <Link to={`/challenges/${challenge._id || challenge.id}`} className="relative block h-full">
           {/* Card Header Band */}
           <div
-            className="h-20 flex items-center justify-center relative border-b border-[#263248]"
+            className="h-20 flex items-center justify-center relative border-b border-edge"
             style={{ background: `linear-gradient(135deg, ${catMeta.bg} 0%, #121a2a 80%)` }}
           >
             <CategoryIcon
@@ -72,14 +72,14 @@ const EnhancedChallengeCard: React.FC<EnhancedChallengeCardProps> = ({
             />
 
             {/* Points badge */}
-            <div className="absolute top-3 right-3 bg-[#0e1522] border border-[#263248] px-2.5 py-1 rounded flex flex-col items-center">
-              <span className="text-lg font-black text-[#9fef00] leading-none">{displayPoints}</span>
-              <span className="text-[9px] text-[#6e7a94] uppercase tracking-widest mt-0.5">PTS</span>
+            <div className="absolute top-3 right-3 bg-inset border border-edge px-2.5 py-1 rounded flex flex-col items-center">
+              <span className="text-lg font-black text-brand-neon leading-none">{displayPoints}</span>
+              <span className="text-[9px] text-faint uppercase tracking-widest mt-0.5">PTS</span>
             </div>
 
             {/* Solved badge */}
             {isSolved && (
-              <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-0.5 bg-[#00a859] text-[#0d1117] text-[9px] font-black rounded uppercase tracking-tight">
+              <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-0.5 bg-brand text-base text-[9px] font-black rounded uppercase tracking-tight">
                 <Award size={10} />
                 SOLVED
               </div>
@@ -108,18 +108,18 @@ const EnhancedChallengeCard: React.FC<EnhancedChallengeCardProps> = ({
             </div>
 
             {/* Title */}
-            <h3 className="text-base font-bold text-[#f3f6ff] mb-2 line-clamp-1 group-hover:text-white transition-colors">
+            <h3 className="text-base font-bold text-fg mb-2 line-clamp-1 group-hover:text-white transition-colors">
               {challenge.title}
             </h3>
 
             {/* Description */}
-            <p className="text-[#9aa5bf] text-xs line-clamp-2 leading-relaxed mb-4">
+            <p className="text-muted text-xs line-clamp-2 leading-relaxed mb-4">
               {challenge.description}
             </p>
 
             {/* Footer */}
             <div className="flex items-center justify-between pt-3 border-t border-[#1f2a40]">
-              <div className="flex items-center gap-3 text-[#6e7a94]">
+              <div className="flex items-center gap-3 text-faint">
                 <span className="flex items-center gap-1 text-xs">
                   <Users size={11} />
                   {challenge.solves || 0}
@@ -130,7 +130,7 @@ const EnhancedChallengeCard: React.FC<EnhancedChallengeCardProps> = ({
                 </span>
               </div>
               {challenge.author && (
-                <span className="text-[10px] text-[#6e7a94] truncate max-w-[80px]">
+                <span className="text-[10px] text-faint truncate max-w-[80px]">
                   by {challenge.author}
                 </span>
               )}
@@ -144,7 +144,7 @@ const EnhancedChallengeCard: React.FC<EnhancedChallengeCardProps> = ({
             href={(challenge as any).challengeLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="absolute bottom-4 right-4 p-1.5 rounded border border-[#263248] text-[#6e7a94] hover:text-[#00a859] hover:border-[#00a859]/40 opacity-0 group-hover:opacity-100 transition-all"
+            className="absolute bottom-4 right-4 p-1.5 rounded border border-edge text-faint hover:text-brand hover:border-brand/40 opacity-0 group-hover:opacity-100 transition-all"
             onClick={(e) => e.stopPropagation()}
           >
             <ExternalLink size={12} />

@@ -101,7 +101,7 @@ const HeroSection: React.FC = () => {
   const { t, isArabic } = useLang();
 
   return (
-    <section className="relative h-screen w-full bg-[#0d1117] overflow-hidden">
+    <section className="relative h-screen w-full bg-base overflow-hidden">
       {/* Subtle grid background */}
       <div className="absolute inset-0 opacity-[0.04]" style={{
         backgroundImage: `linear-gradient(rgba(159,239,0,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(159,239,0,0.3) 1px, transparent 1px)`,
@@ -109,7 +109,7 @@ const HeroSection: React.FC = () => {
       }} />
 
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0d1117]/50 to-[#0d1117]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-base/50 to-base" />
 
       <div className="relative z-10 flex items-center justify-center h-full">
         <div className="max-w-4xl mx-auto px-6 w-full text-center">
@@ -129,7 +129,7 @@ const HeroSection: React.FC = () => {
             variants={fadeUpVariants}
             initial="hidden"
             animate="visible"
-            className="text-2xl md:text-4xl lg:text-5xl font-extrabold text-[#f3f6ff] leading-tight"
+            className="text-2xl md:text-4xl lg:text-5xl font-extrabold text-fg leading-tight"
             style={{ fontWeight: 800 }}
           >
             {t('hero.headline')}
@@ -141,7 +141,7 @@ const HeroSection: React.FC = () => {
             variants={fadeUpVariants}
             initial="hidden"
             animate="visible"
-            className="mt-6 text-lg md:text-xl text-[#9aa5bf] max-w-2xl mx-auto"          >
+            className="mt-6 text-lg md:text-xl text-muted max-w-2xl mx-auto"          >
             {isArabic
               ? 'تعلّم. تدرّب. تنافس. — منصتك لتطوير مهارات الأمن السيبراني.'
               : 'Learn. Practice. Compete. — Your platform to sharpen real cybersecurity skills.'}
@@ -153,9 +153,9 @@ const HeroSection: React.FC = () => {
             variants={fadeUpVariants}
             initial="hidden"
             animate="visible"
-            className="mt-4 text-base md:text-lg text-[#6e7a94] h-8"          >
+            className="mt-4 text-base md:text-lg text-faint h-8"          >
             <span>{typedText}</span>
-            <span className="inline-block w-[2px] h-5 bg-[#9fef00] ml-1 align-middle animate-pulse" />
+            <span className="inline-block w-[2px] h-5 bg-brand-neon ml-1 align-middle animate-pulse" />
           </motion.div>
 
           {/* CTA buttons */}
@@ -178,7 +178,7 @@ const HeroSection: React.FC = () => {
                   aria-hidden="true"
                   className="h-7 w-auto object-contain"
                 />
-                <span className="font-bold text-[#f3f6ff]">CyberKhana Main</span>
+                <span className="font-bold text-fg">CyberKhana Main</span>
               </SpotlightButton>
             </Link>
             <a
@@ -190,7 +190,7 @@ const HeroSection: React.FC = () => {
             >
               <SpotlightButton>
                 <BrandLogo variant="academy" alt="CyberKhana Academy" className="h-7 w-auto object-contain" />
-                <ExternalLink className="w-4 h-4 text-[#9aa5bf]" />
+                <ExternalLink className="w-4 h-4 text-muted" />
               </SpotlightButton>
             </a>
           </motion.div>
@@ -202,7 +202,7 @@ const HeroSection: React.FC = () => {
         animate={{ y: [0, 10, 0] }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
       >
-        <ArrowDown className="h-6 w-6 text-[#9aa5bf]" />
+        <ArrowDown className="h-6 w-6 text-muted" />
       </motion.div>
     </section>
   );

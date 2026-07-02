@@ -118,7 +118,7 @@ const ProfilePage: React.FC = () => {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-40 bg-[#121a2a] rounded-xl animate-pulse border border-[#263248]" />
+          <div key={i} className="h-40 bg-panel rounded-xl animate-pulse border border-edge" />
         ))}
       </div>
     );
@@ -137,20 +137,20 @@ const ProfilePage: React.FC = () => {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="relative rounded-2xl border border-[#263248] bg-[#121a2a] overflow-hidden p-6 md:p-8"
+        className="relative rounded-2xl border border-edge bg-panel overflow-hidden p-6 md:p-8"
       >
         {/* BG glow */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-[#6f56d9]/5 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#00a859]/4 rounded-full translate-y-1/2 -translate-x-1/4 pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand/4 rounded-full translate-y-1/2 -translate-x-1/4 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
           {/* Octagon avatar */}
           <div className="relative flex-shrink-0">
             <div
-              className="w-24 h-24 md:w-28 md:h-28 bg-[#0e1522] border-2 border-[#6f56d9]/40 flex items-center justify-center"
+              className="w-24 h-24 md:w-28 md:h-28 bg-inset border-2 border-[#6f56d9]/40 flex items-center justify-center"
               style={{ clipPath: shapePath }}
             >
-              <span className="text-4xl font-black text-[#9fef00]">{initial}</span>
+              <span className="text-4xl font-black text-brand-neon">{initial}</span>
             </div>
             {/* Frame glow */}
             <div
@@ -170,21 +170,21 @@ const ProfilePage: React.FC = () => {
                     onChange={(e) => setEditedFullName(e.target.value)}
                     placeholder="Enter your full name"
                     maxLength={MAX_FULLNAME_LENGTH}
-                    className="flex-1 px-3 py-2 bg-[#0e1522] border border-[#263248] rounded text-[#f3f6ff] text-xl font-bold focus:outline-none focus:border-[#00a859]/60"
+                    className="flex-1 px-3 py-2 bg-inset border border-edge rounded text-fg text-xl font-bold focus:outline-none focus:border-brand/60"
                     autoFocus
                     disabled={savingName}
                   />
                   <button
                     onClick={handleSaveName}
                     disabled={savingName}
-                    className="p-2 bg-[#00a859] hover:bg-[#007a42] rounded text-white transition-colors disabled:opacity-50"
+                    className="p-2 bg-brand hover:bg-brand-deep rounded text-white transition-colors disabled:opacity-50"
                   >
                     <Check size={16} />
                   </button>
                   <button
                     onClick={() => { setIsEditingName(false); setNameError(''); }}
                     disabled={savingName}
-                    className="p-2 bg-[#1a2332] hover:bg-[#182235] rounded text-[#9aa5bf] transition-colors border border-[#263248]"
+                    className="p-2 bg-surface hover:bg-surface-hover rounded text-muted transition-colors border border-edge"
                   >
                     <X size={16} />
                   </button>
@@ -192,19 +192,19 @@ const ProfilePage: React.FC = () => {
                 <div className="flex justify-between mt-1">
                   {nameError
                     ? <p className="text-red-400 text-xs">{nameError}</p>
-                    : <p className="text-[#6e7a94] text-xs">Max {MAX_FULLNAME_LENGTH} chars</p>
+                    : <p className="text-faint text-xs">Max {MAX_FULLNAME_LENGTH} chars</p>
                   }
-                  <p className="text-[#6e7a94] text-xs">{editedFullName.length}/{MAX_FULLNAME_LENGTH}</p>
+                  <p className="text-faint text-xs">{editedFullName.length}/{MAX_FULLNAME_LENGTH}</p>
                 </div>
               </div>
             ) : (
               <div className="flex items-center gap-2 mb-2">
-                <h1 className="text-3xl font-black text-[#f3f6ff] truncate max-w-sm" title={displayName}>
+                <h1 className="text-3xl font-black text-fg truncate max-w-sm" title={displayName}>
                   {displayName}
                 </h1>
                 <button
                   onClick={() => { setEditedFullName(user?.fullName || ''); setIsEditingName(true); setNameError(''); }}
-                  className="p-1.5 text-[#6e7a94] hover:text-[#00a859] hover:bg-[#182235] rounded transition-colors"
+                  className="p-1.5 text-faint hover:text-brand hover:bg-surface-hover rounded transition-colors"
                   title="Edit name"
                 >
                   <Edit2 size={14} />
@@ -212,7 +212,7 @@ const ProfilePage: React.FC = () => {
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[#9aa5bf]">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
               <span className="flex items-center gap-1.5">
                 <Calendar size={13} />
                 Joined {stats.joinDate ? new Date(stats.joinDate).toLocaleDateString() : '–'}
@@ -222,20 +222,20 @@ const ProfilePage: React.FC = () => {
                 {user?.universityName || user?.universityCode || 'CyberKhana'}
               </span>
               {user?.username && (
-                <span className="text-[#6e7a94] text-xs">@{user.username}</span>
+                <span className="text-faint text-xs">@{user.username}</span>
               )}
             </div>
           </div>
 
           {/* Stat pillars */}
           <div className="flex items-center gap-4">
-            <div className="text-center px-5 py-4 rounded-xl bg-[#0e1522] border border-[#263248]">
-              <p className="text-2xl font-black text-[#9fef00]">{stats.points.toLocaleString()}</p>
-              <p className="text-[10px] text-[#8390ac] uppercase tracking-wider mt-0.5">Points</p>
+            <div className="text-center px-5 py-4 rounded-xl bg-inset border border-edge">
+              <p className="text-2xl font-black text-brand-neon">{stats.points.toLocaleString()}</p>
+              <p className="text-[10px] text-dim uppercase tracking-wider mt-0.5">Points</p>
             </div>
-            <div className="text-center px-5 py-4 rounded-xl bg-[#0e1522] border border-[#263248]">
-              <p className="text-2xl font-black text-[#60a5fa]">{stats.solvedCount}</p>
-              <p className="text-[10px] text-[#8390ac] uppercase tracking-wider mt-0.5">Solved</p>
+            <div className="text-center px-5 py-4 rounded-xl bg-inset border border-edge">
+              <p className="text-2xl font-black text-info">{stats.solvedCount}</p>
+              <p className="text-[10px] text-dim uppercase tracking-wider mt-0.5">Solved</p>
             </div>
           </div>
         </div>
@@ -246,35 +246,35 @@ const ProfilePage: React.FC = () => {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.4 }}
-        className="rounded-xl border border-[#263248] bg-[#121a2a] overflow-hidden"
+        className="rounded-xl border border-edge bg-panel overflow-hidden"
       >
-        <div className="flex items-center gap-2 px-5 py-4 border-b border-[#263248]">
-          <Shield size={15} className="text-[#00a859]" />
-          <h2 className="text-sm font-bold text-[#f3f6ff] uppercase tracking-wider">Operator Briefing</h2>
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-edge">
+          <Shield size={15} className="text-brand" />
+          <h2 className="text-sm font-bold text-fg uppercase tracking-wider">Operator Briefing</h2>
         </div>
-        <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[#263248]">
+        <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-edge">
           <div className="p-5">
-            <p className="text-[10px] text-[#8390ac] uppercase tracking-wider mb-2">Standing</p>
-            <p className="text-xl font-black text-[#f3a43a]">
-              #{stats.rank || '–'} <span className="text-sm font-normal text-[#6e7a94]">of {stats.totalUsers || '–'}</span>
+            <p className="text-[10px] text-dim uppercase tracking-wider mb-2">Standing</p>
+            <p className="text-xl font-black text-amber">
+              #{stats.rank || '–'} <span className="text-sm font-normal text-faint">of {stats.totalUsers || '–'}</span>
             </p>
-            <p className="text-xs text-[#9aa5bf] mt-1">Global rank</p>
+            <p className="text-xs text-muted mt-1">Global rank</p>
           </div>
           <div className="p-5">
-            <p className="text-[10px] text-[#8390ac] uppercase tracking-wider mb-2">Streak</p>
-            <p className="text-xl font-black text-[#a855f7]">
-              {stats.streak || 0} <span className="text-sm font-normal text-[#6e7a94]">days</span>
+            <p className="text-[10px] text-dim uppercase tracking-wider mb-2">Streak</p>
+            <p className="text-xl font-black text-violet">
+              {stats.streak || 0} <span className="text-sm font-normal text-faint">days</span>
             </p>
-            <p className="text-xs text-[#9aa5bf] mt-1">
+            <p className="text-xs text-muted mt-1">
               Last solve: {stats.lastSolveDate ? new Date(stats.lastSolveDate).toLocaleDateString() : 'None'}
             </p>
           </div>
           <div className="p-5">
-            <p className="text-[10px] text-[#8390ac] uppercase tracking-wider mb-2">Focus Area</p>
-            <p className="text-xl font-black text-[#60a5fa] truncate">
+            <p className="text-[10px] text-dim uppercase tracking-wider mb-2">Focus Area</p>
+            <p className="text-xl font-black text-info truncate">
               {stats.favoriteCategory || '–'}
             </p>
-            <p className="text-xs text-[#9aa5bf] mt-1">Most solved category</p>
+            <p className="text-xs text-muted mt-1">Most solved category</p>
           </div>
         </div>
       </motion.div>
@@ -285,11 +285,11 @@ const ProfilePage: React.FC = () => {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.4 }}
-          className="rounded-xl border border-[#263248] bg-[#121a2a] overflow-hidden"
+          className="rounded-xl border border-edge bg-panel overflow-hidden"
         >
-          <div className="flex items-center gap-2 px-5 py-4 border-b border-[#263248]">
-            <Flag size={15} className="text-[#60a5fa]" />
-            <h2 className="text-sm font-bold text-[#f3f6ff] uppercase tracking-wider">Category Breakdown</h2>
+          <div className="flex items-center gap-2 px-5 py-4 border-b border-edge">
+            <Flag size={15} className="text-info" />
+            <h2 className="text-sm font-bold text-fg uppercase tracking-wider">Category Breakdown</h2>
           </div>
           <div className="p-5 space-y-4">
             {categoryStats
@@ -305,15 +305,15 @@ const ProfilePage: React.FC = () => {
                     transition={{ delay: 0.25 + i * 0.05 }}
                   >
                     <div className="flex justify-between text-sm mb-1.5">
-                      <span className="font-medium text-[#d2d7e3] flex items-center gap-2">
+                      <span className="font-medium text-fg-soft flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: accent }} />
                         {stat.category}
                       </span>
-                      <span className="text-[#6e7a94] text-xs">
+                      <span className="text-faint text-xs">
                         {stat.count} flags · {stat.points} pts
                       </span>
                     </div>
-                    <div className="h-1.5 bg-[#0e1522] rounded-full overflow-hidden border border-[#2a3346]">
+                    <div className="h-1.5 bg-inset rounded-full overflow-hidden border border-edge-soft">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{ width: `${pct}%`, backgroundColor: accent }}

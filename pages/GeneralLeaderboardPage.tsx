@@ -135,11 +135,11 @@ const GeneralLeaderboardPage: React.FC = () => {
     <>
       {isSuperAdmin && (
         <div className="mb-5 flex flex-col sm:flex-row sm:items-center gap-3">
-          <label className="text-xs font-bold uppercase tracking-wider text-[#8390ac]">University</label>
+          <label className="text-xs font-bold uppercase tracking-wider text-dim">University</label>
           <select
             value={selectedUniversity}
             onChange={(e) => setSelectedUniversity(e.target.value)}
-            className="bg-[#141c2b] border border-[#2a3346] rounded-lg px-3 py-2 text-sm text-[#d2d7e3] focus:outline-none focus:border-[#00a859]/50 transition-colors"
+            className="bg-[#141c2b] border border-edge-soft rounded-lg px-3 py-2 text-sm text-fg-soft focus:outline-none focus:border-brand/50 transition-colors"
           >
             {universities.length === 0 && <option value="">No universities</option>}
             {universities.map((u) => (

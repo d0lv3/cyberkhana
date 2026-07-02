@@ -14,7 +14,7 @@ function CTABlock() {
         loading="lazy"
         className="absolute inset-0 w-full h-full object-cover opacity-30"
       />
-      <div className="absolute inset-0 bg-[#0d1117]/80" />
+      <div className="absolute inset-0 bg-base/80" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -24,26 +24,26 @@ function CTABlock() {
         className="relative z-10 text-center px-6"
       >
         <h2
-          className="text-3xl md:text-5xl text-[#f3f6ff]"
+          className="text-3xl md:text-5xl text-fg"
           style={{
             fontWeight: 800,
           }}
         >
           {t('cta.heading')}
         </h2>
-        <p className="text-[#9aa5bf] text-lg mt-4">
+        <p className="text-muted text-lg mt-4">
           {t('cta.subtitle')}
         </p>
         <div className="flex gap-4 mt-8 justify-center flex-wrap">
           <Link
             to="/register"
-            className="bg-[#9fef00] text-[#0d1117] font-bold px-8 py-4 rounded-lg hover:bg-[#b8ff3a] transition-all text-lg cursor-pointer"
+            className="bg-brand-neon text-base font-bold px-8 py-4 rounded-lg hover:bg-[#b8ff3a] transition-all text-lg cursor-pointer"
           >
             {t('cta.getStarted')}
           </Link>
           <Link
             to="/login"
-            className="border border-[#263248] text-[#d2d7e3] px-8 py-4 rounded-lg hover:border-[#00a859] hover:text-[#00a859] transition-all text-lg cursor-pointer"
+            className="border border-edge text-fg-soft px-8 py-4 rounded-lg hover:border-brand hover:text-brand transition-all text-lg cursor-pointer"
           >
             {t('cta.signIn')}
           </Link>
@@ -57,7 +57,7 @@ function Footer() {
   const { t } = useLang();
 
   return (
-    <footer className="bg-[#0a0f18] border-t border-[#263248]">
+    <footer className="bg-deep border-t border-edge">
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <img
@@ -68,9 +68,9 @@ function Footer() {
           />
         </div>
 
-        <div className="border-t border-[#263248]/50 my-8" />
+        <div className="border-t border-edge/50 my-8" />
 
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-[#6e7a94] text-xs">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-faint text-xs">
           <span>{t('footer.founded')}</span>
           <span className="inline-flex items-center gap-1.5">
             {t('footer.builtIn')}

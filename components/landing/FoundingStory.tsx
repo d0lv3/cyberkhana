@@ -52,7 +52,7 @@ function TimelineCard({
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.6, ease: "easeOut", delay: index * 0.1 }}
-      className="bg-[#121a2a]/80 backdrop-blur-sm border border-[#263248] rounded-2xl overflow-hidden"
+      className="bg-panel/80 backdrop-blur-sm border border-edge rounded-2xl overflow-hidden"
     >
       <div className="relative h-48 w-full">
         <img
@@ -61,19 +61,19 @@ function TimelineCard({
           loading="lazy"
           className="h-48 object-cover w-full"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#121a2a] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-panel to-transparent" />
       </div>
       <div className="p-6">
-        <span className="bg-[#00a859]/20 text-[#00a859] text-xs font-bold px-3 py-1 rounded-full">
+        <span className="bg-brand/20 text-brand text-xs font-bold px-3 py-1 rounded-full">
           {node.year}
         </span>
         <h3
-          className="text-xl font-bold text-[#f3f6ff] mt-3 mb-2"
+          className="text-xl font-bold text-fg mt-3 mb-2"
           style={{ fontWeight: 800 }}
         >
           {title}
         </h3>
-        <p className="text-[#9aa5bf] text-sm leading-relaxed">
+        <p className="text-muted text-sm leading-relaxed">
           {text}
         </p>
       </div>
@@ -86,7 +86,7 @@ function MobileTimeline() {
 
   return (
     <div className="md:hidden relative">
-      <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#00a859] via-[#00a859] to-transparent" />
+      <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-brand via-brand to-transparent" />
       <div className="flex flex-col gap-10">
         {timelineNodes.map((node, index) => {
           const nodeIndex = index + 1;
@@ -95,7 +95,7 @@ function MobileTimeline() {
 
           return (
             <div key={nodeIndex} className="relative pl-12">
-              <div className="absolute left-2 top-6 w-4 h-4 rounded-full bg-[#00a859] shadow-[0_0_15px_rgba(0,168,89,0.6)]" />
+              <div className="absolute left-2 top-6 w-4 h-4 rounded-full bg-brand shadow-[0_0_15px_rgba(0,168,89,0.6)]" />
               <motion.div
                 initial={{ opacity: 0, x: -30 }}
                 whileInView={{ opacity: 1, x: 0 }}
@@ -105,7 +105,7 @@ function MobileTimeline() {
                   ease: "easeOut",
                   delay: index * 0.1,
                 }}
-                className="bg-[#121a2a]/80 backdrop-blur-sm border border-[#263248] rounded-2xl overflow-hidden"
+                className="bg-panel/80 backdrop-blur-sm border border-edge rounded-2xl overflow-hidden"
               >
                 <div className="relative h-48 w-full">
                   <img
@@ -114,19 +114,19 @@ function MobileTimeline() {
                     loading="lazy"
                     className="h-48 object-cover w-full"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#121a2a] to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-panel to-transparent" />
                 </div>
                 <div className="p-6">
-                  <span className="bg-[#00a859]/20 text-[#00a859] text-xs font-bold px-3 py-1 rounded-full">
+                  <span className="bg-brand/20 text-brand text-xs font-bold px-3 py-1 rounded-full">
                     {node.year}
                   </span>
                   <h3
-                    className="text-xl font-bold text-[#f3f6ff] mt-3 mb-2"
+                    className="text-xl font-bold text-fg mt-3 mb-2"
                     style={{ fontWeight: 800 }}
                   >
                     {title}
                   </h3>
-                  <p className="text-[#9aa5bf] text-sm leading-relaxed">
+                  <p className="text-muted text-sm leading-relaxed">
                     {text}
                   </p>
                 </div>
@@ -142,7 +142,7 @@ function MobileTimeline() {
 function DesktopTimeline() {
   return (
     <div className="hidden md:block relative">
-      <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#00a859] via-[#00a859] to-transparent" />
+      <div className="absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-brand via-brand to-transparent" />
       <div className="flex flex-col gap-16">
         {timelineNodes.map((node, index) => {
           const isLeft = index % 2 === 0;
@@ -150,7 +150,7 @@ function DesktopTimeline() {
           return (
             <div key={nodeIndex} className="relative grid grid-cols-2 gap-12">
               <div
-                className="absolute left-1/2 -translate-x-1/2 top-6 w-4 h-4 rounded-full bg-[#00a859] shadow-[0_0_15px_rgba(0,168,89,0.6)] z-10"
+                className="absolute left-1/2 -translate-x-1/2 top-6 w-4 h-4 rounded-full bg-brand shadow-[0_0_15px_rgba(0,168,89,0.6)] z-10"
               />
               {isLeft ? (
                 <>
@@ -189,16 +189,16 @@ export default function FoundingStory() {
   const { t } = useLang();
 
   return (
-    <section className="bg-[#0d1117] py-24 md:py-32">
+    <section className="bg-base py-24 md:py-32">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2
-            className="text-4xl md:text-5xl font-extrabold text-[#f3f6ff] mb-3"
+            className="text-4xl md:text-5xl font-extrabold text-fg mb-3"
             style={{ fontWeight: 800 }}
           >
             {t('story.heading')}
           </h2>
-          <p className="text-[#9aa5bf] text-lg">
+          <p className="text-muted text-lg">
             {t('story.subtitle')}
           </p>
         </div>

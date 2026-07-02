@@ -63,10 +63,10 @@ interface ActivityEntry {
 }
 
 const rankIcon = (rank: number) => {
-  if (rank === 1) return <Crown className="w-4 h-4 text-[#9fef00]" />;
+  if (rank === 1) return <Crown className="w-4 h-4 text-brand-neon" />;
   if (rank === 2) return <Medal className="w-4 h-4 text-[#cbd5e1]" />;
   if (rank === 3) return <Medal className="w-4 h-4 text-[#d6a55a]" />;
-  return <span className="text-xs font-bold text-[#8390ac]">{rank}</span>;
+  return <span className="text-xs font-bold text-dim">{rank}</span>;
 };
 
 const CompetitionDashboardPage: React.FC = () => {
@@ -255,10 +255,10 @@ const CompetitionDashboardPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
+      <div className="min-h-screen bg-base flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-[#00a859]/20 border-t-[#00a859] rounded-full animate-spin" />
-          <p className="text-[#9aa5bf] text-sm">Loading competition...</p>
+          <div className="w-10 h-10 border-4 border-brand/20 border-t-brand rounded-full animate-spin" />
+          <p className="text-muted text-sm">Loading competition...</p>
         </div>
       </div>
     );
@@ -266,10 +266,10 @@ const CompetitionDashboardPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-base flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
-          <div className="bg-[#f43f5e]/10 border border-[#f43f5e]/30 text-[#f43f5e] px-6 py-4 rounded-xl mb-6">{error}</div>
-          <Button onClick={() => navigate('/competition')} className="bg-[#182130] border border-[#263248] text-[#d2d7e3] hover:bg-[#1a2332]">
+          <div className="bg-danger/10 border border-danger/30 text-danger px-6 py-4 rounded-xl mb-6">{error}</div>
+          <Button onClick={() => navigate('/competition')} className="bg-surface-alt border border-edge text-fg-soft hover:bg-surface">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Competitions
           </Button>
         </div>
@@ -280,10 +280,10 @@ const CompetitionDashboardPage: React.FC = () => {
   if (!competition) {
     if (!showSecurityCodeModal) {
       return (
-        <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-4">
+        <div className="min-h-screen bg-base flex items-center justify-center p-4">
           <div className="text-center">
-            <p className="text-[#9aa5bf] text-lg mb-4">Competition not found</p>
-            <Button onClick={() => navigate('/competition')} className="bg-[#182130] border border-[#263248] text-[#d2d7e3]">
+            <p className="text-muted text-lg mb-4">Competition not found</p>
+            <Button onClick={() => navigate('/competition')} className="bg-surface-alt border border-edge text-fg-soft">
               <ArrowLeft className="w-4 h-4 mr-2" /> Back to Competitions
             </Button>
           </div>
@@ -293,18 +293,18 @@ const CompetitionDashboardPage: React.FC = () => {
 
     // Security code modal (standalone page)
     return (
-      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-base flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#121a2a] border border-[#263248] rounded-2xl max-w-md w-full p-8 shadow-2xl"
+          className="bg-panel border border-edge rounded-2xl max-w-md w-full p-8 shadow-2xl"
         >
           <div className="text-center mb-8">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#f3a43a]/10 border border-[#f3a43a]/20 flex items-center justify-center">
-              <Lock className="w-8 h-8 text-[#f3a43a]" />
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber/10 border border-amber/20 flex items-center justify-center">
+              <Lock className="w-8 h-8 text-amber" />
             </div>
-            <h2 className="text-2xl font-black text-[#f3f6ff] mb-2">Security Code Required</h2>
-            <p className="text-[#9aa5bf] text-sm">Enter the code provided by your instructor to access this competition.</p>
+            <h2 className="text-2xl font-black text-fg mb-2">Security Code Required</h2>
+            <p className="text-muted text-sm">Enter the code provided by your instructor to access this competition.</p>
           </div>
           <form onSubmit={handleSecurityCodeSubmit} className="space-y-4">
             <div>
@@ -313,16 +313,16 @@ const CompetitionDashboardPage: React.FC = () => {
                 placeholder="Enter security code"
                 value={securityCode}
                 onChange={(e) => setSecurityCode(e.target.value)}
-                className="w-full font-mono text-center tracking-widest bg-[#0e1522] border-[#263248] text-[#f3f6ff]"
+                className="w-full font-mono text-center tracking-widest bg-inset border-edge text-fg"
                 autoFocus
               />
-              {securityCodeError && <p className="text-[#f43f5e] text-sm mt-2">{securityCodeError}</p>}
+              {securityCodeError && <p className="text-danger text-sm mt-2">{securityCodeError}</p>}
             </div>
-            <Button type="submit" className="w-full bg-[#00a859] text-white hover:bg-[#00c064] font-bold" disabled={enteringCode}>
+            <Button type="submit" className="w-full bg-brand text-white hover:bg-[#00c064] font-bold" disabled={enteringCode}>
               {enteringCode ? 'Verifying...' : 'Enter Competition'}
             </Button>
           </form>
-          <button onClick={() => navigate('/competition')} className="w-full mt-4 text-[#6e7a94] hover:text-[#9aa5bf] text-sm flex items-center justify-center gap-2 transition-colors">
+          <button onClick={() => navigate('/competition')} className="w-full mt-4 text-faint hover:text-muted text-sm flex items-center justify-center gap-2 transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to Competitions
           </button>
         </motion.div>
@@ -331,11 +331,11 @@ const CompetitionDashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#d2d7e3]">
+    <div className="min-h-screen bg-base text-fg-soft">
 
       {/* Hero Banner */}
       <div
-        className="relative overflow-hidden border-b border-[#263248]"
+        className="relative overflow-hidden border-b border-edge"
         style={{
           backgroundImage: `linear-gradient(to right, rgba(13,17,23,1) 0%, rgba(13,17,23,0.85) 40%, rgba(13,17,23,0.3) 100%), url(${heroImage})`,
           backgroundSize: 'cover',
@@ -345,7 +345,7 @@ const CompetitionDashboardPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 md:px-8 pt-8 pb-10">
           <button
             onClick={() => navigate('/competition')}
-            className="group flex items-center gap-2 text-[#9aa5bf] hover:text-[#f3f6ff] mb-6 transition-colors text-sm"
+            className="group flex items-center gap-2 text-muted hover:text-fg mb-6 transition-colors text-sm"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             Back to Competitions
@@ -355,18 +355,18 @@ const CompetitionDashboardPage: React.FC = () => {
             <div>
               <div className="flex items-center gap-3 mb-3">
                 {ended ? (
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-bold bg-[#f3a43a]/10 border border-[#f3a43a]/30 text-[#f3a43a]">
+                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-bold bg-amber/10 border border-amber/30 text-amber">
                     <Clock className="w-3 h-3" /> Ended
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-bold bg-[#00a859]/10 border border-[#00a859]/30 text-[#00a859]">
-                    <span className="w-2 h-2 rounded-full bg-[#00a859] animate-pulse" /> Live
+                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-bold bg-brand/10 border border-brand/30 text-brand">
+                    <span className="w-2 h-2 rounded-full bg-brand animate-pulse" /> Live
                   </span>
                 )}
               </div>
-              <h1 className="text-4xl md:text-5xl font-black text-[#f3f6ff] tracking-tight">{competition.name}</h1>
+              <h1 className="text-4xl md:text-5xl font-black text-fg tracking-tight">{competition.name}</h1>
               {!ended && (
-                <p className="text-[#9aa5bf] mt-2 flex items-center gap-2 text-sm">
+                <p className="text-muted mt-2 flex items-center gap-2 text-sm">
                   <Clock className="w-4 h-4" /> {getTimeRemaining(competition.endTime)} remaining
                 </p>
               )}
@@ -375,7 +375,7 @@ const CompetitionDashboardPage: React.FC = () => {
             <div className="flex items-center gap-3">
               <Button
                 onClick={() => navigate(`/competition/${id}/leaderboard`)}
-                className="bg-[#182130] border border-[#263248] text-[#d2d7e3] hover:bg-[#1a2332] hover:border-[#00a859]/40"
+                className="bg-surface-alt border border-edge text-fg-soft hover:bg-surface hover:border-brand/40"
               >
                 <TrendingUp className="w-4 h-4 mr-2" /> Leaderboard
               </Button>
@@ -384,11 +384,11 @@ const CompetitionDashboardPage: React.FC = () => {
                   setShowAnnouncements(!showAnnouncements);
                   if (!showAnnouncements) markAnnouncementsAsRead();
                 }}
-                className="relative bg-[#182130] border border-[#263248] text-[#d2d7e3] hover:bg-[#1a2332]"
+                className="relative bg-surface-alt border border-edge text-fg-soft hover:bg-surface"
               >
                 <Bell className="w-4 h-4 mr-2" /> Announcements
                 {unreadCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-[#f43f5e] text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                  <span className="absolute -top-2 -right-2 bg-danger text-white text-[10px] rounded-full w-5 h-5 flex items-center justify-center font-bold">
                     {unreadCount}
                   </span>
                 )}
@@ -404,25 +404,25 @@ const CompetitionDashboardPage: React.FC = () => {
         <AnimatePresence>
           {showAnnouncements && (
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-8">
-              <div className="bg-[#121a2a] border border-[#263248] rounded-xl p-6">
+              <div className="bg-panel border border-edge rounded-xl p-6">
                 <div className="flex items-center gap-2 mb-4">
-                  <Bell className="w-5 h-5 text-[#f3a43a]" />
-                  <h2 className="text-lg font-bold text-[#f3f6ff]">Announcements</h2>
+                  <Bell className="w-5 h-5 text-amber" />
+                  <h2 className="text-lg font-bold text-fg">Announcements</h2>
                 </div>
                 {announcements.length > 0 ? (
                   <div className="space-y-3">
                     {announcements.map((a: any) => (
-                      <div key={a._id} className="p-4 bg-[#0e1522] rounded-lg border border-[#263248]">
+                      <div key={a._id} className="p-4 bg-inset rounded-lg border border-edge">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="font-bold text-[#e5ecfb]">{a.title}</h3>
-                          <span className="text-[10px] text-[#6e7a94]">{new Date(a.createdAt).toLocaleString()}</span>
+                          <span className="text-[10px] text-faint">{new Date(a.createdAt).toLocaleString()}</span>
                         </div>
-                        <p className="text-sm text-[#9aa5bf]">{a.content}</p>
+                        <p className="text-sm text-muted">{a.content}</p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-[#6e7a94] text-sm text-center py-4">No announcements yet</p>
+                  <p className="text-faint text-sm text-center py-4">No announcements yet</p>
                 )}
               </div>
             </motion.div>
@@ -431,39 +431,39 @@ const CompetitionDashboardPage: React.FC = () => {
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-[#121a2a] border border-[#263248] rounded-xl p-5">
+          <div className="bg-panel border border-edge rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-[#8390ac]">Progress</span>
-              <Target className="w-4 h-4 text-[#00a859]" />
+              <span className="text-xs text-dim">Progress</span>
+              <Target className="w-4 h-4 text-brand" />
             </div>
-            <p className="text-2xl font-black text-[#f3f6ff]">{solvedChallenges.size}<span className="text-sm text-[#6e7a94] font-normal">/{totalChallenges}</span></p>
-            <div className="h-1.5 bg-[#0e1522] rounded-full border border-[#263248] mt-3 overflow-hidden">
-              <div className="h-full bg-[#00a859] rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+            <p className="text-2xl font-black text-fg">{solvedChallenges.size}<span className="text-sm text-faint font-normal">/{totalChallenges}</span></p>
+            <div className="h-1.5 bg-inset rounded-full border border-edge mt-3 overflow-hidden">
+              <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${progressPct}%` }} />
             </div>
           </div>
-          <div className="bg-[#121a2a] border border-[#263248] rounded-xl p-5">
+          <div className="bg-panel border border-edge rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-[#8390ac]">Your Rank</span>
-              <Award className="w-4 h-4 text-[#f3a43a]" />
+              <span className="text-xs text-dim">Your Rank</span>
+              <Award className="w-4 h-4 text-amber" />
             </div>
-            <p className="text-2xl font-black text-[#f3f6ff]">{userRank > 0 ? `#${userRank}` : '—'}</p>
-            <p className="text-[10px] text-[#6e7a94] mt-1">of {leaderboard.length} participants</p>
+            <p className="text-2xl font-black text-fg">{userRank > 0 ? `#${userRank}` : '—'}</p>
+            <p className="text-[10px] text-faint mt-1">of {leaderboard.length} participants</p>
           </div>
-          <div className="bg-[#121a2a] border border-[#263248] rounded-xl p-5">
+          <div className="bg-panel border border-edge rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-[#8390ac]">Your Points</span>
-              <Trophy className="w-4 h-4 text-[#9fef00]" />
+              <span className="text-xs text-dim">Your Points</span>
+              <Trophy className="w-4 h-4 text-brand-neon" />
             </div>
-            <p className="text-2xl font-black text-[#f3f6ff]">{user?.competitionPoints || 0}</p>
-            <p className="text-[10px] text-[#6e7a94] mt-1">pts earned</p>
+            <p className="text-2xl font-black text-fg">{user?.competitionPoints || 0}</p>
+            <p className="text-[10px] text-faint mt-1">pts earned</p>
           </div>
-          <div className="bg-[#121a2a] border border-[#263248] rounded-xl p-5">
+          <div className="bg-panel border border-edge rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-[#8390ac]">Time Left</span>
-              <Clock className="w-4 h-4 text-[#60a5fa]" />
+              <span className="text-xs text-dim">Time Left</span>
+              <Clock className="w-4 h-4 text-info" />
             </div>
-            <p className="text-2xl font-black text-[#f3f6ff]">{ended ? 'Ended' : getTimeRemaining(competition.endTime)}</p>
-            {!ended && competition.endTime && <p className="text-[10px] text-[#6e7a94] mt-1">{new Date(competition.endTime).toLocaleDateString()}</p>}
+            <p className="text-2xl font-black text-fg">{ended ? 'Ended' : getTimeRemaining(competition.endTime)}</p>
+            {!ended && competition.endTime && <p className="text-[10px] text-faint mt-1">{new Date(competition.endTime).toLocaleDateString()}</p>}
           </div>
         </div>
 
@@ -495,7 +495,7 @@ const CompetitionDashboardPage: React.FC = () => {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="bg-[#0e1522] border border-[#263248] text-[#d2d7e3] text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#00a859]"
+                className="bg-inset border border-edge text-fg-soft text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-brand"
               >
                 <option value="default">Default</option>
                 <option value="points-desc">Points ↓</option>
@@ -507,10 +507,10 @@ const CompetitionDashboardPage: React.FC = () => {
 
             {/* Challenges List */}
             {sortedChallenges.length === 0 ? (
-              <div className="text-center py-16 bg-[#121a2a] border border-[#263248] rounded-xl">
-                <Shield className="w-12 h-12 text-[#263248] mx-auto mb-4" />
-                <p className="text-[#9aa5bf] text-lg mb-1">No challenges yet</p>
-                <p className="text-[#6e7a94] text-sm">Check back later</p>
+              <div className="text-center py-16 bg-panel border border-edge rounded-xl">
+                <Shield className="w-12 h-12 text-edge mx-auto mb-4" />
+                <p className="text-muted text-lg mb-1">No challenges yet</p>
+                <p className="text-faint text-sm">Check back later</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -530,20 +530,20 @@ const CompetitionDashboardPage: React.FC = () => {
                         if (!ended || isAdmin) navigate(`/competition/${id}/challenge/${challenge._id}`);
                       }}
                       className={`group border rounded-xl p-4 md:p-5 transition-all ${
-                        ended && !isAdmin ? 'cursor-default' : 'cursor-pointer hover:border-[#00a859]/40'
+                        ended && !isAdmin ? 'cursor-default' : 'cursor-pointer hover:border-brand/40'
                       } ${
                         isSolved && !ended
-                          ? 'bg-[#00a859]/5 border-[#00a859]/20'
-                          : 'bg-[#121a2a] border-[#263248] hover:bg-[#151e2d]'
+                          ? 'bg-brand/5 border-brand/20'
+                          : 'bg-panel border-edge hover:bg-[#151e2d]'
                       }`}
                     >
                       <div className="flex items-center gap-4">
                         {/* Status Icon */}
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                          isSolved && !ended ? 'bg-[#00a859]/15' : 'bg-[#0e1522] border border-[#263248]'
+                          isSolved && !ended ? 'bg-brand/15' : 'bg-inset border border-edge'
                         }`}>
                           {isSolved && !ended ? (
-                            <CheckCircle className="w-5 h-5 text-[#00a859]" />
+                            <CheckCircle className="w-5 h-5 text-brand" />
                           ) : (
                             <Target className="w-5 h-5" style={{ color: catStyle.accent }} />
                           )}
@@ -552,12 +552,12 @@ const CompetitionDashboardPage: React.FC = () => {
                         {/* Content */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-bold text-[#f3f6ff] truncate group-hover:text-[#00a859] transition-colors">{challenge.title}</h3>
+                            <h3 className="font-bold text-fg truncate group-hover:text-brand transition-colors">{challenge.title}</h3>
                             {isSolved && !ended && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#00a859]/15 text-[#00a859] border border-[#00a859]/30 flex-shrink-0">SOLVED</span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand/15 text-brand border border-brand/30 flex-shrink-0">SOLVED</span>
                             )}
                             {ended && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#263248] text-[#8390ac] border border-[#263248] flex-shrink-0">ENDED</span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-edge text-dim border border-edge flex-shrink-0">ENDED</span>
                             )}
                           </div>
                           <div className="flex items-center flex-wrap gap-2 text-xs">
@@ -567,12 +567,12 @@ const CompetitionDashboardPage: React.FC = () => {
                             {challenge.difficulty && (
                               <span className="flex items-center gap-1.5">
                                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: diffColor }} />
-                                <span className="text-[#d2d7e3] font-medium">{challenge.difficulty}</span>
+                                <span className="text-fg-soft font-medium">{challenge.difficulty}</span>
                               </span>
                             )}
-                            <span className="text-[#6e7a94]">{challenge.solves} solves</span>
+                            <span className="text-faint">{challenge.solves} solves</span>
                             {firstBloodUser && (
-                              <span className="flex items-center gap-1 text-[#f3a43a] font-medium">
+                              <span className="flex items-center gap-1 text-amber font-medium">
                                 <Zap className="w-3 h-3" /> {firstBloodUser}
                               </span>
                             )}
@@ -589,7 +589,7 @@ const CompetitionDashboardPage: React.FC = () => {
                                     }
                                   }
                                 }}
-                                className="ml-auto text-[#f43f5e]/70 hover:text-[#f43f5e] text-[10px] font-bold border border-[#f43f5e]/20 hover:border-[#f43f5e]/50 px-2 py-0.5 rounded transition-colors"
+                                className="ml-auto text-danger/70 hover:text-danger text-[10px] font-bold border border-danger/20 hover:border-danger/50 px-2 py-0.5 rounded transition-colors"
                               >
                                 Remove
                               </button>
@@ -599,11 +599,11 @@ const CompetitionDashboardPage: React.FC = () => {
 
                         {/* Points */}
                         <div className="text-right flex-shrink-0">
-                          <span className="text-lg font-bold text-[#f3f6ff]">{challenge.currentPoints || challenge.points}</span>
-                          <span className="text-[#6e7a94] text-xs ml-1">pts</span>
+                          <span className="text-lg font-bold text-fg">{challenge.currentPoints || challenge.points}</span>
+                          <span className="text-faint text-xs ml-1">pts</span>
                           {!ended && (
                             <div className="mt-1">
-                              <ArrowRight className="w-4 h-4 text-[#263248] group-hover:text-[#00a859] transition-all group-hover:translate-x-1 ml-auto" />
+                              <ArrowRight className="w-4 h-4 text-edge group-hover:text-brand transition-all group-hover:translate-x-1 ml-auto" />
                             </div>
                           )}
                         </div>
@@ -618,36 +618,36 @@ const CompetitionDashboardPage: React.FC = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Leaderboard */}
-            <div className="bg-[#121a2a] border border-[#263248] rounded-xl overflow-hidden">
-              <div className="p-4 border-b border-[#263248] bg-[#0e1522] flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-[#00a859]" />
-                <span className="font-bold text-[#f3f6ff] text-sm">Leaderboard</span>
+            <div className="bg-panel border border-edge rounded-xl overflow-hidden">
+              <div className="p-4 border-b border-edge bg-inset flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-brand" />
+                <span className="font-bold text-fg text-sm">Leaderboard</span>
               </div>
               <div className="p-4 space-y-2">
                 {leaderboard.slice(0, 5).map((entry, index) => {
                   const isCurrentUser = user && entry.username === user.username;
                   return (
                     <div key={entry._id} className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors ${
-                      isCurrentUser ? 'bg-[#00a859]/8 border border-[#00a859]/20' : 'hover:bg-[#0e1522]'
+                      isCurrentUser ? 'bg-brand/8 border border-brand/20' : 'hover:bg-inset'
                     }`}>
-                      <div className="w-7 h-7 rounded flex items-center justify-center bg-[#0e1522] border border-[#263248]">
+                      <div className="w-7 h-7 rounded flex items-center justify-center bg-inset border border-edge">
                         {rankIcon(index + 1)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm font-bold truncate ${isCurrentUser ? 'text-[#00a859]' : 'text-[#e5ecfb]'}`}>
+                        <p className={`text-sm font-bold truncate ${isCurrentUser ? 'text-brand' : 'text-[#e5ecfb]'}`}>
                           {entry.username}
                           {isCurrentUser && <span className="text-[10px] opacity-70 ml-1">(You)</span>}
                         </p>
                         {isSharedCompetition && (entry.universityName || entry.universityCode) && (
                           <p className="mt-1">
-                            <span className="inline-flex items-center rounded-full border border-[#33405c] bg-[#0b1220] px-2 py-0.5 text-[10px] font-semibold text-[#9aa5bf]">
+                            <span className="inline-flex items-center rounded-full border border-[#33405c] bg-[#0b1220] px-2 py-0.5 text-[10px] font-semibold text-muted">
                               {entry.universityName || entry.universityCode}
                             </span>
                           </p>
                         )}
-                        <p className="text-[10px] text-[#6e7a94]">{entry.solvedChallenges} solved</p>
+                        <p className="text-[10px] text-faint">{entry.solvedChallenges} solved</p>
                       </div>
-                      <span className="text-[#00a859] font-bold text-sm">{entry.points}</span>
+                      <span className="text-brand font-bold text-sm">{entry.points}</span>
                     </div>
                   );
                 })}
@@ -655,56 +655,56 @@ const CompetitionDashboardPage: React.FC = () => {
                   const userEntry = leaderboard[userRank - 1];
                   return userEntry ? (
                     <>
-                      <div className="border-t border-[#263248] my-1" />
-                      <div className="flex items-center gap-3 p-2.5 rounded-lg bg-[#00a859]/8 border border-[#00a859]/20">
-                        <div className="w-7 h-7 rounded flex items-center justify-center bg-[#0e1522] border border-[#263248]">
-                          <span className="text-[10px] font-bold text-[#8390ac]">{userRank}</span>
+                      <div className="border-t border-edge my-1" />
+                      <div className="flex items-center gap-3 p-2.5 rounded-lg bg-brand/8 border border-brand/20">
+                        <div className="w-7 h-7 rounded flex items-center justify-center bg-inset border border-edge">
+                          <span className="text-[10px] font-bold text-dim">{userRank}</span>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-[#00a859] truncate">{userEntry.username} <span className="text-[10px] opacity-70">(You)</span></p>
+                          <p className="text-sm font-bold text-brand truncate">{userEntry.username} <span className="text-[10px] opacity-70">(You)</span></p>
                           {isSharedCompetition && (userEntry.universityName || userEntry.universityCode) && (
                             <p className="mt-1">
-                              <span className="inline-flex items-center rounded-full border border-[#33405c] bg-[#0b1220] px-2 py-0.5 text-[10px] font-semibold text-[#9aa5bf]">
+                              <span className="inline-flex items-center rounded-full border border-[#33405c] bg-[#0b1220] px-2 py-0.5 text-[10px] font-semibold text-muted">
                                 {userEntry.universityName || userEntry.universityCode}
                               </span>
                             </p>
                           )}
-                          <p className="text-[10px] text-[#6e7a94]">{userEntry.solvedChallenges} solved</p>
+                          <p className="text-[10px] text-faint">{userEntry.solvedChallenges} solved</p>
                         </div>
-                        <span className="text-[#00a859] font-bold text-sm">{userEntry.points}</span>
+                        <span className="text-brand font-bold text-sm">{userEntry.points}</span>
                       </div>
                     </>
                   ) : null;
                 })()}
-                {leaderboard.length === 0 && <p className="text-[#6e7a94] text-sm text-center py-4">No participants yet</p>}
+                {leaderboard.length === 0 && <p className="text-faint text-sm text-center py-4">No participants yet</p>}
               </div>
-              <div className="p-4 border-t border-[#263248]">
-                <Button onClick={() => navigate(`/competition/${id}/leaderboard`)} className="w-full bg-[#0e1522] border border-[#263248] text-[#d2d7e3] hover:bg-[#182130] text-sm">
+              <div className="p-4 border-t border-edge">
+                <Button onClick={() => navigate(`/competition/${id}/leaderboard`)} className="w-full bg-inset border border-edge text-fg-soft hover:bg-surface-alt text-sm">
                   View Full Leaderboard
                 </Button>
               </div>
             </div>
 
             {/* Recent Activity */}
-            <div className="bg-[#121a2a] border border-[#263248] rounded-xl overflow-hidden">
-              <div className="p-4 border-b border-[#263248] bg-[#0e1522] flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#9fef00]" />
-                <span className="font-bold text-[#f3f6ff] text-sm">Recent Activity</span>
+            <div className="bg-panel border border-edge rounded-xl overflow-hidden">
+              <div className="p-4 border-b border-edge bg-inset flex items-center gap-2">
+                <Activity className="w-4 h-4 text-brand-neon" />
+                <span className="font-bold text-fg text-sm">Recent Activity</span>
               </div>
               <div className="p-4 space-y-2 max-h-72 overflow-y-auto custom-scrollbar">
                 {recentActivity.length > 0 ? recentActivity.slice(0, 8).map((activity, index) => (
-                  <div key={index} className="p-3 bg-[#0e1522] rounded-lg border border-[#263248]">
+                  <div key={index} className="p-3 bg-inset rounded-lg border border-edge">
                     <p className="text-sm">
-                      <span className="font-bold text-[#00a859]">{activity.username}</span>
-                      <span className="text-[#8390ac]"> solved </span>
+                      <span className="font-bold text-brand">{activity.username}</span>
+                      <span className="text-dim"> solved </span>
                       <span className="font-medium text-[#e5ecfb]">{activity.challengeTitle}</span>
                     </p>
-                    <p className="text-[10px] text-[#6e7a94] mt-1">
-                      {activity.timestamp} · <span className="text-[#00a859]">+{activity.points} pts</span>
+                    <p className="text-[10px] text-faint mt-1">
+                      {activity.timestamp} · <span className="text-brand">+{activity.points} pts</span>
                     </p>
                   </div>
                 )) : (
-                  <p className="text-[#6e7a94] text-sm text-center py-4">No activity yet</p>
+                  <p className="text-faint text-sm text-center py-4">No activity yet</p>
                 )}
               </div>
             </div>
@@ -715,14 +715,14 @@ const CompetitionDashboardPage: React.FC = () => {
       {/* Security Code Modal (overlay) */}
       <AnimatePresence>
         {showSecurityCodeModal && competition && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-[#0d1117]/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-[#121a2a] border border-[#263248] rounded-2xl max-w-md w-full p-8 shadow-2xl">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-base/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-panel border border-edge rounded-2xl max-w-md w-full p-8 shadow-2xl">
               <div className="text-center mb-8">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#f3a43a]/10 border border-[#f3a43a]/20 flex items-center justify-center">
-                  <Lock className="w-8 h-8 text-[#f3a43a]" />
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber/10 border border-amber/20 flex items-center justify-center">
+                  <Lock className="w-8 h-8 text-amber" />
                 </div>
-                <h2 className="text-2xl font-black text-[#f3f6ff] mb-2">Security Code Required</h2>
-                <p className="text-[#9aa5bf] text-sm">Enter the code to access this competition.</p>
+                <h2 className="text-2xl font-black text-fg mb-2">Security Code Required</h2>
+                <p className="text-muted text-sm">Enter the code to access this competition.</p>
               </div>
               <form onSubmit={handleSecurityCodeSubmit} className="space-y-4">
                 <Input
@@ -730,11 +730,11 @@ const CompetitionDashboardPage: React.FC = () => {
                   placeholder="Enter security code"
                   value={securityCode}
                   onChange={(e) => setSecurityCode(e.target.value)}
-                  className="w-full font-mono text-center tracking-widest bg-[#0e1522] border-[#263248] text-[#f3f6ff]"
+                  className="w-full font-mono text-center tracking-widest bg-inset border-edge text-fg"
                   autoFocus
                 />
-                {securityCodeError && <p className="text-[#f43f5e] text-sm">{securityCodeError}</p>}
-                <Button type="submit" className="w-full bg-[#00a859] text-white hover:bg-[#00c064] font-bold" disabled={enteringCode}>
+                {securityCodeError && <p className="text-danger text-sm">{securityCodeError}</p>}
+                <Button type="submit" className="w-full bg-brand text-white hover:bg-[#00c064] font-bold" disabled={enteringCode}>
                   {enteringCode ? 'Verifying...' : 'Enter Competition'}
                 </Button>
               </form>

@@ -28,7 +28,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ user }) => {
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#0d1117]/95 backdrop-blur-md border-t border-[#1e293b]"
+      className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-base/95 backdrop-blur-md border-t border-edge-strong"
       aria-label="Primary"
     >
       <div
@@ -42,13 +42,13 @@ const MobileNav: React.FC<MobileNavProps> = ({ user }) => {
             className={({ isActive }) =>
               [
                 'flex flex-col items-center justify-center gap-1 py-2.5 text-[10px] font-semibold transition-colors',
-                isActive ? 'text-[#00a859]' : 'text-[#6e7a94] hover:text-[#9aa5bf]',
+                isActive ? 'text-brand' : 'text-faint hover:text-muted',
               ].join(' ')
             }
           >
             {({ isActive }) => (
               <>
-                <Icon size={20} className={isActive ? 'text-[#00a859]' : 'text-[#6e7a94]'} />
+                <Icon size={20} className={isActive ? 'text-brand' : 'text-faint'} />
                 <span>{label}</span>
               </>
             )}

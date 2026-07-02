@@ -106,7 +106,7 @@ const CyberMatrixHero = ({ onCTAClick }: { onCTAClick: () => void }) => {
     };
 
     return (
-        <div className="relative h-screen w-full bg-[#0d1117] flex flex-col items-center justify-center overflow-hidden">
+        <div className="relative h-screen w-full bg-base flex flex-col items-center justify-center overflow-hidden">
             <div ref={gridRef} id="tiles"></div>
             
             <style>{`

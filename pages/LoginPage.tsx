@@ -59,7 +59,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="bg-[#0d1117] min-h-screen flex items-center justify-center px-4 relative">
+    <div className="bg-base min-h-screen flex items-center justify-center px-4 relative">
       {/* Subtle background grid */}
       <div className="absolute inset-0 opacity-[0.03]" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2300a859' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
@@ -68,21 +68,21 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
       <div className="w-full max-w-md relative z-10">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 text-[#9aa5bf] hover:text-[#00a859] transition-colors text-sm mb-8"
+          className="inline-flex items-center gap-2 text-muted hover:text-brand transition-colors text-sm mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to home
         </Link>
 
-        <div className="bg-[#121a2a]/95 border border-[#263248] rounded-2xl shadow-2xl backdrop-blur-xl p-8">
+        <div className="bg-panel/95 border border-edge rounded-2xl shadow-2xl backdrop-blur-xl p-8">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-[#00a859]/20 rounded-full mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-brand/20 rounded-full mb-4">
               <BrandLogo variant="mark" alt="" className="h-8 w-8 object-contain" />
             </div>
-            <h2 className="text-3xl font-bold text-[#f3f6ff] mb-2">
+            <h2 className="text-3xl font-bold text-fg mb-2">
               Welcome Back
             </h2>
-            <p className="text-[#9aa5bf] text-sm">
+            <p className="text-muted text-sm">
               Sign in to your account
             </p>
           </div>
@@ -101,10 +101,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               )}
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#8390ac] uppercase tracking-wider">Username</label>
+                <label className="text-xs font-bold text-dim uppercase tracking-wider">Username</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Shield className="h-5 w-5 text-[#6e7a94]" />
+                    <Shield className="h-5 w-5 text-faint" />
                   </div>
                   <Input
                     type="text"
@@ -119,10 +119,10 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-[#8390ac] uppercase tracking-wider">Password</label>
+                <label className="text-xs font-bold text-dim uppercase tracking-wider">Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <KeyRound className="h-5 w-5 text-[#6e7a94]" />
+                    <KeyRound className="h-5 w-5 text-faint" />
                   </div>
                   <Input
                     type={showPassword ? 'text' : 'password'}
@@ -158,9 +158,9 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
         </div>
 
         <div className="mt-6 text-center">
-          <p className="text-[#9aa5bf] text-sm">
+          <p className="text-muted text-sm">
             Don't have an account?{' '}
-            <Link to="/register" className="text-[#00a859] hover:text-[#17c66f] font-medium transition-colors">
+            <Link to="/register" className="text-brand hover:text-[#17c66f] font-medium transition-colors">
               Create one
             </Link>
           </p>

@@ -90,7 +90,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
   };
 
   return (
-    <div className="bg-[#0d1117] min-h-screen">
+    <div className="bg-base min-h-screen">
       <CyberMatrixHero onCTAClick={() => {
         const registerForm = document.getElementById('register-form');
         if (registerForm) {
@@ -120,15 +120,15 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
 
       <div id="register-form" className="flex items-center justify-center -mt-[25rem] md:-mt-[35rem] pb-20 relative z-10 px-4">
         <div className="w-full max-w-md">
-          <div className="bg-[#121a2a]/95 border border-[#263248] rounded-2xl shadow-2xl backdrop-blur-xl p-8">
+          <div className="bg-panel/95 border border-edge rounded-2xl shadow-2xl backdrop-blur-xl p-8">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-[#00a859]/20 rounded-full mb-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-brand/20 rounded-full mb-4">
                 <BrandLogo variant="mark" alt="" className="h-8 w-8 object-contain" />
               </div>
-              <h2 className="text-3xl font-bold text-[#f3f6ff] mb-2">
+              <h2 className="text-3xl font-bold text-fg mb-2">
                 Create Account
               </h2>
-              <p className="text-[#9aa5bf] text-sm">
+              <p className="text-muted text-sm">
                 Register to start your CTF journey
               </p>
             </div>
@@ -136,7 +136,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
             {isRegistering ? (
               <div className="flex flex-col items-center justify-center py-12">
                 <Loader />
-                <p className="text-[#9aa5bf] mt-4">Creating your account...</p>
+                <p className="text-muted mt-4">Creating your account...</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -147,10 +147,10 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-[#8390ac] uppercase tracking-wider">Username</label>
+                  <label className="text-xs font-bold text-dim uppercase tracking-wider">Username</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Shield className="h-5 w-5 text-[#6e7a94]" />
+                      <Shield className="h-5 w-5 text-faint" />
                     </div>
                     <Input
                       type="text"
@@ -165,13 +165,13 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-[#8390ac] uppercase tracking-wider">
+                  <label className="text-xs font-bold text-dim uppercase tracking-wider">
                     Full Name
-                    <span className="text-[#6e7a94] text-xs ml-2">({fullName.length}/50)</span>
+                    <span className="text-faint text-xs ml-2">({fullName.length}/50)</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <UserPlus className="h-5 w-5 text-[#6e7a94]" />
+                      <UserPlus className="h-5 w-5 text-faint" />
                     </div>
                     <Input
                       type="text"
@@ -187,10 +187,10 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-[#8390ac] uppercase tracking-wider">University Code</label>
+                  <label className="text-xs font-bold text-dim uppercase tracking-wider">University Code</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <School className="h-5 w-5 text-[#6e7a94]" />
+                      <School className="h-5 w-5 text-faint" />
                     </div>
                     <Input
                       type="text"
@@ -205,10 +205,10 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-[#8390ac] uppercase tracking-wider">Password</label>
+                  <label className="text-xs font-bold text-dim uppercase tracking-wider">Password</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <KeyRound className="h-5 w-5 text-[#6e7a94]" />
+                      <KeyRound className="h-5 w-5 text-faint" />
                     </div>
                     <Input
                       type={showPassword ? 'text' : 'password'}
@@ -222,7 +222,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#6e7a94] hover:text-[#d2d7e3] transition-colors"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-faint hover:text-fg-soft transition-colors"
                     >
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
@@ -230,10 +230,10 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-[#8390ac] uppercase tracking-wider">Confirm Password</label>
+                  <label className="text-xs font-bold text-dim uppercase tracking-wider">Confirm Password</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-[#6e7a94]" />
+                      <Lock className="h-5 w-5 text-faint" />
                     </div>
                     <Input
                       type={showConfirmPassword ? 'text' : 'password'}
@@ -247,7 +247,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-[#6e7a94] hover:text-[#d2d7e3] transition-colors"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-faint hover:text-fg-soft transition-colors"
                     >
                       {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
@@ -269,9 +269,9 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
           </div>
 
           <div className="mt-6 text-center">
-            <p className="text-[#9aa5bf] text-sm">
+            <p className="text-muted text-sm">
               Already have an account?{' '}
-              <Link to="/login" className="text-[#00a859] hover:text-[#17c66f] font-medium transition-colors">
+              <Link to="/login" className="text-brand hover:text-[#17c66f] font-medium transition-colors">
                 Sign in
               </Link>
             </p>

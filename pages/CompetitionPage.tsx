@@ -58,7 +58,7 @@ const CompetitionCard: React.FC<{
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4 }}
-      className="group rounded-xl border border-[#263248] bg-[#121a2a] overflow-hidden hover:border-[#354562] hover:bg-[#182235] transition-all duration-200"
+      className="group rounded-xl border border-edge bg-panel overflow-hidden hover:border-edge-light hover:bg-surface-hover transition-all duration-200"
     >
       {/* Top color strip */}
       <div
@@ -92,10 +92,10 @@ const CompetitionCard: React.FC<{
         </div>
 
         {/* Title */}
-        <h3 className="text-lg font-bold text-[#f3f6ff] mb-3 line-clamp-2">{competition.name}</h3>
+        <h3 className="text-lg font-bold text-fg mb-3 line-clamp-2">{competition.name}</h3>
 
         {/* Stats */}
-        <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-[#8390ac] mb-5">
+        <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-dim mb-5">
           <span className="flex items-center gap-1.5">
             <Target size={12} />
             {competition.challenges?.length || 0} challenges
@@ -115,7 +115,7 @@ const CompetitionCard: React.FC<{
         {ended ? (
           <button
             onClick={() => navigate(`/competition/${competition._id}/leaderboard`)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded border border-[#263248] text-[#9aa5bf] hover:border-[#354562] hover:text-[#d2d7e3] transition-all"
+            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded border border-edge text-muted hover:border-edge-light hover:text-fg-soft transition-all"
           >
             <Trophy size={15} /> View Leaderboard
           </button>
@@ -153,10 +153,10 @@ const AdminCompetitionRow: React.FC<{
   const meta = getStatusMeta(competition.status, ended);
 
   return (
-    <div className="rounded-xl border border-[#263248] bg-[#121a2a] overflow-hidden">
+    <div className="rounded-xl border border-edge bg-panel overflow-hidden">
       {/* Row header */}
       <div
-        className="flex items-center gap-4 p-5 cursor-pointer hover:bg-[#182235] transition-colors"
+        className="flex items-center gap-4 p-5 cursor-pointer hover:bg-surface-hover transition-colors"
         onClick={onToggle}
       >
         <div
@@ -166,8 +166,8 @@ const AdminCompetitionRow: React.FC<{
           <Trophy size={18} style={{ color: meta.color }} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="font-bold text-[#f3f6ff] truncate">{competition.name}</p>
-          <p className="text-xs text-[#8390ac]">
+          <p className="font-bold text-fg truncate">{competition.name}</p>
+          <p className="text-xs text-dim">
             {competition.challenges?.length || 0} challenges ·{' '}
             {ended ? `Ended ${new Date(competition.endTime).toLocaleDateString()}` : getCountdown(competition.endTime, 'ends')}
           </p>
@@ -179,7 +179,7 @@ const AdminCompetitionRow: React.FC<{
           {!ended && competition.status === 'active' && <span className="w-1 h-1 rounded-full bg-current animate-pulse" />}
           {meta.label}
         </span>
-        <div className="text-[#6e7a94] flex-shrink-0">
+        <div className="text-faint flex-shrink-0">
           {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </div>
       </div>
@@ -192,17 +192,17 @@ const AdminCompetitionRow: React.FC<{
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="border-t border-[#263248] bg-[#0e1522] overflow-hidden"
+            className="border-t border-edge bg-inset overflow-hidden"
           >
             <div className="p-5">
-              <h4 className="text-sm font-bold text-[#f3f6ff] uppercase tracking-wider mb-4">Challenges</h4>
+              <h4 className="text-sm font-bold text-fg uppercase tracking-wider mb-4">Challenges</h4>
               {competition.challenges?.length > 0 ? (
                 <div className="space-y-2 mb-5">
                   {competition.challenges.map((challenge: any, i: number) => (
-                    <div key={i} className="flex items-center gap-3 p-3 rounded bg-[#121a2a] border border-[#263248]">
+                    <div key={i} className="flex items-center gap-3 p-3 rounded bg-panel border border-edge">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#d2d7e3] truncate">{challenge.title}</p>
-                        <p className="text-xs text-[#8390ac]">
+                        <p className="text-sm font-medium text-fg-soft truncate">{challenge.title}</p>
+                        <p className="text-xs text-dim">
                           {challenge.category} · {(challenge as any).currentPoints || challenge.points} pts · {challenge.solves} solves
                         </p>
                       </div>
@@ -210,7 +210,7 @@ const AdminCompetitionRow: React.FC<{
                         <button
                           onClick={() => navigate(`/competition/${competition._id}/challenge/${challenge._id}`)}
                           disabled={ended}
-                          className="px-3 py-1.5 text-xs font-semibold rounded border border-[#263248] text-[#9aa5bf] hover:border-[#00a859]/40 hover:text-[#00a859] transition-colors disabled:opacity-40"
+                          className="px-3 py-1.5 text-xs font-semibold rounded border border-edge text-muted hover:border-brand/40 hover:text-brand transition-colors disabled:opacity-40"
                         >
                           {ended ? 'View' : 'Solve'}
                         </button>
@@ -236,21 +236,21 @@ const AdminCompetitionRow: React.FC<{
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-[#6e7a94] mb-4">No challenges added yet</p>
+                <p className="text-sm text-faint mb-4">No challenges added yet</p>
               )}
 
               <div className="flex gap-2">
                 {ended ? (
                   <button
                     onClick={() => navigate(`/competition/${competition._id}/leaderboard`)}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded border border-[#263248] text-[#9aa5bf] hover:border-[#354562] hover:text-[#d2d7e3] transition-all"
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded border border-edge text-muted hover:border-edge-light hover:text-fg-soft transition-all"
                   >
                     <Trophy size={14} /> View Leaderboard
                   </button>
                 ) : (
                   <button
                     onClick={() => navigate(`/competition/${competition._id}`)}
-                    className="flex-1 py-2.5 text-sm font-bold rounded bg-[#00a859] text-white hover:bg-[#007a42] transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 py-2.5 text-sm font-bold rounded bg-brand text-white hover:bg-brand-deep transition-colors flex items-center justify-center gap-2"
                   >
                     <Play size={14} /> Enter Competition
                   </button>
@@ -342,7 +342,7 @@ const CompetitionPage: React.FC = () => {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-4">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-32 bg-[#121a2a] rounded-xl animate-pulse border border-[#263248]" />
+          <div key={i} className="h-32 bg-panel rounded-xl animate-pulse border border-edge" />
         ))}
       </div>
     );
@@ -351,14 +351,14 @@ const CompetitionPage: React.FC = () => {
   // ── Modal ──
   const JoinModal = (
     <Modal isOpen={isJoinModalOpen} onClose={() => setIsJoinModalOpen(false)}>
-      <div className="bg-[#121a2a] border border-[#263248] p-6 rounded-xl max-w-md w-full shadow-2xl">
+      <div className="bg-panel border border-edge p-6 rounded-xl max-w-md w-full shadow-2xl">
         <div className="flex items-center gap-3 mb-5">
-          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[#00a859]/15 border border-[#00a859]/25">
-            <Lock size={18} className="text-[#00a859]" />
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-brand/15 border border-brand/25">
+            <Lock size={18} className="text-brand" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-[#f3f6ff]">Enter Competition</h2>
-            <p className="text-xs text-[#9aa5bf]">Enter the code from your instructor</p>
+            <h2 className="text-lg font-bold text-fg">Enter Competition</h2>
+            <p className="text-xs text-muted">Enter the code from your instructor</p>
           </div>
         </div>
         <form onSubmit={handleEnterCompetition} className="space-y-4">
@@ -370,7 +370,7 @@ const CompetitionPage: React.FC = () => {
             autoFocus
           />
           {message.text && (
-            <div className={`p-3 rounded text-sm ${message.type === 'success' ? 'bg-[#00a859]/10 text-[#00a859] border border-[#00a859]/25' : 'bg-red-500/10 text-red-400 border border-red-500/25'}`}>
+            <div className={`p-3 rounded text-sm ${message.type === 'success' ? 'bg-brand/10 text-brand border border-brand/25' : 'bg-red-500/10 text-red-400 border border-red-500/25'}`}>
               {message.text}
             </div>
           )}
@@ -378,7 +378,7 @@ const CompetitionPage: React.FC = () => {
             <button
               type="submit"
               disabled={enteringCode}
-              className="flex-1 py-2.5 text-sm font-bold rounded bg-[#00a859] text-white hover:bg-[#007a42] transition-colors disabled:opacity-50"
+              className="flex-1 py-2.5 text-sm font-bold rounded bg-brand text-white hover:bg-brand-deep transition-colors disabled:opacity-50"
             >
               {enteringCode ? 'Checking...' : 'Enter'}
             </button>
@@ -386,7 +386,7 @@ const CompetitionPage: React.FC = () => {
               type="button"
               onClick={() => setIsJoinModalOpen(false)}
               disabled={enteringCode}
-              className="px-5 py-2.5 text-sm font-semibold rounded border border-[#263248] text-[#9aa5bf] hover:text-[#d2d7e3] transition-colors"
+              className="px-5 py-2.5 text-sm font-semibold rounded border border-edge text-muted hover:text-fg-soft transition-colors"
             >
               Cancel
             </button>
@@ -402,12 +402,12 @@ const CompetitionPage: React.FC = () => {
       <div className="max-w-5xl mx-auto px-4 py-8 pb-24 md:pb-8 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black text-[#f3f6ff]">Competitions</h1>
-            <p className="text-sm text-[#9aa5bf] mt-1">Manage all competitions</p>
+            <h1 className="text-3xl font-black text-fg">Competitions</h1>
+            <p className="text-sm text-muted mt-1">Manage all competitions</p>
           </div>
           <button
             onClick={openJoinModal}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded bg-[#00a859] text-white hover:bg-[#007a42] transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded bg-brand text-white hover:bg-brand-deep transition-colors"
           >
             <Lock size={15} /> Join with Code
           </button>
@@ -428,10 +428,10 @@ const CompetitionPage: React.FC = () => {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-16 h-16 rounded-full bg-[#1a2332] border border-[#263248] flex items-center justify-center mb-4">
-              <Trophy size={28} className="text-[#6e7a94]" />
+            <div className="w-16 h-16 rounded-full bg-surface border border-edge flex items-center justify-center mb-4">
+              <Trophy size={28} className="text-faint" />
             </div>
-            <p className="text-[#9aa5bf]">No competitions yet</p>
+            <p className="text-muted">No competitions yet</p>
           </div>
         )}
         {JoinModal}
@@ -445,16 +445,16 @@ const CompetitionPage: React.FC = () => {
       {/* Header */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded border border-[#263248] bg-[#0e1522] text-xs text-[#8390ac] mb-3">
-            <Shield size={12} className="text-[#00a859]" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded border border-edge bg-inset text-xs text-dim mb-3">
+            <Shield size={12} className="text-brand" />
             <span>CTF Platform</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-black text-[#f3f6ff]">Competitions</h1>
-          <p className="text-sm text-[#9aa5bf] mt-1">Join live events and compete for the top spot</p>
+          <h1 className="text-3xl md:text-4xl font-black text-fg">Competitions</h1>
+          <p className="text-sm text-muted mt-1">Join live events and compete for the top spot</p>
         </div>
         <button
           onClick={openJoinModal}
-          className="self-start sm:self-auto flex items-center gap-2 px-5 py-3 text-sm font-bold rounded border border-[#9fef00]/40 text-[#9fef00] bg-[#9fef00]/08 hover:bg-[#9fef00]/12 transition-all"
+          className="self-start sm:self-auto flex items-center gap-2 px-5 py-3 text-sm font-bold rounded border border-brand-neon/40 text-brand-neon bg-brand-neon/08 hover:bg-brand-neon/12 transition-all"
         >
           <Lock size={15} /> Join with Code
         </button>
@@ -464,8 +464,8 @@ const CompetitionPage: React.FC = () => {
       {activeComps.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <span className="w-2 h-2 rounded-full bg-[#9fef00] animate-pulse" />
-            <h2 className="text-sm font-bold text-[#f3f6ff] uppercase tracking-wider">Live Now</h2>
+            <span className="w-2 h-2 rounded-full bg-brand-neon animate-pulse" />
+            <h2 className="text-sm font-bold text-fg uppercase tracking-wider">Live Now</h2>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             {activeComps.map((c, i) => (
@@ -479,8 +479,8 @@ const CompetitionPage: React.FC = () => {
       {upcomingComps.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <Calendar size={14} className="text-[#f3a43a]" />
-            <h2 className="text-sm font-bold text-[#f3f6ff] uppercase tracking-wider">Upcoming</h2>
+            <Calendar size={14} className="text-amber" />
+            <h2 className="text-sm font-bold text-fg uppercase tracking-wider">Upcoming</h2>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             {upcomingComps.map((c, i) => (
@@ -494,8 +494,8 @@ const CompetitionPage: React.FC = () => {
       {pastComps.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <Trophy size={14} className="text-[#8390ac]" />
-            <h2 className="text-sm font-bold text-[#f3f6ff] uppercase tracking-wider">Past Competitions</h2>
+            <Trophy size={14} className="text-dim" />
+            <h2 className="text-sm font-bold text-fg uppercase tracking-wider">Past Competitions</h2>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             {pastComps.map((c, i) => (
@@ -508,11 +508,11 @@ const CompetitionPage: React.FC = () => {
       {/* Empty */}
       {competitions.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="w-16 h-16 rounded-full bg-[#1a2332] border border-[#263248] flex items-center justify-center mb-4">
-            <Trophy size={28} className="text-[#6e7a94]" />
+          <div className="w-16 h-16 rounded-full bg-surface border border-edge flex items-center justify-center mb-4">
+            <Trophy size={28} className="text-faint" />
           </div>
-          <p className="text-[#9aa5bf]">No competitions available yet</p>
-          <p className="text-xs text-[#6e7a94] mt-1">Check back soon for upcoming events</p>
+          <p className="text-muted">No competitions available yet</p>
+          <p className="text-xs text-faint mt-1">Check back soon for upcoming events</p>
         </div>
       )}
 

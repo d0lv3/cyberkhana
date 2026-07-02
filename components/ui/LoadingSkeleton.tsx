@@ -11,7 +11,7 @@ const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
   variant = 'text',
   lines = 1,
 }) => {
-  const baseClasses = 'animate-pulse bg-[#1a2332] rounded';
+  const baseClasses = 'animate-pulse bg-surface rounded';
 
   if (variant === 'text') {
     return (
@@ -31,7 +31,7 @@ const LoadingSkeleton: React.FC<LoadingSkeletonProps> = ({
 
   if (variant === 'card') {
     return (
-      <div className={`bg-[#121a2a] border border-[#263248] rounded-xl p-6 ${className}`}>
+      <div className={`bg-panel border border-edge rounded-xl p-6 ${className}`}>
         <div className="space-y-4">
           <div className="flex items-start justify-between">
             <div className="space-y-2">

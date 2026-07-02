@@ -19,7 +19,7 @@ const LandingNavbar = () => {
     <nav
       className={`fixed top-0 w-full z-50 transition-all duration-300 ${
         scrolled
-          ? 'bg-[#0d1117]/90 backdrop-blur-xl border-b border-[#263248]/50'
+          ? 'bg-base/90 backdrop-blur-xl border-b border-edge/50'
           : 'bg-transparent'
       }`}
     >
@@ -35,19 +35,19 @@ const LandingNavbar = () => {
         <div className="flex items-center gap-4">
           <Link
             to="/login"
-            className="text-[#d2d7e3] hover:text-[#00a859] transition-colors font-medium"
+            className="text-fg-soft hover:text-brand transition-colors font-medium"
           >
             {t('nav.login')}
           </Link>
           <button
             onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
-            className="text-xs font-bold px-3 py-1.5 rounded border border-[#263248] text-[#9aa5bf] hover:text-[#9fef00] hover:border-[#9fef00] transition-all"
+            className="text-xs font-bold px-3 py-1.5 rounded border border-edge text-muted hover:text-brand-neon hover:border-brand-neon transition-all"
           >
             {lang === 'en' ? 'AR' : 'EN'}
           </button>
           <Link
             to="/register"
-            className="bg-[#9fef00] text-[#0d1117] font-bold px-5 py-2 rounded-lg hover:bg-[#b8ff3a] transition-all text-sm"
+            className="bg-brand-neon text-base font-bold px-5 py-2 rounded-lg hover:bg-[#b8ff3a] transition-all text-sm"
           >
             {t('nav.getStarted')}
           </Link>

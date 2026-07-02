@@ -84,7 +84,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({ user, onLogout }) =
           {/* User Info */}
           <div className="p-4 border-b border-zinc-800">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00a859] to-[#007a42] flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand to-brand-deep flex items-center justify-center">
                 <span className="text-xl text-white font-bold">
                   {user?.username?.charAt(0).toUpperCase()}
                 </span>
@@ -124,7 +124,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({ user, onLogout }) =
                   className={({ isActive }) =>
                     `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                       isActive
-                        ? 'bg-[#00a859]/20 text-[#00a859] border border-[#00a859]/30'
+                        ? 'bg-brand/20 text-brand border border-brand/30'
                         : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100'
                     }`
                   }
@@ -174,7 +174,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({ user, onLogout }) =
                 className={({ isActive }) =>
                   `flex flex-col items-center justify-center p-2 rounded-lg transition-colors ${
                     isActive
-                      ? 'text-[#00a859]'
+                      ? 'text-brand'
                       : 'text-zinc-400 hover:text-zinc-100'
                   }`
                 }

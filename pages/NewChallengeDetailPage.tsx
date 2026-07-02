@@ -42,23 +42,23 @@ interface Challenge {
 }
 
 const CATEGORY_STYLES: Record<string, { gradient: string; icon: any; color: string; bg: string; bgImage?: string; customIcon?: string }> = {
-  'Web Exploitation': { gradient: 'from-[#60a5fa]/20 to-[#121a2a]', icon: Zap, color: 'text-[#60a5fa]', bg: 'bg-[#60a5fa]/10', bgImage: '/assets/academy/Gemini_Generated_Image_cx4kdzcx4kdzcx4k.jpg', customIcon: '/assets/icons/icon_web.png' },
-  'Reverse Engineering': { gradient: 'from-[#a855f7]/20 to-[#121a2a]', icon: Target, color: 'text-[#a855f7]', bg: 'bg-[#a855f7]/10', bgImage: '/assets/academy/Gemini_Generated_Image_ijgy1cijgy1cijgy.jpg', customIcon: '/assets/icons/icon_reversing.png' },
-  'Cryptography': { gradient: 'from-[#f3a43a]/20 to-[#121a2a]', icon: Star, color: 'text-[#f3a43a]', bg: 'bg-[#f3a43a]/10', bgImage: '/assets/academy/Gemini_Generated_Image_xonlj2xonlj2xonl.jpg', customIcon: '/assets/icons/icon_crypto.png' },
-  'Binary Exploitation': { gradient: 'from-[#f43f5e]/20 to-[#121a2a]', icon: Zap, color: 'text-[#f43f5e]', bg: 'bg-[#f43f5e]/10', bgImage: '/assets/academy/Gemini_Generated_Image_93kgsv93kgsv93kg.jpg', customIcon: '/assets/icons/icon_pwn.png' },
-  'Forensics': { gradient: 'from-[#34d399]/20 to-[#121a2a]', icon: Target, color: 'text-[#34d399]', bg: 'bg-[#34d399]/10', bgImage: '/assets/academy/Gemini_Generated_Image_454bls454bls454b.jpg', customIcon: '/assets/icons/icon_forensics.png' },
-  'Social Engineering': { gradient: 'from-[#818cf8]/20 to-[#121a2a]', icon: Users, color: 'text-[#818cf8]', bg: 'bg-[#818cf8]/10' },
-  'Miscellaneous': { gradient: 'from-gray-900 to-[#121a2a]', icon: Book, color: 'text-[#9aa5bf]', bg: 'bg-[#9aa5bf]/10', bgImage: '/assets/academy/Gemini_Generated_Image_pj2knxpj2knxpj2k.jpg', customIcon: '/assets/icons/icon_all.png' },
-  Competition: { gradient: 'from-[#60a5fa]/20 to-[#121a2a]', icon: Trophy, color: 'text-[#60a5fa]', bg: 'bg-[#60a5fa]/10', bgImage: '/assets/academy/Gemini_Generated_Image_x94uvzx94uvzx94u.jpg', customIcon: '/assets/icons/icon_all.png' },
-  'Competition Challenge': { gradient: 'from-[#00a859]/20 to-[#121a2a]', icon: Trophy, color: 'text-[#00a859]', bg: 'bg-[#00a859]/10', bgImage: '/assets/academy/Gemini_Generated_Image_rwzshhrwzshhrwzs.jpg', customIcon: '/assets/icons/icon_all.png' },
-  Academy: { gradient: 'from-[#00a859]/20 to-[#121a2a]', icon: Book, color: 'text-[#00a859]', bg: 'bg-[#00a859]/10', bgImage: '/assets/academy/Gemini_Generated_Image_se59kdse59kdse59.jpg', customIcon: '/assets/icons/icon_all.png' },
+  'Web Exploitation': { gradient: 'from-info/20 to-panel', icon: Zap, color: 'text-info', bg: 'bg-info/10', bgImage: '/assets/academy/Gemini_Generated_Image_cx4kdzcx4kdzcx4k.jpg', customIcon: '/assets/icons/icon_web.png' },
+  'Reverse Engineering': { gradient: 'from-violet/20 to-panel', icon: Target, color: 'text-violet', bg: 'bg-violet/10', bgImage: '/assets/academy/Gemini_Generated_Image_ijgy1cijgy1cijgy.jpg', customIcon: '/assets/icons/icon_reversing.png' },
+  'Cryptography': { gradient: 'from-amber/20 to-panel', icon: Star, color: 'text-amber', bg: 'bg-amber/10', bgImage: '/assets/academy/Gemini_Generated_Image_xonlj2xonlj2xonl.jpg', customIcon: '/assets/icons/icon_crypto.png' },
+  'Binary Exploitation': { gradient: 'from-danger/20 to-panel', icon: Zap, color: 'text-danger', bg: 'bg-danger/10', bgImage: '/assets/academy/Gemini_Generated_Image_93kgsv93kgsv93kg.jpg', customIcon: '/assets/icons/icon_pwn.png' },
+  'Forensics': { gradient: 'from-mint/20 to-panel', icon: Target, color: 'text-mint', bg: 'bg-mint/10', bgImage: '/assets/academy/Gemini_Generated_Image_454bls454bls454b.jpg', customIcon: '/assets/icons/icon_forensics.png' },
+  'Social Engineering': { gradient: 'from-[#818cf8]/20 to-panel', icon: Users, color: 'text-[#818cf8]', bg: 'bg-[#818cf8]/10' },
+  'Miscellaneous': { gradient: 'from-gray-900 to-panel', icon: Book, color: 'text-muted', bg: 'bg-muted/10', bgImage: '/assets/academy/Gemini_Generated_Image_pj2knxpj2knxpj2k.jpg', customIcon: '/assets/icons/icon_all.png' },
+  Competition: { gradient: 'from-info/20 to-panel', icon: Trophy, color: 'text-info', bg: 'bg-info/10', bgImage: '/assets/academy/Gemini_Generated_Image_x94uvzx94uvzx94u.jpg', customIcon: '/assets/icons/icon_all.png' },
+  'Competition Challenge': { gradient: 'from-brand/20 to-panel', icon: Trophy, color: 'text-brand', bg: 'bg-brand/10', bgImage: '/assets/academy/Gemini_Generated_Image_rwzshhrwzshhrwzs.jpg', customIcon: '/assets/icons/icon_all.png' },
+  Academy: { gradient: 'from-brand/20 to-panel', icon: Book, color: 'text-brand', bg: 'bg-brand/10', bgImage: '/assets/academy/Gemini_Generated_Image_se59kdse59kdse59.jpg', customIcon: '/assets/icons/icon_all.png' },
 };
 
 const DIFFICULTY_STYLES: Record<string, { color: string; bg: string; dot: string }> = {
-  'Very Easy': { color: 'text-[#00a859]', bg: 'bg-[#00a859]/10', dot: 'bg-[#00a859]' },
-  'Easy': { color: 'text-[#34d399]', bg: 'bg-[#34d399]/10', dot: 'bg-[#34d399]' },
-  'Medium': { color: 'text-[#f3a43a]', bg: 'bg-[#f3a43a]/10', dot: 'bg-[#f3a43a]' },
-  'Hard': { color: 'text-[#f43f5e]', bg: 'bg-[#f43f5e]/10', dot: 'bg-[#f43f5e]' },
+  'Very Easy': { color: 'text-brand', bg: 'bg-brand/10', dot: 'bg-brand' },
+  'Easy': { color: 'text-mint', bg: 'bg-mint/10', dot: 'bg-mint' },
+  'Medium': { color: 'text-amber', bg: 'bg-amber/10', dot: 'bg-amber' },
+  'Hard': { color: 'text-danger', bg: 'bg-danger/10', dot: 'bg-danger' },
   'Expert': { color: 'text-[#dc2626]', bg: 'bg-[#dc2626]/10', dot: 'bg-[#dc2626]' },
 };
 
@@ -196,10 +196,10 @@ const NewChallengeDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
+      <div className="min-h-screen bg-base flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-[#00a859]/20 border-t-[#00a859] rounded-full animate-spin" />
-          <p className="text-[#9aa5bf] font-medium animate-pulse uppercase tracking-widest text-xs">Loading Challenge...</p>
+          <div className="w-12 h-12 border-4 border-brand/20 border-t-brand rounded-full animate-spin" />
+          <p className="text-muted font-medium animate-pulse uppercase tracking-widest text-xs">Loading Challenge...</p>
         </div>
       </div>
     );
@@ -207,11 +207,11 @@ const NewChallengeDetailPage: React.FC = () => {
 
   if (!challenge) {
     return (
-      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-4">
-        <Card className="max-w-md p-8 text-center border-[#263248] bg-[#121a2a]">
-          <XCircle className="w-16 h-16 text-[#f43f5e] mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-[#f3f6ff] mb-2">Challenge Missing</h2>
-          <p className="text-[#9aa5bf] mb-6">The challenge you are looking for does not exist or has been removed.</p>
+      <div className="min-h-screen bg-base flex items-center justify-center p-4">
+        <Card className="max-w-md p-8 text-center border-edge bg-panel">
+          <XCircle className="w-16 h-16 text-danger mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-fg mb-2">Challenge Missing</h2>
+          <p className="text-muted mb-6">The challenge you are looking for does not exist or has been removed.</p>
           <Button onClick={() => navigate('/challenges')} className="w-full">
             Return to Challenges
           </Button>
@@ -226,10 +226,10 @@ const NewChallengeDetailPage: React.FC = () => {
   const CategoryIcon = categoryStyle.icon;
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#d2d7e3] pb-24">
+    <div className="min-h-screen bg-base text-fg-soft pb-24">
       {/* Hero Header */}
       <div 
-        className="relative pt-12 pb-24 border-b border-[#263248] min-h-[400px] flex items-center transition-colors duration-500"
+        className="relative pt-12 pb-24 border-b border-edge min-h-[400px] flex items-center transition-colors duration-500"
         style={categoryStyle.bgImage ? {
           backgroundImage: `linear-gradient(to right, rgba(13, 17, 23, 1) 0%, rgba(13, 17, 23, 0.85) 45%, rgba(13, 17, 23, 0.3) 100%), url(${categoryStyle.bgImage})`,
           backgroundSize: 'cover',
@@ -245,9 +245,9 @@ const NewChallengeDetailPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 md:px-8 w-full relative z-10">
           <button
             onClick={() => navigate('/challenges')}
-            className="group flex items-center gap-2 text-[#9aa5bf] hover:text-[#9fef00] mb-8 transition-colors duration-300"
+            className="group flex items-center gap-2 text-muted hover:text-brand-neon mb-8 transition-colors duration-300"
           >
-            <div className="p-2 rounded-lg bg-[#263248]/50 border border-[#263248] group-hover:border-[#9fef00]/50 transition-colors">
+            <div className="p-2 rounded-lg bg-edge/50 border border-edge group-hover:border-brand-neon/50 transition-colors">
               <ArrowLeft className="w-4 h-4" />
             </div>
             <span className="font-semibold tracking-tight uppercase text-sm">Return to Grid</span>
@@ -268,7 +268,7 @@ const NewChallengeDetailPage: React.FC = () => {
                 <span className={`text-sm font-black uppercase tracking-widest ${categoryStyle.color}`}>
                   {challenge.category}
                 </span>
-                <div className="h-4 w-px bg-[#263248] mx-1" />
+                <div className="h-4 w-px bg-edge mx-1" />
                 <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full ${difficultyStyle.bg} border border-current opacity-80`}>
                   <div className={`w-1.5 h-1.5 rounded-full ${difficultyStyle.dot}`} />
                   <span className={`text-[10px] font-black uppercase tracking-wider ${difficultyStyle.color}`}>
@@ -277,17 +277,17 @@ const NewChallengeDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tight text-[#f3f6ff] drop-shadow-lg leading-tight break-words">
+              <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tight text-fg drop-shadow-lg leading-tight break-words">
                 {challenge.title}
               </h1>
 
-              <div className="flex flex-wrap items-center gap-6 text-[#9aa5bf] pt-4">
-                <div className="flex items-center gap-2 bg-[#121a2a]/50 px-3 py-1.5 rounded-full border border-[#263248]">
-                  <User size={14} className="text-[#60a5fa]" />
-                  <span className="text-xs font-bold uppercase tracking-widest">Op By: <span className="text-[#f3f6ff]">{challenge.author}</span></span>
+              <div className="flex flex-wrap items-center gap-6 text-muted pt-4">
+                <div className="flex items-center gap-2 bg-panel/50 px-3 py-1.5 rounded-full border border-edge">
+                  <User size={14} className="text-info" />
+                  <span className="text-xs font-bold uppercase tracking-widest">Op By: <span className="text-fg">{challenge.author}</span></span>
                 </div>
-                <div className="flex items-center gap-2 bg-[#121a2a]/50 px-3 py-1.5 rounded-full border border-[#263248]">
-                  <Clock size={14} className="text-[#f3a43a]" />
+                <div className="flex items-center gap-2 bg-panel/50 px-3 py-1.5 rounded-full border border-edge">
+                  <Clock size={14} className="text-amber" />
                   <span className="text-xs font-bold uppercase tracking-widest">Duration: ~{challenge.estimatedTime || 30}m</span>
                 </div>
               </div>
@@ -295,19 +295,19 @@ const NewChallengeDetailPage: React.FC = () => {
 
             <div className="flex flex-col items-center md:items-end gap-2 shrink-0">
               <div className="relative group">
-                <div className="absolute -inset-4 bg-[#9fef00]/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className="relative bg-[#121a2a]/80 backdrop-blur-xl border border-[#263248] p-6 rounded-3xl flex flex-col items-center min-w-[140px] shadow-2xl">
-                  <span className="text-4xl font-black text-[#9fef00] leading-none drop-shadow-[0_0_10px_rgba(159,239,0,0.3)]">
+                <div className="absolute -inset-4 bg-brand-neon/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative bg-panel/80 backdrop-blur-xl border border-edge p-6 rounded-3xl flex flex-col items-center min-w-[140px] shadow-2xl">
+                  <span className="text-4xl font-black text-brand-neon leading-none drop-shadow-[0_0_10px_rgba(159,239,0,0.3)]">
                     {challenge.currentPoints || challenge.points}
                   </span>
-                  <span className="text-xs font-bold text-[#9aa5bf] uppercase tracking-widest mt-2">Bounty</span>
+                  <span className="text-xs font-bold text-muted uppercase tracking-widest mt-2">Bounty</span>
                 </div>
               </div>
               {solved && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center gap-2 px-4 py-1.5 bg-[#9fef00]/20 text-[#9fef00] border border-[#9fef00]/30 rounded-full text-xs font-black uppercase tracking-widest mt-2"
+                  className="flex items-center gap-2 px-4 py-1.5 bg-brand-neon/20 text-brand-neon border border-brand-neon/30 rounded-full text-xs font-black uppercase tracking-widest mt-2"
                 >
                   <Award size={14} />
                   Pwned
@@ -323,18 +323,18 @@ const NewChallengeDetailPage: React.FC = () => {
           {/* Main Column */}
           <div className="lg:col-span-8 space-y-8">
             {/* Description Section */}
-            <Card className="p-8 bg-[#121a2a]/80 backdrop-blur-md border-[#263248] shadow-2xl overflow-hidden relative group">
+            <Card className="p-8 bg-panel/80 backdrop-blur-md border-edge shadow-2xl overflow-hidden relative group">
               <div className="absolute top-0 right-0 p-8 opacity-5">
                 <Book size={120} className={categoryStyle.color} />
               </div>
 
-              <h2 className="text-xl font-bold text-[#f3f6ff] mb-6 flex items-center gap-3">
-                <div className="w-1.5 h-6 bg-[#9fef00] rounded-full" />
+              <h2 className="text-xl font-bold text-fg mb-6 flex items-center gap-3">
+                <div className="w-1.5 h-6 bg-brand-neon rounded-full" />
                 Description
               </h2>
 
               <div className="relative z-10">
-                <div className="text-[#d2d7e3] text-lg leading-relaxed font-medium whitespace-pre-wrap break-words bg-[#0d1117]/50 p-6 rounded-2xl border border-[#263248]/50">
+                <div className="text-fg-soft text-lg leading-relaxed font-medium whitespace-pre-wrap break-words bg-base/50 p-6 rounded-2xl border border-edge/50">
                   {challenge.description}
                 </div>
               </div>
@@ -344,9 +344,9 @@ const NewChallengeDetailPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Files */}
               {challenge.files && challenge.files.length > 0 && (
-                <Card className="p-6 bg-[#121a2a]/80 border-[#263248]">
-                  <h3 className="text-lg font-bold text-[#f3f6ff] mb-4 flex items-center gap-2">
-                    <Download size={18} className="text-[#9aa5bf]" />
+                <Card className="p-6 bg-panel/80 border-edge">
+                  <h3 className="text-lg font-bold text-fg mb-4 flex items-center gap-2">
+                    <Download size={18} className="text-muted" />
                     Attached Files
                   </h3>
                   <div className="space-y-3">
@@ -356,15 +356,15 @@ const NewChallengeDetailPage: React.FC = () => {
                         href={file.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-between p-4 bg-[#0d1117]/80 rounded-xl border border-[#263248] hover:border-[#9fef00]/30 hover:bg-[#263248]/50 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9fef00] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1117]"
+                        className="flex items-center justify-between p-4 bg-base/80 rounded-xl border border-edge hover:border-brand-neon/30 hover:bg-edge/50 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon focus-visible:ring-offset-2 focus-visible:ring-offset-base"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-[#263248] group-hover:bg-[#9fef00]/20 group-hover:text-[#9fef00]">
+                          <div className="p-2 rounded-lg bg-edge group-hover:bg-brand-neon/20 group-hover:text-brand-neon">
                             <Book size={16} />
                           </div>
-                          <span className="text-sm font-medium text-[#d2d7e3] truncate max-w-[150px]">{file.name}</span>
+                          <span className="text-sm font-medium text-fg-soft truncate max-w-[150px]">{file.name}</span>
                         </div>
-                        <Download size={14} className="text-[#9aa5bf] group-hover:text-[#9fef00]" />
+                        <Download size={14} className="text-muted group-hover:text-brand-neon" />
                       </a>
                     ))}
                   </div>
@@ -373,20 +373,20 @@ const NewChallengeDetailPage: React.FC = () => {
 
               {/* Link */}
               {(challenge as any).challengeLink && (
-                <Card className="p-6 bg-[#121a2a]/80 border-[#263248] flex flex-col h-full">
-                  <h3 className="text-lg font-bold text-[#f3f6ff] mb-4 flex items-center gap-2">
-                    <ExternalLink size={18} className="text-[#9aa5bf]" />
+                <Card className="p-6 bg-panel/80 border-edge flex flex-col h-full">
+                  <h3 className="text-lg font-bold text-fg mb-4 flex items-center gap-2">
+                    <ExternalLink size={18} className="text-muted" />
                     Environment
                   </h3>
                   <a
                     href={(challenge as any).challengeLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-auto block p-5 bg-[#00a859]/10 hover:bg-[#00a859]/20 border border-[#00a859]/20 rounded-2xl transition-all group text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9fef00] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d1117]"
+                    className="mt-auto block p-5 bg-brand/10 hover:bg-brand/20 border border-brand/20 rounded-2xl transition-all group text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon focus-visible:ring-offset-2 focus-visible:ring-offset-base"
                   >
-                    <ExternalLink size={24} className="text-[#9fef00] mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                    <span className="text-[#9fef00] font-bold block">Access Challenge Instance</span>
-                    <span className="text-[10px] text-[#9fef00]/50 truncate block mt-1">{(challenge as any).challengeLink}</span>
+                    <ExternalLink size={24} className="text-brand-neon mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                    <span className="text-brand-neon font-bold block">Access Challenge Instance</span>
+                    <span className="text-[10px] text-brand-neon/50 truncate block mt-1">{(challenge as any).challengeLink}</span>
                   </a>
                 </Card>
               )}
@@ -394,33 +394,33 @@ const NewChallengeDetailPage: React.FC = () => {
 
             {/* Writeup Section */}
             {challenge.writeup?.isUnlocked && (challenge.writeup.content || challenge.writeup.pdfFile) && (
-              <Card className="p-8 bg-[#121a2a]/80 border-[#263248] border-l-4 border-l-[#00a859]">
-                <h2 className="text-xl font-bold text-[#f3f6ff] mb-6 flex items-center gap-3">
-                  <CheckCircle size={20} className="text-[#00a859]" />
+              <Card className="p-8 bg-panel/80 border-edge border-l-4 border-l-brand">
+                <h2 className="text-xl font-bold text-fg mb-6 flex items-center gap-3">
+                  <CheckCircle size={20} className="text-brand" />
                   Writeup
                 </h2>
                 <div className="space-y-6">
                   {challenge.writeup.pdfFile && (
-                    <div className="p-6 bg-[#0d1117]/50 rounded-2xl border border-[#263248] flex items-center justify-between">
+                    <div className="p-6 bg-base/50 rounded-2xl border border-edge flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="p-3 bg-red-500/10 text-red-500 rounded-xl">
                           <Download size={24} />
                         </div>
                         <div>
-                          <p className="text-[#d2d7e3] font-bold">{challenge.writeup.pdfFile.name}</p>
-                          <p className="text-[#9aa5bf] text-xs">PDF Document • {new Date(challenge.writeup.pdfFile.uploadedAt).toLocaleDateString()}</p>
+                          <p className="text-fg-soft font-bold">{challenge.writeup.pdfFile.name}</p>
+                          <p className="text-muted text-xs">PDF Document • {new Date(challenge.writeup.pdfFile.uploadedAt).toLocaleDateString()}</p>
                         </div>
                       </div>
                       <Button
                         onClick={() => window.open(challenge.writeup!.pdfFile!.url, '_blank')}
-                        className="bg-[#263248] hover:bg-[#263248]/80 text-white"
+                        className="bg-edge hover:bg-edge/80 text-white"
                       >
                         Source PDF
                       </Button>
                     </div>
                   )}
                   {challenge.writeup.content && (
-                    <div className="prose prose-invert max-w-none text-[#d2d7e3] leading-relaxed font-normal bg-[#0d1117]/30 p-8 rounded-2xl border border-[#263248]/50 whitespace-pre-wrap">
+                    <div className="prose prose-invert max-w-none text-fg-soft leading-relaxed font-normal bg-base/30 p-8 rounded-2xl border border-edge/50 whitespace-pre-wrap">
                       {challenge.writeup.content}
                     </div>
                   )}
@@ -435,29 +435,29 @@ const NewChallengeDetailPage: React.FC = () => {
           {/* Sidebar */}
           <div className="lg:col-span-4 space-y-8">
             {/* Submission Card */}
-            <Card className={`p-8 transition-all duration-500 ${solved ? 'bg-[#9fef00]/5 border-[#9fef00]/20' : 'bg-[#121a2a] border-[#263248] shadow-2xl shadow-[#9fef00]/5'}`}>
-              <h2 className="text-xl font-bold text-[#f3f6ff] mb-6 flex items-center gap-2">
-                <Target size={20} className={solved ? 'text-[#9fef00]' : 'text-[#9aa5bf]'} />
+            <Card className={`p-8 transition-all duration-500 ${solved ? 'bg-brand-neon/5 border-brand-neon/20' : 'bg-panel border-edge shadow-2xl shadow-brand-neon/5'}`}>
+              <h2 className="text-xl font-bold text-fg mb-6 flex items-center gap-2">
+                <Target size={20} className={solved ? 'text-brand-neon' : 'text-muted'} />
                 Flag Submission
               </h2>
 
               {solved ? (
                 <div className="space-y-6">
-                  <div className="w-20 h-20 mx-auto rounded-full bg-[#9fef00]/20 flex items-center justify-center border-2 border-[#9fef00]/30">
-                    <CheckCircle className="w-10 h-10 text-[#9fef00]" />
+                  <div className="w-20 h-20 mx-auto rounded-full bg-brand-neon/20 flex items-center justify-center border-2 border-brand-neon/30">
+                    <CheckCircle className="w-10 h-10 text-brand-neon" />
                   </div>
                   <div className="text-center">
                     <p className="text-xl font-black text-white mb-1">Solved</p>
-                    <p className="text-[#9aa5bf] text-sm">System integrity verified. Points awarded.</p>
+                    <p className="text-muted text-sm">System integrity verified. Points awarded.</p>
                   </div>
-                  <Button variant="outline" className="w-full border-[#263248]" onClick={() => navigate('/challenges')}>
+                  <Button variant="outline" className="w-full border-edge" onClick={() => navigate('/challenges')}>
                     Back to Terminal
                   </Button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="relative group">
-                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-[#9aa5bf] group-focus-within:text-[#9fef00] transition-colors">
+                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-muted group-focus-within:text-brand-neon transition-colors">
                       <Zap size={18} />
                     </div>
                     <Input
@@ -465,14 +465,14 @@ const NewChallengeDetailPage: React.FC = () => {
                       placeholder="khana{...}"
                       value={flag}
                       onChange={(e) => setFlag(e.target.value)}
-                      className="w-full pl-12 py-4 bg-[#0d1117] border-[#263248] focus:border-[#9fef00]/50 rounded-2xl transition-all"
+                      className="w-full pl-12 py-4 bg-base border-edge focus:border-brand-neon/50 rounded-2xl transition-all"
                     />
                   </div>
 
                   <Button
                     type="submit"
                     disabled={submitting}
-                    className="w-full py-4 bg-[#007a42] hover:bg-[#006737] shadow-lg shadow-[#00a859]/20 h-auto rounded-2xl text-lg font-black"
+                    className="w-full py-4 bg-brand-deep hover:bg-[#006737] shadow-lg shadow-brand/20 h-auto rounded-2xl text-lg font-black"
                   >
                     {submitting ? 'SUBMITTING...' : 'SUBMIT FLAG'}
                   </Button>
@@ -485,7 +485,7 @@ const NewChallengeDetailPage: React.FC = () => {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className={`mt-6 p-4 rounded-xl flex items-center gap-3 ${message.type === 'error' ? 'bg-[#f43f5e]/10 text-[#f43f5e] border border-[#f43f5e]/20' : 'bg-[#9fef00]/10 text-[#9fef00] border border-[#9fef00]/20'
+                    className={`mt-6 p-4 rounded-xl flex items-center gap-3 ${message.type === 'error' ? 'bg-danger/10 text-danger border border-danger/20' : 'bg-brand-neon/10 text-brand-neon border border-brand-neon/20'
                       }`}
                   >
                     {message.type === 'error' ? <XCircle size={18} /> : <CheckCircle size={18} />}
@@ -497,9 +497,9 @@ const NewChallengeDetailPage: React.FC = () => {
 
             {/* Hints Card */}
             {challenge.hints && challenge.hints.length > 0 && (
-              <Card className="p-8 bg-[#121a2a] border-[#263248]">
-                <h2 className="text-xl font-bold text-[#f3f6ff] mb-6 flex items-center gap-2">
-                  <HelpCircle size={20} className="text-[#9aa5bf]" />
+              <Card className="p-8 bg-panel border-edge">
+                <h2 className="text-xl font-bold text-fg mb-6 flex items-center gap-2">
+                  <HelpCircle size={20} className="text-muted" />
                   Hints
                 </h2>
                 <div className="space-y-4">
@@ -512,31 +512,31 @@ const NewChallengeDetailPage: React.FC = () => {
                         <div
                           key={index}
                           className={`p-5 rounded-2xl border transition-all ${isUnlocked
-                            ? 'bg-[#9fef00]/5 border-[#9fef00]/20'
-                            : 'bg-[#0d1117] border-[#263248] hover:border-[#263248]/80'
+                            ? 'bg-brand-neon/5 border-brand-neon/20'
+                            : 'bg-base border-edge hover:border-edge/80'
                             }`}
                         >
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
-                              {isUnlocked ? <HelpCircle size={16} className="text-[#9fef00]" /> : <Lock size={16} className="text-[#9aa5bf]" />}
-                              <span className={`text-xs font-black uppercase tracking-widest ${isUnlocked ? 'text-[#9fef00]' : 'text-[#9aa5bf]'}`}>
+                              {isUnlocked ? <HelpCircle size={16} className="text-brand-neon" /> : <Lock size={16} className="text-muted" />}
+                              <span className={`text-xs font-black uppercase tracking-widest ${isUnlocked ? 'text-brand-neon' : 'text-muted'}`}>
                                 HINT {index + 1}
                               </span>
                             </div>
                             {!isUnlocked && (
-                              <span className="text-xs font-black text-[#f3a43a] tracking-tighter">
+                              <span className="text-xs font-black text-amber tracking-tighter">
                                 COST: {hint.cost} UNIT
                               </span>
                             )}
                           </div>
 
                           {isUnlocked ? (
-                            <p className="text-[#d2d7e3] text-sm italic font-medium leading-relaxed">{hint.text}</p>
+                            <p className="text-fg-soft text-sm italic font-medium leading-relaxed">{hint.text}</p>
                           ) : (
                             <Button
                               onClick={() => handlePurchaseHint(index, hint.cost)}
                               disabled={!currentUser || currentUser.points < hint.cost}
-                              className="w-full bg-[#263248] hover:bg-[#263248]/80 h-9 rounded-xl text-[10px] font-black tracking-widest uppercase"
+                              className="w-full bg-edge hover:bg-edge/80 h-9 rounded-xl text-[10px] font-black tracking-widest uppercase"
                               variant="secondary"
                             >
                               UNLOCK HINT
@@ -550,13 +550,13 @@ const NewChallengeDetailPage: React.FC = () => {
             )}
 
             {/* Solvers Card */}
-            <Card className="p-8 bg-[#121a2a] border-[#263248]">
-              <h2 className="text-xl font-bold text-[#f3f6ff] mb-6 flex items-center justify-between">
+            <Card className="p-8 bg-panel border-edge">
+              <h2 className="text-xl font-bold text-fg mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Users size={20} className="text-[#9aa5bf]" />
+                  <Users size={20} className="text-muted" />
                   High Scores
                 </div>
-                <span className="text-xs font-black text-[#9fef00]">{solvers.length} Solved</span>
+                <span className="text-xs font-black text-brand-neon">{solvers.length} Solved</span>
               </h2>
 
               <div className="space-y-3 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
@@ -565,23 +565,23 @@ const NewChallengeDetailPage: React.FC = () => {
                     <div
                       key={solver.odId || index}
                       className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${solver.isFirstBlood
-                        ? 'bg-[#f3a43a]/10 border border-[#f3a43a]/30'
-                        : 'bg-[#0d1117]/50 border border-[#263248]/50'
+                        ? 'bg-amber/10 border border-amber/30'
+                        : 'bg-base/50 border border-edge/50'
                         }`}
                     >
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${solver.isFirstBlood
-                        ? 'bg-[#f3a43a] text-amber-950'
-                        : 'bg-[#263248] text-[#9aa5bf]'
+                        ? 'bg-amber text-amber-950'
+                        : 'bg-edge text-muted'
                         }`}>
                         {solver.isFirstBlood ? <Crown size={20} /> : <span className="text-xs font-black tracking-tighter">{index + 1}</span>}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`font-black truncate text-sm tracking-tight ${solver.isFirstBlood ? 'text-[#f3a43a]' : 'text-[#d2d7e3]'
+                        <p className={`font-black truncate text-sm tracking-tight ${solver.isFirstBlood ? 'text-amber' : 'text-fg-soft'
                           }`}>
                           {solver.fullName || solver.username}
                         </p>
-                        <p className="text-[10px] text-[#9aa5bf] font-bold uppercase tracking-tighter">
-                          {solver.isFirstBlood && <span className="text-[#f3a43a] mr-2">🩸 ALPHA SOLVE</span>}
+                        <p className="text-[10px] text-muted font-bold uppercase tracking-tighter">
+                          {solver.isFirstBlood && <span className="text-amber mr-2">🩸 ALPHA SOLVE</span>}
                           {new Date(solver.solvedAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -589,11 +589,11 @@ const NewChallengeDetailPage: React.FC = () => {
                   ))
                 ) : (
                   <div className="text-center py-10">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#0d1117] flex items-center justify-center border border-[#263248] opacity-50">
-                      <Target size={24} className="text-[#9aa5bf]" />
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-base flex items-center justify-center border border-edge opacity-50">
+                      <Target size={24} className="text-muted" />
                     </div>
-                    <p className="text-[#9aa5bf] font-bold mb-1">No Solutions Yet</p>
-                    <p className="text-[#6e7a94] text-xs font-medium">Be the first to breach this challenge.</p>
+                    <p className="text-muted font-bold mb-1">No Solutions Yet</p>
+                    <p className="text-faint text-xs font-medium">Be the first to breach this challenge.</p>
                   </div>
                 )}
               </div>
@@ -604,35 +604,35 @@ const NewChallengeDetailPage: React.FC = () => {
 
       {/* Modals */}
       <Modal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} className="max-w-md">
-        <div className="relative p-10 text-center bg-[#0d1117] border border-[#9fef00]/30 rounded-3xl overflow-hidden">
+        <div className="relative p-10 text-center bg-base border border-brand-neon/30 rounded-3xl overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(159,239,0,0.2),transparent)]" />
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-24 h-24 mx-auto mb-8 rounded-full bg-[#9fef00]/20 flex items-center justify-center border-2 border-[#9fef00]/30 shadow-[0_0_50px_rgba(159,239,0,0.3)]">
-            <CheckCircle className="w-14 h-14 text-[#9fef00]" />
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-24 h-24 mx-auto mb-8 rounded-full bg-brand-neon/20 flex items-center justify-center border-2 border-brand-neon/30 shadow-[0_0_50px_rgba(159,239,0,0.3)]">
+            <CheckCircle className="w-14 h-14 text-brand-neon" />
           </motion.div>
-          <h2 className="text-3xl font-black text-[#f3f6ff] mb-4 tracking-tighter uppercase italic">Challenge Solved</h2>
-          <p className="text-[#9aa5bf] font-medium mb-8 leading-relaxed">Excellent work agent. Your credentials have been verified and points have been allocated to your profile.</p>
-          <Button onClick={() => setShowSuccessModal(false)} className="w-full py-4 bg-[#007a42] hover:bg-[#006737] text-[#f3f6ff] font-black rounded-2xl h-auto">
+          <h2 className="text-3xl font-black text-fg mb-4 tracking-tighter uppercase italic">Challenge Solved</h2>
+          <p className="text-muted font-medium mb-8 leading-relaxed">Excellent work agent. Your credentials have been verified and points have been allocated to your profile.</p>
+          <Button onClick={() => setShowSuccessModal(false)} className="w-full py-4 bg-brand-deep hover:bg-[#006737] text-fg font-black rounded-2xl h-auto">
             ACKNOWLEDGE
           </Button>
         </div>
       </Modal>
 
       <Modal isOpen={showHintModal} onClose={() => setShowHintModal(false)} className="max-w-sm">
-        <div className="p-8 bg-[#0d1117] border border-[#263248] rounded-3xl">
-          <h3 className="text-xl font-black text-[#f3f6ff] mb-4 tracking-tight uppercase italic flex items-center gap-2">
-            <Lock className="text-[#f3a43a]" />
+        <div className="p-8 bg-base border border-edge rounded-3xl">
+          <h3 className="text-xl font-black text-fg mb-4 tracking-tight uppercase italic flex items-center gap-2">
+            <Lock className="text-amber" />
             Unlock Hint?
           </h3>
           {selectedHint && (
             <>
-              <p className="text-[#9aa5bf] font-medium mb-8 leading-relaxed text-sm">
-                Unlocking <strong className="text-[#f3f6ff]">Hint {selectedHint.index + 1}</strong> will cost <strong className="text-[#f3a43a]">{selectedHint.cost} Units</strong>. This budget allocation is permanent.
+              <p className="text-muted font-medium mb-8 leading-relaxed text-sm">
+                Unlocking <strong className="text-fg">Hint {selectedHint.index + 1}</strong> will cost <strong className="text-amber">{selectedHint.cost} Units</strong>. This budget allocation is permanent.
               </p>
               <div className="flex gap-4">
-                <Button variant="secondary" onClick={() => setShowHintModal(false)} className="flex-1 bg-[#121a2a] border-[#263248] rounded-xl h-12">
+                <Button variant="secondary" onClick={() => setShowHintModal(false)} className="flex-1 bg-panel border-edge rounded-xl h-12">
                   ABORT
                 </Button>
-                <Button onClick={confirmPurchaseHint} className="flex-1 bg-[#f3a43a] hover:bg-[#f3a43a]/80 text-black font-black rounded-xl h-12">
+                <Button onClick={confirmPurchaseHint} className="flex-1 bg-amber hover:bg-amber/80 text-black font-black rounded-xl h-12">
                   CONFIRM
                 </Button>
               </div>

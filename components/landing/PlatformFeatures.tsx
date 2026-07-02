@@ -43,16 +43,16 @@ const PlatformFeatures = () => {
   const { t, isArabic } = useLang();
 
   return (
-    <section className="py-24 md:py-32 bg-[#0d1117]">
+    <section className="py-24 md:py-32 bg-base">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center">
           <h2
-            className="text-4xl md:text-5xl text-[#f3f6ff] font-extrabold"
+            className="text-4xl md:text-5xl text-fg font-extrabold"
             style={{ fontWeight: 800 }}
           >
             {t('features.heading')}
           </h2>
-          <p className="text-[#9aa5bf] text-lg mt-3">
+          <p className="text-muted text-lg mt-3">
             {t('features.subtitle')}
           </p>
         </div>
@@ -70,7 +70,7 @@ const PlatformFeatures = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.15 }}
-                className="relative overflow-hidden rounded-2xl border border-[#263248] group cursor-pointer transition-all duration-100"
+                className="relative overflow-hidden rounded-2xl border border-edge group cursor-pointer transition-all duration-100"
                 style={{
                   ['--card-color' as string]: feature.color,
                   ['--card-rgb' as string]: hexToRgb(feature.color),
@@ -86,20 +86,20 @@ const PlatformFeatures = () => {
                   loading="lazy"
                   className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-150"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] via-[#0d1117]/80 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-base via-base/80 to-transparent" />
                 <div className="relative z-10 p-8">
                   <div
                     className="w-3 h-3 rounded-full"
                     style={{ backgroundColor: feature.color }}
                   />
                   <h3
-                    className="text-2xl font-bold text-[#f3f6ff] mt-4"
+                    className="text-2xl font-bold text-fg mt-4"
                     style={{ fontWeight: 800 }}
                   >
                     {title}
                   </h3>
                   <p
-                    className="text-[#9aa5bf] mt-2 text-sm leading-relaxed"
+                    className="text-muted mt-2 text-sm leading-relaxed"
                     style={undefined}
                   >
                     {description}

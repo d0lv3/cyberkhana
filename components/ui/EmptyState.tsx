@@ -23,11 +23,11 @@ const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="w-24 h-24 bg-[#1a2332] border border-[#263248] rounded-full flex items-center justify-center mb-6">
-        <Icon size={40} className="text-[#8390ac]" />
+      <div className="w-24 h-24 bg-surface border border-edge rounded-full flex items-center justify-center mb-6">
+        <Icon size={40} className="text-dim" />
       </div>
-      <h3 className="text-2xl font-bold text-[#f3f6ff] mb-2">{title}</h3>
-      <p className="text-[#9aa5bf] max-w-md mb-8">{description}</p>
+      <h3 className="text-2xl font-bold text-fg mb-2">{title}</h3>
+      <p className="text-muted max-w-md mb-8">{description}</p>
       {actionLabel && onAction && (
         <div className="flex gap-3">
           <Button onClick={onAction} size="lg">

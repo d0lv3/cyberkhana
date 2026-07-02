@@ -58,16 +58,16 @@ const MascotGallery = () => {
   const { t } = useLang();
 
   return (
-    <section className="py-24 md:py-32 bg-[#0a0f18]">
+    <section className="py-24 md:py-32 bg-deep">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center">
           <h2
-            className="text-4xl md:text-5xl text-[#f3f6ff] font-extrabold"
+            className="text-4xl md:text-5xl text-fg font-extrabold"
             style={{ fontFamily: "'Montserrat', sans-serif" }}
           >
             {t('mascots.heading')}
           </h2>
-          <p className="text-[#9aa5bf] text-lg mt-3">
+          <p className="text-muted text-lg mt-3">
             {t('mascots.subtitle')}
           </p>
         </div>
@@ -85,7 +85,7 @@ const MascotGallery = () => {
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 whileHover={{ y: -6 }}
-                className="bg-[#121a2a] border border-[#263248] rounded-2xl overflow-hidden group transition-all duration-300"
+                className="bg-panel border border-edge rounded-2xl overflow-hidden group transition-all duration-300"
                 style={{
                   ['--mascot-color' as string]: mascot.color,
                 }}
@@ -106,16 +106,16 @@ const MascotGallery = () => {
                   src={mascot.image}
                   alt={domain}
                   loading="lazy"
-                  className="w-full h-48 md:h-56 object-contain p-4 bg-[#0a0f18]"
+                  className="w-full h-48 md:h-56 object-contain p-4 bg-deep"
                 />
                 <div className="p-5">
                   <h3
-                    className="text-lg font-bold text-[#f3f6ff]"
+                    className="text-lg font-bold text-fg"
                     style={{ fontFamily: "'Montserrat', sans-serif" }}
                   >
                     {domain}
                   </h3>
-                  <p className="text-sm text-[#9aa5bf] mt-1 italic">
+                  <p className="text-sm text-muted mt-1 italic">
                     {tagline}
                   </p>
                 </div>

@@ -46,13 +46,13 @@ const ManagementLayout: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="inline-flex items-center gap-2 rounded-full border border-[#263248] bg-[#121a2a] px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-[#9fef00]">
+      <div className="inline-flex items-center gap-2 rounded-full border border-edge bg-panel px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-brand-neon">
         <ShieldCheck size={12} />
         Management
       </div>
 
       {/* Sub-nav tabs */}
-      <div className="flex gap-1 overflow-x-auto border-b border-[#263248]">
+      <div className="flex gap-1 overflow-x-auto border-b border-edge">
         {tabs.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
@@ -62,8 +62,8 @@ const ManagementLayout: React.FC = () => {
               [
                 'inline-flex items-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 -mb-px transition-colors',
                 isActive
-                  ? 'border-[#00a859] text-[#00a859] bg-[#00a859]/8'
-                  : 'border-transparent text-[#9aa5bf] hover:text-[#d2d7e3] hover:bg-[#182235]',
+                  ? 'border-brand text-brand bg-brand/8'
+                  : 'border-transparent text-muted hover:text-fg-soft hover:bg-surface-hover',
               ].join(' ')
             }
           >

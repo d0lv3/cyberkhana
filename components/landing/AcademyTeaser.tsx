@@ -18,7 +18,7 @@ const AcademyTeaser = () => {
 
 
   return (
-    <section className="py-24 md:py-32 bg-[#0d1117]">
+    <section className="py-24 md:py-32 bg-base">
       <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-12 md:gap-16">
         <motion.div
           className="md:w-1/2"
@@ -33,7 +33,7 @@ const AcademyTeaser = () => {
             className="h-12 w-auto mb-6"
           />
           <h2
-            className="text-3xl md:text-4xl text-[#f3f6ff] font-extrabold"
+            className="text-3xl md:text-4xl text-fg font-extrabold"
             style={{ fontWeight: 800 }}
           >
             {t('academy.heading')}
@@ -49,9 +49,9 @@ const AcademyTeaser = () => {
                 transition={{ duration: 0.4, delay: index * 0.1 }}
                 className="flex items-center gap-3"
               >
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#00a859]/20 flex items-center justify-center">
+                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-brand/20 flex items-center justify-center">
                   <svg
-                    className="w-3.5 h-3.5 text-[#00a859]"
+                    className="w-3.5 h-3.5 text-brand"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -65,7 +65,7 @@ const AcademyTeaser = () => {
                   </svg>
                 </div>
                 <span
-                  className="text-[#f3f6ff] text-sm"
+                  className="text-fg text-sm"
                   style={undefined}
                 >
                   {t(key)}
@@ -75,7 +75,7 @@ const AcademyTeaser = () => {
           </ul>
 
           <p
-            className="text-2xl md:text-3xl font-bold text-[#9fef00] mt-8"
+            className="text-2xl md:text-3xl font-bold text-brand-neon mt-8"
             style={{
               textShadow: '0 0 20px rgba(159,239,0,0.3)',
             }}
@@ -87,7 +87,7 @@ const AcademyTeaser = () => {
             href={ACADEMY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-[#9fef00] px-6 py-3 font-bold text-[#0d1117] transition-all hover:bg-[#b8ff3a]"
+            className="mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-brand-neon px-6 py-3 font-bold text-base transition-all hover:bg-[#b8ff3a]"
           >
             {t('academy.cta')}
             <ExternalLink size={18} />
@@ -106,7 +106,7 @@ const AcademyTeaser = () => {
             src="/assets/landing/story-academy.jpg"
             alt="CyberKhana Academy Preview"
             loading="lazy"
-            className="rounded-2xl shadow-2xl border border-[#263248] w-full"
+            className="rounded-2xl shadow-2xl border border-edge w-full"
           />
         </motion.div>
       </div>

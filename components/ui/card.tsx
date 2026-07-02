@@ -8,7 +8,7 @@ interface CardProps {
 }
 
 const Card: React.FC<CardProps> = ({ children, className, onClick }) => {
-  const baseClasses = 'bg-[#121a2a] border border-[#263248] rounded-lg';
+  const baseClasses = 'bg-panel border border-edge rounded-lg';
 
   return (
     <div

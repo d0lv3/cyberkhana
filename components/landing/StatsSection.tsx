@@ -57,7 +57,7 @@ function CounterCard({ value, suffix, labelKey }: StatItem) {
   return (
     <div ref={ref} className="text-center p-6">
       <div
-        className="text-4xl md:text-5xl font-black text-[#9fef00]"
+        className="text-4xl md:text-5xl font-black text-brand-neon"
         style={{
           textShadow: "0 0 20px rgba(159,239,0,0.3)",
         }}
@@ -65,7 +65,7 @@ function CounterCard({ value, suffix, labelKey }: StatItem) {
         {count}
         {suffix}
       </div>
-      <div className="text-[#9aa5bf] text-sm mt-2 uppercase tracking-wider font-medium">
+      <div className="text-muted text-sm mt-2 uppercase tracking-wider font-medium">
         {t(labelKey)}
       </div>
     </div>
@@ -76,14 +76,14 @@ export default function StatsSection() {
   const { t } = useLang();
 
   return (
-    <section className="py-24 md:py-32 bg-[#0a0f18] relative overflow-hidden">
+    <section className="py-24 md:py-32 bg-deep relative overflow-hidden">
       <img
         src="/assets/landing/stats-iraq-map.jpg"
         alt=""
         loading="lazy"
         className="absolute inset-0 w-full h-full object-cover opacity-20"
       />
-      <div className="absolute inset-0 bg-[#0d1117]/80" />
+      <div className="absolute inset-0 bg-base/80" />
 
       <div className="relative z-10 max-w-5xl mx-auto px-6">
         <motion.h2
@@ -91,7 +91,7 @@ export default function StatsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-3xl md:text-4xl text-[#f3f6ff] text-center"
+          className="text-3xl md:text-4xl text-fg text-center"
           style={{
             fontWeight: 800,
           }}

@@ -33,10 +33,10 @@ const itemVariants = {
 };
 
 const rankIcon = (rank: number) => {
-  if (rank === 1) return <Crown className="w-5 h-5 text-[#9fef00]" />;
+  if (rank === 1) return <Crown className="w-5 h-5 text-brand-neon" />;
   if (rank === 2) return <Medal className="w-5 h-5 text-[#cbd5e1]" />;
   if (rank === 3) return <Medal className="w-5 h-5 text-[#d6a55a]" />;
-  return <span className="text-sm font-black text-[#9aa5bf]">{rank}</span>;
+  return <span className="text-sm font-black text-muted">{rank}</span>;
 };
 
 const CompetitionMonitoringPage: React.FC = () => {
@@ -218,15 +218,15 @@ const CompetitionMonitoringPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#111622] flex flex-col items-center justify-center">
-        <div className="animate-spin w-12 h-12 border-4 border-[#33405c] border-t-[#9fef00] rounded-full mb-4"></div>
-        <p className="text-[#9aa5bf] font-mono tracking-widest text-sm">Loading dashboard...</p>
+      <div className="min-h-screen bg-base-alt flex flex-col items-center justify-center">
+        <div className="animate-spin w-12 h-12 border-4 border-[#33405c] border-t-brand-neon rounded-full mb-4"></div>
+        <p className="text-muted font-mono tracking-widest text-sm">Loading dashboard...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#111622] text-[#d2d7e3] font-sans selection:bg-[#9fef00]/30 selection:text-[#9fef00] overflow-x-hidden">
+    <div className="min-h-screen bg-base-alt text-fg-soft font-sans selection:bg-brand-neon/30 selection:text-brand-neon overflow-x-hidden">
       <div className="container mx-auto px-4 py-8">
         
         {/* Top Header */}
@@ -235,41 +235,41 @@ const CompetitionMonitoringPage: React.FC = () => {
             <Button
               variant="ghost"
               onClick={() => navigate('/admin/competitions')}
-              className="group text-[#9aa5bf] hover:text-[#f3f6ff] hover:bg-[#1a2332] pl-0 mb-4 transition-all duration-300"
+              className="group text-muted hover:text-fg hover:bg-surface pl-0 mb-4 transition-all duration-300"
               leftIcon={<ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />}
             >
               Back
             </Button>
 
             <div className="flex items-center gap-3 mb-2">
-              <div className="inline-flex items-center rounded border border-[#2a3346] bg-[#1a2332] px-3 py-1 text-xs font-mono text-[#9fef00]">
+              <div className="inline-flex items-center rounded border border-edge-soft bg-surface px-3 py-1 text-xs font-mono text-brand-neon">
                 MONITORING DASHBOARD
               </div>
               <div className={`flex items-center gap-2 px-3 py-1 border rounded-[4px] text-xs font-mono font-bold transition-all duration-300 ${
-                isLive ? 'border-[#9fef00]/50 bg-[#9fef00]/10 text-[#9fef00]' : 'border-[#f3a43a]/50 bg-[#f3a43a]/10 text-[#f3a43a]'
+                isLive ? 'border-brand-neon/50 bg-brand-neon/10 text-brand-neon' : 'border-amber/50 bg-amber/10 text-amber'
               }`}>
-                <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-[#9fef00] animate-pulse' : 'bg-[#f3a43a]'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-brand-neon animate-pulse' : 'bg-amber'}`}></div>
                 {isLive ? 'LIVE' : 'PAUSED'}
               </div>
-              {refreshing && <RefreshCw className="w-4 h-4 text-[#9fef00] animate-spin" />}
+              {refreshing && <RefreshCw className="w-4 h-4 text-brand-neon animate-spin" />}
             </div>
             
-            <h1 className="text-4xl md:text-5xl font-black text-[#f3f6ff] tracking-tight uppercase">
+            <h1 className="text-4xl md:text-5xl font-black text-fg tracking-tight uppercase">
               {competition?.name}
             </h1>
-            <p className="text-[#8390ac] mt-2 font-mono flex items-center gap-2 text-sm">
+            <p className="text-dim mt-2 font-mono flex items-center gap-2 text-sm">
               <Clock className="w-4 h-4" /> Ends: {competition?.endTime ? new Date(competition.endTime).toLocaleString() : 'No time limit'}
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="text-xs text-[#6e7a94] font-mono mr-4">
-              Last updated: <span className="text-[#9aa5bf]">{formatTimeAgo(lastUpdate)}</span>
+            <div className="text-xs text-faint font-mono mr-4">
+              Last updated: <span className="text-muted">{formatTimeAgo(lastUpdate)}</span>
             </div>
             <Button
               variant="outline"
               onClick={() => setIsLive(!isLive)}
-              className={`border-[#2a3346] bg-[#1a2332] hover:bg-[#1f2a40] ${isLive ? 'text-[#f3a43a]' : 'text-[#9fef00]'}`}
+              className={`border-edge-soft bg-surface hover:bg-[#1f2a40] ${isLive ? 'text-amber' : 'text-brand-neon'}`}
             >
               {isLive ? 'Pause' : 'Resume'}
             </Button>
@@ -277,7 +277,7 @@ const CompetitionMonitoringPage: React.FC = () => {
               variant="default"
               onClick={() => fetchCompetitionData(true)}
               disabled={refreshing}
-              className="bg-[#9fef00] text-[#111622] hover:bg-[#b0f52b] font-black"
+              className="bg-brand-neon text-base-alt hover:bg-[#b0f52b] font-black"
               leftIcon={<RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />}
             >
               Refresh
@@ -287,54 +287,54 @@ const CompetitionMonitoringPage: React.FC = () => {
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-[#182130] border border-[#2a3346] p-5 rounded-xl">
+          <div className="bg-surface-alt border border-edge-soft p-5 rounded-xl">
             <div className="flex items-center gap-2 mb-2">
-              <Target className="w-5 h-5 text-[#00a859]" />
-              <span className="text-xs text-[#8390ac]">Challenges Solved</span>
+              <Target className="w-5 h-5 text-brand" />
+              <span className="text-xs text-dim">Challenges Solved</span>
             </div>
-            <p className="text-2xl font-black text-[#f3f6ff]">
+            <p className="text-2xl font-black text-fg">
               {competition?.challenges.filter((c: any) => (c.solves || 0) > 0).length}
-              <span className="text-sm text-[#6e7a94] font-normal ml-1">/ {competition?.challenges.length || 0}</span>
+              <span className="text-sm text-faint font-normal ml-1">/ {competition?.challenges.length || 0}</span>
             </p>
           </div>
-          <div className="bg-[#182130] border border-[#2a3346] p-5 rounded-xl">
+          <div className="bg-surface-alt border border-edge-soft p-5 rounded-xl">
             <div className="flex items-center gap-2 mb-2">
-              <Users className="w-5 h-5 text-[#60a5fa]" />
-              <span className="text-xs text-[#8390ac]">Participants</span>
+              <Users className="w-5 h-5 text-info" />
+              <span className="text-xs text-dim">Participants</span>
             </div>
-            <p className="text-2xl font-black text-[#f3f6ff]">
+            <p className="text-2xl font-black text-fg">
               {stats.activeParticipants}
-              <span className="text-sm text-[#6e7a94] font-normal ml-1">/ {stats.totalParticipants}</span>
+              <span className="text-sm text-faint font-normal ml-1">/ {stats.totalParticipants}</span>
             </p>
           </div>
-          <div className="bg-[#182130] border border-[#2a3346] p-5 rounded-xl">
+          <div className="bg-surface-alt border border-edge-soft p-5 rounded-xl">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-5 h-5 text-[#f3a43a]" />
-              <span className="text-xs text-[#8390ac]">Completion Rate</span>
+              <TrendingUp className="w-5 h-5 text-amber" />
+              <span className="text-xs text-dim">Completion Rate</span>
             </div>
-            <p className="text-2xl font-black text-[#f3f6ff]">{stats.challengeCompletionRate}%</p>
+            <p className="text-2xl font-black text-fg">{stats.challengeCompletionRate}%</p>
           </div>
-          <div className="bg-[#182130] border border-[#2a3346] p-5 rounded-xl">
+          <div className="bg-surface-alt border border-edge-soft p-5 rounded-xl">
             <div className="flex items-center gap-2 mb-2">
               <Activity className="w-5 h-5 text-[#6f56d9]" />
-              <span className="text-xs text-[#8390ac]">Total Solves</span>
+              <span className="text-xs text-dim">Total Solves</span>
             </div>
-            <p className="text-2xl font-black text-[#f3f6ff]">
+            <p className="text-2xl font-black text-fg">
               {competition?.challenges.reduce((sum, c) => sum + (c.solves || 0), 0) || 0}
             </p>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 mb-6 border-b border-[#263248]">
+        <div className="flex gap-1 mb-6 border-b border-edge">
           {(['leaderboard', 'students', 'activity'] as const).map(tab => (
             <button
               key={tab}
               onClick={() => { setActiveTab(tab); setCurrentPage(1); }}
               className={`px-5 py-3 text-sm font-bold capitalize transition-colors border-b-2 -mb-px ${
                 activeTab === tab
-                  ? 'border-[#00a859] text-[#00a859]'
-                  : 'border-transparent text-[#8390ac] hover:text-[#d2d7e3]'
+                  ? 'border-brand text-brand'
+                  : 'border-transparent text-dim hover:text-fg-soft'
               }`}
             >
               {tab === 'leaderboard' ? 'Leaderboard' : tab === 'students' ? 'Student Progress' : 'Live Activity'}
@@ -349,28 +349,28 @@ const CompetitionMonitoringPage: React.FC = () => {
             {activeTab === 'leaderboard' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-                  <h2 className="text-xl font-bold text-[#f3f6ff] flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-[#f3a43a]" /> Rankings
+                  <h2 className="text-xl font-bold text-fg flex items-center gap-2">
+                    <Trophy className="w-5 h-5 text-amber" /> Rankings
                   </h2>
                   <div className="relative w-full md:w-64">
-                    <Search className="w-4 h-4 text-[#8390ac] absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Search className="w-4 h-4 text-dim absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       value={searchTerm}
                       onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                       placeholder="Search participants..."
-                      className="w-full bg-[#182130] border border-[#2a3346] rounded px-9 py-2 text-sm text-[#e2e8f6] placeholder:text-[#6e7a94] focus:outline-none focus:border-[#00a859]"
+                      className="w-full bg-surface-alt border border-edge-soft rounded px-9 py-2 text-sm text-[#e2e8f6] placeholder:text-faint focus:outline-none focus:border-brand"
                     />
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-[#263248] bg-[#182130] overflow-x-auto">
+                <div className="rounded-xl border border-edge bg-surface-alt overflow-x-auto">
                   <table className="w-full min-w-[600px] text-sm">
-                    <thead className="border-b border-[#263248] bg-[#151c29]">
+                    <thead className="border-b border-edge bg-[#151c29]">
                       <tr>
-                        <th className="text-left px-5 py-3 text-xs text-[#8390ac]">Rank</th>
-                        <th className="text-left px-5 py-3 text-xs text-[#8390ac]">Participant</th>
-                        <th className="text-left px-5 py-3 text-xs text-[#8390ac]">Score</th>
-                        <th className="text-left px-5 py-3 text-xs text-[#8390ac]">Challenges Solved</th>
+                        <th className="text-left px-5 py-3 text-xs text-dim">Rank</th>
+                        <th className="text-left px-5 py-3 text-xs text-dim">Participant</th>
+                        <th className="text-left px-5 py-3 text-xs text-dim">Score</th>
+                        <th className="text-left px-5 py-3 text-xs text-dim">Challenges Solved</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -380,51 +380,51 @@ const CompetitionMonitoringPage: React.FC = () => {
                           <tr
                             key={user._id}
                             onClick={() => handleViewUser(user)}
-                            className="border-b border-[#2a3346]/50 hover:bg-[#1f2a40] transition-colors cursor-pointer group"
+                            className="border-b border-edge-soft/50 hover:bg-[#1f2a40] transition-colors cursor-pointer group"
                           >
                             <td className="px-5 py-4">
-                              <div className="text-[#f3f6ff] font-black w-8">
-                                {globalRank <= 3 ? rankIcon(globalRank) : <span className="text-[#8390ac]">#{globalRank}</span>}
+                              <div className="text-fg font-black w-8">
+                                {globalRank <= 3 ? rankIcon(globalRank) : <span className="text-dim">#{globalRank}</span>}
                               </div>
                             </td>
                             <td className="px-5 py-4">
                               <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded border border-[#263248] bg-[#1a2332] flex items-center justify-center text-xs font-black text-[#f3f6ff]">
+                                <div className="w-8 h-8 rounded border border-edge bg-surface flex items-center justify-center text-xs font-black text-fg">
                                   {user.username?.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
-                                  <p className="font-bold text-[#e5ecfb] group-hover:text-[#00a859] transition-colors">{user.username}</p>
+                                  <p className="font-bold text-[#e5ecfb] group-hover:text-brand transition-colors">{user.username}</p>
                                   {isSharedCompetition && (user.universityName || user.universityCode) && (
                                     <p className="mt-1">
-                                      <span className="inline-flex items-center rounded-full border border-[#33405c] bg-[#111622] px-2 py-0.5 text-[10px] font-semibold text-[#9aa5bf]">
+                                      <span className="inline-flex items-center rounded-full border border-[#33405c] bg-base-alt px-2 py-0.5 text-[10px] font-semibold text-muted">
                                         {user.universityName || user.universityCode}
                                       </span>
                                     </p>
                                   )}
-                                  {user.fullName && user.fullName !== user.username && <p className="text-[11px] text-[#6e7a94]">{user.fullName}</p>}
+                                  {user.fullName && user.fullName !== user.username && <p className="text-[11px] text-faint">{user.fullName}</p>}
                                 </div>
                               </div>
                             </td>
-                            <td className="px-5 py-4 text-[#f3a43a] font-bold text-base">{user.points}</td>
+                            <td className="px-5 py-4 text-amber font-bold text-base">{user.points}</td>
                             <td className="px-5 py-4 text-[#dce5f9]">
-                              {user.solvedChallenges} <span className="text-[#6e7a94] text-xs">/ {competition?.challenges.length}</span>
+                              {user.solvedChallenges} <span className="text-faint text-xs">/ {competition?.challenges.length}</span>
                             </td>
                           </tr>
                         );
                       })}
                       {paginatedLeaderboard.length === 0 && (
-                        <tr><td colSpan={4} className="px-5 py-8 text-center text-[#6e7a94]">No participants found</td></tr>
+                        <tr><td colSpan={4} className="px-5 py-8 text-center text-faint">No participants found</td></tr>
                       )}
                     </tbody>
                   </table>
                   {totalPages > 1 && (
                     <div className="p-4 flex justify-between items-center bg-[#151c29]">
-                      <span className="text-xs text-[#8390ac]">Page {currentPage} / {totalPages}</span>
+                      <span className="text-xs text-dim">Page {currentPage} / {totalPages}</span>
                       <div className="flex gap-2">
-                        <Button variant="outline" className="border-[#2a3346] text-[#9aa5bf] h-8 w-8 p-0 bg-[#111622] hover:bg-[#1a2332]" disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)}>
+                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-base-alt hover:bg-surface" disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)}>
                           <ChevronLeft className="w-4 h-4"/>
                         </Button>
-                        <Button variant="outline" className="border-[#2a3346] text-[#9aa5bf] h-8 w-8 p-0 bg-[#111622] hover:bg-[#1a2332]" disabled={currentPage === totalPages} onClick={() => setCurrentPage(c => c + 1)}>
+                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-base-alt hover:bg-surface" disabled={currentPage === totalPages} onClick={() => setCurrentPage(c => c + 1)}>
                           <ChevronRight className="w-4 h-4"/>
                         </Button>
                       </div>
@@ -438,21 +438,21 @@ const CompetitionMonitoringPage: React.FC = () => {
             {activeTab === 'students' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-                  <h2 className="text-xl font-bold text-[#f3f6ff] flex items-center gap-2">
-                    <Users className="w-5 h-5 text-[#60a5fa]" /> Student Progress
+                  <h2 className="text-xl font-bold text-fg flex items-center gap-2">
+                    <Users className="w-5 h-5 text-info" /> Student Progress
                   </h2>
                   <div className="relative w-full md:w-64">
-                    <Search className="w-4 h-4 text-[#8390ac] absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Search className="w-4 h-4 text-dim absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       value={searchTerm}
                       onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                       placeholder="Search students..."
-                      className="w-full bg-[#182130] border border-[#2a3346] rounded px-9 py-2 text-sm text-[#e2e8f6] placeholder:text-[#6e7a94] focus:outline-none focus:border-[#60a5fa]"
+                      className="w-full bg-surface-alt border border-edge-soft rounded px-9 py-2 text-sm text-[#e2e8f6] placeholder:text-faint focus:outline-none focus:border-info"
                     />
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-[#263248] bg-[#182130] overflow-hidden">
+                <div className="rounded-xl border border-edge bg-surface-alt overflow-hidden">
                   {paginatedLeaderboard.map((user, index) => {
                     const globalRank = (currentPage - 1) * itemsPerPage + index + 1;
                     const isExpanded = expandedStudent === user._id;
@@ -466,44 +466,44 @@ const CompetitionMonitoringPage: React.FC = () => {
                       : 'Never';
 
                     return (
-                      <div key={user._id} className="border-b border-[#2a3346]/50 last:border-b-0">
+                      <div key={user._id} className="border-b border-edge-soft/50 last:border-b-0">
                         <div
                           onClick={() => setExpandedStudent(isExpanded ? null : user._id)}
                           className="flex items-center gap-4 p-4 hover:bg-[#1f2a40] cursor-pointer transition-colors"
                         >
-                          <div className="w-8 text-center font-black text-[#8390ac]">
+                          <div className="w-8 text-center font-black text-dim">
                             {globalRank <= 3 ? rankIcon(globalRank) : <span>#{globalRank}</span>}
                           </div>
-                          <div className="w-8 h-8 rounded-full bg-[#0e1522] border border-[#263248] flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-black text-[#00a859]">{user.username?.charAt(0).toUpperCase()}</span>
+                          <div className="w-8 h-8 rounded-full bg-inset border border-edge flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-black text-brand">{user.username?.charAt(0).toUpperCase()}</span>
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-[#e5ecfb] truncate">{user.username}</p>
                             {isSharedCompetition && (user.universityName || user.universityCode) && (
                               <p className="mt-1">
-                                <span className="inline-flex items-center rounded-full border border-[#33405c] bg-[#111622] px-2 py-0.5 text-[10px] font-semibold text-[#9aa5bf]">
+                                <span className="inline-flex items-center rounded-full border border-[#33405c] bg-base-alt px-2 py-0.5 text-[10px] font-semibold text-muted">
                                   {user.universityName || user.universityCode}
                                 </span>
                               </p>
                             )}
-                            {user.fullName && user.fullName !== user.username && <p className="text-[11px] text-[#6e7a94]">{user.fullName}</p>}
+                            {user.fullName && user.fullName !== user.username && <p className="text-[11px] text-faint">{user.fullName}</p>}
                           </div>
                           <div className="hidden sm:flex items-center gap-6 text-sm">
                             <div className="text-right">
-                              <p className="font-bold text-[#f3a43a]">{user.points} pts</p>
+                              <p className="font-bold text-amber">{user.points} pts</p>
                             </div>
                             <div className="w-32">
                               <div className="flex justify-between text-xs mb-1">
-                                <span className="text-[#8390ac]">{user.solvedChallenges || 0}/{totalChallenges}</span>
-                                <span className="text-[#00a859]">{progressPct}%</span>
+                                <span className="text-dim">{user.solvedChallenges || 0}/{totalChallenges}</span>
+                                <span className="text-brand">{progressPct}%</span>
                               </div>
-                              <div className="h-1.5 bg-[#111622] rounded-full border border-[#263248] overflow-hidden">
-                                <div className="h-full bg-[#00a859] rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+                              <div className="h-1.5 bg-base-alt rounded-full border border-edge overflow-hidden">
+                                <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${progressPct}%` }} />
                               </div>
                             </div>
-                            <div className="text-xs text-[#6e7a94] w-20 text-right">{lastActive}</div>
+                            <div className="text-xs text-faint w-20 text-right">{lastActive}</div>
                           </div>
-                          <ChevronRight className={`w-4 h-4 text-[#6e7a94] transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+                          <ChevronRight className={`w-4 h-4 text-faint transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
                         </div>
 
                         {/* Expanded: per-student solve history */}
@@ -513,52 +513,52 @@ const CompetitionMonitoringPage: React.FC = () => {
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
-                              className="overflow-hidden bg-[#111622]"
+                              className="overflow-hidden bg-base-alt"
                             >
-                              <div className="p-4 border-t border-[#263248]">
+                              <div className="p-4 border-t border-edge">
                                 {/* Summary row */}
                                 <div className="grid grid-cols-3 gap-4 mb-4">
-                                  <div className="bg-[#182130] border border-[#2a3346] rounded-lg p-3 text-center">
-                                    <p className="text-xl font-black text-[#f3a43a]">{user.points}</p>
-                                    <p className="text-[10px] text-[#8390ac]">Score</p>
+                                  <div className="bg-surface-alt border border-edge-soft rounded-lg p-3 text-center">
+                                    <p className="text-xl font-black text-amber">{user.points}</p>
+                                    <p className="text-[10px] text-dim">Score</p>
                                   </div>
-                                  <div className="bg-[#182130] border border-[#2a3346] rounded-lg p-3 text-center">
-                                    <p className="text-xl font-black text-[#00a859]">{user.solvedChallenges || 0}</p>
-                                    <p className="text-[10px] text-[#8390ac]">Solved</p>
+                                  <div className="bg-surface-alt border border-edge-soft rounded-lg p-3 text-center">
+                                    <p className="text-xl font-black text-brand">{user.solvedChallenges || 0}</p>
+                                    <p className="text-[10px] text-dim">Solved</p>
                                   </div>
-                                  <div className="bg-[#182130] border border-[#2a3346] rounded-lg p-3 text-center">
-                                    <p className="text-xl font-black text-[#60a5fa]">#{globalRank}</p>
-                                    <p className="text-[10px] text-[#8390ac]">Rank</p>
+                                  <div className="bg-surface-alt border border-edge-soft rounded-lg p-3 text-center">
+                                    <p className="text-xl font-black text-info">#{globalRank}</p>
+                                    <p className="text-[10px] text-dim">Rank</p>
                                   </div>
                                 </div>
 
                                 {/* Solve history */}
-                                <p className="text-xs text-[#8390ac] mb-2">Solve History</p>
+                                <p className="text-xs text-dim mb-2">Solve History</p>
                                 {studentActivities.length > 0 ? (
                                   <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
                                     {studentActivities.map((act: any, i: number) => (
-                                      <div key={i} className="flex items-center justify-between p-2.5 rounded bg-[#182130] border border-[#2a3346] text-sm">
+                                      <div key={i} className="flex items-center justify-between p-2.5 rounded bg-surface-alt border border-edge-soft text-sm">
                                         <div className="flex items-center gap-2">
-                                          <CheckCircle2 className="w-4 h-4 text-[#00a859] flex-shrink-0" />
+                                          <CheckCircle2 className="w-4 h-4 text-brand flex-shrink-0" />
                                           <span className="text-[#e5ecfb] font-medium">{act.challengeTitle}</span>
-                                          <span className="text-[10px] text-[#6e7a94] bg-[#111622] px-1.5 py-0.5 rounded border border-[#263248]">{act.category}</span>
+                                          <span className="text-[10px] text-faint bg-base-alt px-1.5 py-0.5 rounded border border-edge">{act.category}</span>
                                         </div>
                                         <div className="flex items-center gap-3 flex-shrink-0">
-                                          <span className="text-[#00a859] font-bold text-xs">+{act.points} pts</span>
-                                          <span className="text-[10px] text-[#6e7a94]">{formatTimeAgo(new Date(act.solvedAt || act.timestamp))}</span>
+                                          <span className="text-brand font-bold text-xs">+{act.points} pts</span>
+                                          <span className="text-[10px] text-faint">{formatTimeAgo(new Date(act.solvedAt || act.timestamp))}</span>
                                         </div>
                                       </div>
                                     ))}
                                   </div>
                                 ) : (
-                                  <p className="text-sm text-[#6e7a94] py-4 text-center">No solves recorded yet</p>
+                                  <p className="text-sm text-faint py-4 text-center">No solves recorded yet</p>
                                 )}
 
                                 <div className="mt-3 flex justify-end">
                                   <Button
                                     variant="outline"
                                     onClick={() => navigate(`/profile/${user._id}`)}
-                                    className="border-[#2a3346] text-[#9aa5bf] hover:text-[#f3f6ff] hover:bg-[#1a2332] text-xs"
+                                    className="border-edge-soft text-muted hover:text-fg hover:bg-surface text-xs"
                                   >
                                     View Full Profile
                                   </Button>
@@ -571,16 +571,16 @@ const CompetitionMonitoringPage: React.FC = () => {
                     );
                   })}
                   {paginatedLeaderboard.length === 0 && (
-                    <div className="p-8 text-center text-[#6e7a94]">No students found</div>
+                    <div className="p-8 text-center text-faint">No students found</div>
                   )}
                   {totalPages > 1 && (
-                    <div className="p-4 flex justify-between items-center bg-[#151c29] border-t border-[#263248]">
-                      <span className="text-xs text-[#8390ac]">Page {currentPage} / {totalPages}</span>
+                    <div className="p-4 flex justify-between items-center bg-[#151c29] border-t border-edge">
+                      <span className="text-xs text-dim">Page {currentPage} / {totalPages}</span>
                       <div className="flex gap-2">
-                        <Button variant="outline" className="border-[#2a3346] text-[#9aa5bf] h-8 w-8 p-0 bg-[#111622] hover:bg-[#1a2332]" disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)}>
+                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-base-alt hover:bg-surface" disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)}>
                           <ChevronLeft className="w-4 h-4"/>
                         </Button>
-                        <Button variant="outline" className="border-[#2a3346] text-[#9aa5bf] h-8 w-8 p-0 bg-[#111622] hover:bg-[#1a2332]" disabled={currentPage === totalPages} onClick={() => setCurrentPage(c => c + 1)}>
+                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-base-alt hover:bg-surface" disabled={currentPage === totalPages} onClick={() => setCurrentPage(c => c + 1)}>
                           <ChevronRight className="w-4 h-4"/>
                         </Button>
                       </div>
@@ -593,41 +593,41 @@ const CompetitionMonitoringPage: React.FC = () => {
             {/* Live Activity Tab */}
             {activeTab === 'activity' && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <h2 className="text-xl font-bold text-[#f3f6ff] flex items-center gap-2 mb-4">
-                  <Activity className="w-5 h-5 text-[#9fef00]" /> Live Activity
+                <h2 className="text-xl font-bold text-fg flex items-center gap-2 mb-4">
+                  <Activity className="w-5 h-5 text-brand-neon" /> Live Activity
                 </h2>
-                <div className="rounded-xl border border-[#263248] bg-[#182130] overflow-hidden">
+                <div className="rounded-xl border border-edge bg-surface-alt overflow-hidden">
                   <div className="max-h-[600px] overflow-y-auto p-4 space-y-3 custom-scrollbar">
                     {activities.length > 0 ? activities.slice(0, 30).map((activity, index) => {
                       const timeAgo = formatTimeAgo(new Date(activity.solvedAt || activity.timestamp));
                       return (
                         <div
                           key={`${activity.challengeId}-${activity.userId}-${activity.solvedAt}-${index}`}
-                          className="flex items-center justify-between p-3 rounded bg-[#1f2a40] border border-[#2a3346] hover:border-[#00a859]/40 transition-colors"
+                          className="flex items-center justify-between p-3 rounded bg-[#1f2a40] border border-edge-soft hover:border-brand/40 transition-colors"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="text-[#00a859] bg-[#00a859]/10 p-2 rounded">
+                            <div className="text-brand bg-brand/10 p-2 rounded">
                               <CheckCircle2 className="w-4 h-4" />
                             </div>
                             <div>
                               <div className="text-sm">
-                                <span onClick={() => handleViewUser(activity)} className="font-bold text-[#f3f6ff] hover:text-[#00a859] cursor-pointer mr-2">{activity.username}</span>
-                                <span className="text-[#8390ac] mr-2">solved</span>
-                                <span onClick={() => handleViewChallenge(activity)} className="font-semibold text-[#f3a43a] hover:underline cursor-pointer">{activity.challengeTitle}</span>
+                                <span onClick={() => handleViewUser(activity)} className="font-bold text-fg hover:text-brand cursor-pointer mr-2">{activity.username}</span>
+                                <span className="text-dim mr-2">solved</span>
+                                <span onClick={() => handleViewChallenge(activity)} className="font-semibold text-amber hover:underline cursor-pointer">{activity.challengeTitle}</span>
                               </div>
-                              <div className="text-xs text-[#8390ac] mt-1 flex items-center gap-3">
-                                <span className="text-[#6e7a94]">{activity.category}</span>
-                                <span className="text-[#00a859] font-bold">+{activity.points} pts</span>
+                              <div className="text-xs text-dim mt-1 flex items-center gap-3">
+                                <span className="text-faint">{activity.category}</span>
+                                <span className="text-brand font-bold">+{activity.points} pts</span>
                               </div>
                             </div>
                           </div>
-                          <span className="text-xs text-[#6e7a94] flex-shrink-0">{timeAgo}</span>
+                          <span className="text-xs text-faint flex-shrink-0">{timeAgo}</span>
                         </div>
                       );
                     }) : (
                       <div className="py-12 flex flex-col items-center justify-center opacity-50">
-                        <Activity className="w-8 h-8 text-[#6e7a94] mb-2" />
-                        <p className="text-sm text-[#9aa5bf]">No recent activity</p>
+                        <Activity className="w-8 h-8 text-faint mb-2" />
+                        <p className="text-sm text-muted">No recent activity</p>
                       </div>
                     )}
                   </div>
@@ -639,35 +639,35 @@ const CompetitionMonitoringPage: React.FC = () => {
           {/* Side Panel */}
           <div className="space-y-6">
             {/* Categories */}
-            <div className="rounded-xl border border-[#263248] bg-[#182130] overflow-hidden">
-              <div className="p-4 border-b border-[#263248] bg-[#151c29]">
+            <div className="rounded-xl border border-edge bg-surface-alt overflow-hidden">
+              <div className="p-4 border-b border-edge bg-[#151c29]">
                 <span className="text-sm font-bold text-[#dce5f9]">Categories</span>
               </div>
               <div className="p-5 space-y-5">
                 {stats.categoryStats.length > 0 ? stats.categoryStats.map((c, i) => {
                   const pct = c.total > 0 ? (c.solves / c.total) * 100 : 0;
-                  const colors = ['bg-[#00a859]', 'bg-[#f3a43a]', 'bg-[#60a5fa]', 'bg-[#6f56d9]', 'bg-[#e5b970]'];
+                  const colors = ['bg-brand', 'bg-amber', 'bg-info', 'bg-[#6f56d9]', 'bg-[#e5b970]'];
                   const color = colors[i % colors.length];
                   return (
                     <div key={c.name}>
                       <div className="flex justify-between text-xs mb-2">
                         <span className="text-[#e5ecfb] font-bold">{c.name}</span>
-                        <span className="text-[#8390ac]">{c.solves}/{c.total} <span className={color.replace('bg-', 'text-')}>{pct.toFixed(0)}%</span></span>
+                        <span className="text-dim">{c.solves}/{c.total} <span className={color.replace('bg-', 'text-')}>{pct.toFixed(0)}%</span></span>
                       </div>
-                      <div className="h-1.5 w-full bg-[#111622] rounded-full overflow-hidden border border-[#263248]">
+                      <div className="h-1.5 w-full bg-base-alt rounded-full overflow-hidden border border-edge">
                         <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className={`h-full ${color} rounded-full`} />
                       </div>
                     </div>
                   )
                 }) : (
-                  <p className="text-[#6e7a94] text-sm text-center py-4">No data</p>
+                  <p className="text-faint text-sm text-center py-4">No data</p>
                 )}
               </div>
             </div>
 
             {/* Top Performers */}
-            <div className="rounded-xl border border-[#263248] bg-[#182130] overflow-hidden">
-              <div className="p-4 border-b border-[#263248] bg-[#151c29]">
+            <div className="rounded-xl border border-edge bg-surface-alt overflow-hidden">
+              <div className="p-4 border-b border-edge bg-[#151c29]">
                 <span className="text-sm font-bold text-[#dce5f9]">Top Performers</span>
               </div>
               <div className="p-4 space-y-2">
@@ -675,32 +675,32 @@ const CompetitionMonitoringPage: React.FC = () => {
                   const rank = i + 1;
                   return (
                     <div key={user._id} onClick={() => handleViewUser(user)} className="flex items-center gap-3 p-2.5 rounded cursor-pointer hover:bg-[#1f2a40] transition-colors">
-                      <div className="w-7 h-7 flex-shrink-0 rounded bg-[#111622] border border-[#2a3346] flex items-center justify-center">
+                      <div className="w-7 h-7 flex-shrink-0 rounded bg-base-alt border border-edge-soft flex items-center justify-center">
                         {rankIcon(rank)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-[#f3f6ff] truncate">{user.username}</p>
+                        <p className="text-sm font-bold text-fg truncate">{user.username}</p>
                         {isSharedCompetition && (user.universityName || user.universityCode) && (
                           <p className="mt-1">
-                            <span className="inline-flex items-center rounded-full border border-[#33405c] bg-[#111622] px-2 py-0.5 text-[10px] font-semibold text-[#9aa5bf]">
+                            <span className="inline-flex items-center rounded-full border border-[#33405c] bg-base-alt px-2 py-0.5 text-[10px] font-semibold text-muted">
                               {user.universityName || user.universityCode}
                             </span>
                           </p>
                         )}
                       </div>
-                      <p className="text-[#00a859] font-bold text-sm">{user.points} <span className="text-[10px] text-[#6e7a94]">pts</span></p>
+                      <p className="text-brand font-bold text-sm">{user.points} <span className="text-[10px] text-faint">pts</span></p>
                     </div>
                   )
                 })}
                 {leaderboard.length === 0 && (
-                  <p className="text-[#6e7a94] text-sm text-center py-4">No participants yet</p>
+                  <p className="text-faint text-sm text-center py-4">No participants yet</p>
                 )}
               </div>
             </div>
 
             {/* Challenge Overview */}
-            <div className="rounded-xl border border-[#263248] bg-[#182130] overflow-hidden">
-              <div className="p-4 border-b border-[#263248] bg-[#151c29]">
+            <div className="rounded-xl border border-edge bg-surface-alt overflow-hidden">
+              <div className="p-4 border-b border-edge bg-[#151c29]">
                 <span className="text-sm font-bold text-[#dce5f9]">Challenges</span>
               </div>
               <div className="p-4 space-y-2 max-h-80 overflow-y-auto custom-scrollbar">
@@ -709,18 +709,18 @@ const CompetitionMonitoringPage: React.FC = () => {
                   return (
                     <div key={challenge._id} onClick={() => handleViewChallenge(challenge)} className="flex items-center justify-between p-2.5 rounded cursor-pointer hover:bg-[#1f2a40] transition-colors">
                       <div className="flex items-center gap-2 min-w-0">
-                        {isPwned ? <CheckCircle2 className="w-4 h-4 text-[#00a859] flex-shrink-0" /> : <Target className="w-4 h-4 text-[#6e7a94] flex-shrink-0" />}
+                        {isPwned ? <CheckCircle2 className="w-4 h-4 text-brand flex-shrink-0" /> : <Target className="w-4 h-4 text-faint flex-shrink-0" />}
                         <span className="text-sm text-[#e5ecfb] truncate">{challenge.title}</span>
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs text-[#6e7a94]">{challenge.solves || 0} solves</span>
-                        <span className="text-xs font-bold text-[#00a859]">{challenge.currentPoints || challenge.points} pts</span>
+                        <span className="text-xs text-faint">{challenge.solves || 0} solves</span>
+                        <span className="text-xs font-bold text-brand">{challenge.currentPoints || challenge.points} pts</span>
                       </div>
                     </div>
                   );
                 })}
                 {(!competition?.challenges || competition.challenges.length === 0) && (
-                  <p className="text-[#6e7a94] text-sm text-center py-4">No challenges</p>
+                  <p className="text-faint text-sm text-center py-4">No challenges</p>
                 )}
               </div>
             </div>
@@ -732,32 +732,32 @@ const CompetitionMonitoringPage: React.FC = () => {
       <AnimatePresence>
         {selectedUser && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-[#0d131f]/80 backdrop-blur-sm flex items-center justify-center p-4">
-             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-[#182130] border border-[#3a4864] rounded-xl max-w-lg w-full p-6 shadow-2xl">
+             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-surface-alt border border-[#3a4864] rounded-xl max-w-lg w-full p-6 shadow-2xl">
                 <div className="flex justify-between items-center mb-6">
-                   <h3 className="font-black text-2xl text-[#f3f6ff] flex items-center gap-2">
-                     <span className="text-[#9fef00]">&gt;</span> Profile: {selectedUser.username}
+                   <h3 className="font-black text-2xl text-fg flex items-center gap-2">
+                     <span className="text-brand-neon">&gt;</span> Profile: {selectedUser.username}
                    </h3>
-                   <Button variant="ghost" onClick={() => setSelectedUser(null)} className="text-[#8390ac] hover:text-white p-1 hover:bg-[#2a3346]"><X className="w-5 h-5"/></Button>
+                   <Button variant="ghost" onClick={() => setSelectedUser(null)} className="text-dim hover:text-white p-1 hover:bg-edge-soft"><X className="w-5 h-5"/></Button>
                 </div>
                 <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="bg-[#111622] p-4 rounded-xl text-center border border-[#2a3346]">
-                     <p className="text-3xl font-black text-[#f3a43a] mb-1">{selectedUser.points}</p>
-                     <p className="text-[10px] font-mono text-[#8390ac]">Score</p>
+                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                     <p className="text-3xl font-black text-amber mb-1">{selectedUser.points}</p>
+                     <p className="text-[10px] font-mono text-dim">Score</p>
                   </div>
-                  <div className="bg-[#111622] p-4 rounded-xl text-center border border-[#2a3346]">
-                     <p className="text-3xl font-black text-[#9fef00] mb-1">{selectedUser.solvedChallenges || 0}</p>
-                     <p className="text-[10px] font-mono text-[#8390ac]">Solved</p>
+                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                     <p className="text-3xl font-black text-brand-neon mb-1">{selectedUser.solvedChallenges || 0}</p>
+                     <p className="text-[10px] font-mono text-dim">Solved</p>
                   </div>
-                  <div className="bg-[#111622] p-4 rounded-xl text-center border border-[#2a3346]">
-                     <p className="text-3xl font-black text-[#60a5fa] mb-1">{leaderboard.findIndex((l: any) => l._id === selectedUser._id) + 1 || '-'}</p>
-                     <p className="text-[10px] font-mono text-[#8390ac]">Rank</p>
+                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                     <p className="text-3xl font-black text-info mb-1">{leaderboard.findIndex((l: any) => l._id === selectedUser._id) + 1 || '-'}</p>
+                     <p className="text-[10px] font-mono text-dim">Rank</p>
                   </div>
                 </div>
                 <div className="flex gap-3 mt-8">
-                  <Button variant="default" className="flex-1 bg-[#9fef00] text-[#111622] font-black hover:bg-[#b0f52b]" onClick={() => navigate(`/profile/${selectedUser._id}`)}>
+                  <Button variant="default" className="flex-1 bg-brand-neon text-base-alt font-black hover:bg-[#b0f52b]" onClick={() => navigate(`/profile/${selectedUser._id}`)}>
                     FULL PROFILE
                   </Button>
-                  <Button variant="outline" className="flex-1 border-[#3a4864] text-[#dce5f9] hover:bg-[#263248]" onClick={() => setSelectedUser(null)}>
+                  <Button variant="outline" className="flex-1 border-[#3a4864] text-[#dce5f9] hover:bg-edge" onClick={() => setSelectedUser(null)}>
                     CLOSE
                   </Button>
                 </div>
@@ -767,39 +767,39 @@ const CompetitionMonitoringPage: React.FC = () => {
         
         {selectedChallenge && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-[#0d131f]/80 backdrop-blur-sm flex items-center justify-center p-4">
-             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-[#182130] border border-[#3a4864] rounded-xl max-w-2xl w-full p-6 shadow-2xl">
+             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-surface-alt border border-[#3a4864] rounded-xl max-w-2xl w-full p-6 shadow-2xl">
                 <div className="flex justify-between items-start mb-6">
                    <div>
-                     <h3 className="font-black text-2xl text-[#f3f6ff] mb-2">{selectedChallenge.title}</h3>
-                     <span className="text-[#9fef00] font-mono text-xs border border-[#9fef00]/30 px-2 py-0.5 rounded bg-[#9fef00]/10">{selectedChallenge.category}</span>
+                     <h3 className="font-black text-2xl text-fg mb-2">{selectedChallenge.title}</h3>
+                     <span className="text-brand-neon font-mono text-xs border border-brand-neon/30 px-2 py-0.5 rounded bg-brand-neon/10">{selectedChallenge.category}</span>
                    </div>
-                   <Button variant="ghost" onClick={() => setSelectedChallenge(null)} className="text-[#8390ac] hover:text-white p-1 hover:bg-[#2a3346]"><X className="w-5 h-5"/></Button>
+                   <Button variant="ghost" onClick={() => setSelectedChallenge(null)} className="text-dim hover:text-white p-1 hover:bg-edge-soft"><X className="w-5 h-5"/></Button>
                 </div>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="bg-[#111622] p-4 rounded-xl text-center border border-[#2a3346]">
-                     <p className="text-xl font-black text-[#f3a43a] mb-1">{selectedChallenge.currentPoints || selectedChallenge.points}</p>
-                     <p className="text-[10px] font-mono text-[#8390ac]">REWARD</p>
+                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                     <p className="text-xl font-black text-amber mb-1">{selectedChallenge.currentPoints || selectedChallenge.points}</p>
+                     <p className="text-[10px] font-mono text-dim">REWARD</p>
                   </div>
-                  <div className="bg-[#111622] p-4 rounded-xl text-center border border-[#2a3346]">
-                     <p className="text-xl font-black text-[#9fef00] mb-1">{selectedChallenge.solves || 0}</p>
-                     <p className="text-[10px] font-mono text-[#8390ac]">Solves</p>
+                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                     <p className="text-xl font-black text-brand-neon mb-1">{selectedChallenge.solves || 0}</p>
+                     <p className="text-[10px] font-mono text-dim">Solves</p>
                   </div>
-                  <div className="bg-[#111622] p-4 rounded-xl text-center border border-[#2a3346]">
-                     <p className="text-xl font-black text-[#60a5fa] mb-1 uppercase">{selectedChallenge.difficulty || 'N/A'}</p>
-                     <p className="text-[10px] font-mono text-[#8390ac]">RATING</p>
+                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                     <p className="text-xl font-black text-info mb-1 uppercase">{selectedChallenge.difficulty || 'N/A'}</p>
+                     <p className="text-[10px] font-mono text-dim">RATING</p>
                   </div>
-                  <div className="bg-[#111622] p-4 rounded-xl text-center border border-[#2a3346]">
-                     <p className={`text-xl font-black mb-1 ${(selectedChallenge.solves || 0) > 0 ? 'text-[#f3a43a]' : 'text-[#8390ac]'}`}>
+                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                     <p className={`text-xl font-black mb-1 ${(selectedChallenge.solves || 0) > 0 ? 'text-amber' : 'text-dim'}`}>
                        {(selectedChallenge.solves || 0) > 0 ? 'YES' : 'NO'}
                      </p>
-                     <p className="text-[10px] font-mono text-[#8390ac]">Solved</p>
+                     <p className="text-[10px] font-mono text-dim">Solved</p>
                   </div>
                 </div>
 
                 {selectedChallenge.description && (
-                  <div className="mb-8 bg-[#111622] border border-[#2a3346] rounded-xl p-4">
-                    <p className="text-xs font-mono text-[#6e7a94] mb-3 pb-2 border-b border-[#2a3346]">Description</p>
+                  <div className="mb-8 bg-base-alt border border-edge-soft rounded-xl p-4">
+                    <p className="text-xs font-mono text-faint mb-3 pb-2 border-b border-edge-soft">Description</p>
                     <p className="text-[#dce5f9] text-sm leading-relaxed whitespace-pre-wrap font-mono">
                       {selectedChallenge.description}
                     </p>
@@ -807,10 +807,10 @@ const CompetitionMonitoringPage: React.FC = () => {
                 )}
                 
                 <div className="flex gap-3">
-                  <Button variant="default" className="flex-1 bg-[#f3a43a] text-[#111622] font-black hover:bg-[#ffb041]" onClick={() => navigate(`/competitions/${id}/challenges/${selectedChallenge._id}`)}>
+                  <Button variant="default" className="flex-1 bg-amber text-base-alt font-black hover:bg-[#ffb041]" onClick={() => navigate(`/competitions/${id}/challenges/${selectedChallenge._id}`)}>
                     View Challenge
                   </Button>
-                  <Button variant="outline" className="flex-1 border-[#3a4864] text-[#dce5f9] hover:bg-[#263248]" onClick={() => setSelectedChallenge(null)}>
+                  <Button variant="outline" className="flex-1 border-[#3a4864] text-[#dce5f9] hover:bg-edge" onClick={() => setSelectedChallenge(null)}>
                     CANCEL
                   </Button>
                 </div>
