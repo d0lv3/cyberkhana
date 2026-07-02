@@ -440,6 +440,12 @@ export const updateProfileIcon = async (req: AuthRequest, res: Response) => {
   try {
     const { icon } = req.body;
 
+    // profileIcon is a short key into a fixed avatar map; guard against garbage
+    // / oversized values without rejecting valid keys.
+    if (typeof icon !== 'string' || !icon.trim() || icon.length > 40) {
+      return res.status(400).json({ error: 'Invalid profile icon' });
+    }
+
     const user = await User.findById(req.user?.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
@@ -841,8 +847,11 @@ export const deductPoints = async (req: AuthRequest, res: Response) => {
     }
 
     if (type === 'general') {
-      // Deduct from general points
-      const pointsToDeduct = Math.min(points, targetUser.points);
+      // Record the full requested penalty. The general leaderboard is computed
+      // as max(0, solves + bonus - penalties - hints), so it floors at 0 on its
+      // own. Previously this was capped by the stale cached `user.points`, which
+      // is NOT what the leaderboard uses — so deductions silently under-applied.
+      const pointsToDeduct = points;
       targetUser.points = Math.max(0, targetUser.points - points);
 
       // Store the penalty record

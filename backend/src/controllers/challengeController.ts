@@ -8,6 +8,7 @@ import { applyRetroactiveDecay } from '../services/retroactiveDecayService';
 import { SocketEvents } from '../services/socketService';
 import path from 'path';
 import Announcement from '../models/Announcement';
+import University from '../models/University';
 
 // Get solvers for a challenge
 export const getChallengeSolvers = async (req: AuthRequest, res: Response) => {
@@ -502,6 +503,10 @@ export const submitFlag = async (req: AuthRequest, res: Response) => {
           timestamp: new Date()
         });
       }
+    } else {
+      // Admins/super-admins don't score; respond clearly instead of hanging
+      // (previously no branch ran and no response was ever sent).
+      return res.status(403).json({ error: 'Only participants can submit flags' });
     }
   } catch (error) {
     console.error('Submit flag error:', error);
@@ -517,6 +522,16 @@ export const copyChallengeToUniversity = async (req: AuthRequest, res: Response)
 
     const { id } = req.params;
     const { targetUniversityCode } = req.body;
+
+    // Validate the target before any work (prevents a raw 500 on .toUpperCase()
+    // of a missing value, and avoids copying into a non-existent university).
+    if (typeof targetUniversityCode !== 'string' || !targetUniversityCode.trim()) {
+      return res.status(400).json({ error: 'A target university code is required' });
+    }
+    const targetUniversity = await University.findOne({ code: targetUniversityCode.toUpperCase() });
+    if (!targetUniversity) {
+      return res.status(400).json({ error: 'Target university not found' });
+    }
 
     const challenge = await Challenge.findById(id);
     if (!challenge) {

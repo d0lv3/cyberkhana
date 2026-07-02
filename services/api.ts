@@ -46,7 +46,9 @@ class ApiService {
       if (response.status === 401 && message.includes('authentication token')) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        // HashRouter: routes live under '#'. '/login' (no hash) resolves to the
+        // landing page, so send the logged-out user to the actual login route.
+        window.location.href = '/#/login';
         return;
       }
 
