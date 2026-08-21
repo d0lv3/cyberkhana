@@ -14,7 +14,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
     <header className="flex-shrink-0 bg-base/95 border-b border-edge-strong backdrop-blur-md sticky top-0 z-30">
       <div className="flex items-center justify-between h-14 px-4 sm:px-6">
         {/* Mobile logo */}
-        <Link to="/dashboard" className="md:hidden">
+        <Link to="/dashboard" aria-label="CyberKhana" className="md:hidden inline-flex items-center justify-center touch:min-h-tap touch:min-w-tap">
           <BrandLogo variant="mark" loading="eager" className="h-7 w-7 object-contain" />
         </Link>
 
@@ -35,7 +35,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
           <Link
             to="/announcements"
             aria-label="Announcements"
-            className="w-9 h-9 rounded-lg bg-panel border border-edge flex items-center justify-center text-dim hover:text-brand hover:border-brand/40 transition-all"
+            className="w-9 h-9 touch:w-11 touch:h-11 rounded-lg bg-panel border border-edge flex items-center justify-center text-dim hover:text-brand hover:border-brand/40 transition-all"
           >
             <Bell size={16} />
           </Link>
@@ -44,7 +44,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
           <Link
             to="/profile"
             aria-label="My Profile"
-            className="w-9 h-9 rounded-lg bg-panel border border-edge flex items-center justify-center text-dim hover:text-brand hover:border-brand/40 transition-all"
+            className="w-9 h-9 touch:w-11 touch:h-11 rounded-lg bg-panel border border-edge flex items-center justify-center text-dim hover:text-brand hover:border-brand/40 transition-all"
           >
             <UserIcon size={16} />
           </Link>
@@ -53,7 +53,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
           <button
             onClick={onLogout}
             aria-label="Log out"
-            className="w-9 h-9 rounded-lg bg-panel border border-edge flex items-center justify-center text-dim hover:text-red-400 hover:border-red-500/30 transition-all"
+            className="w-9 h-9 touch:w-11 touch:h-11 rounded-lg bg-panel border border-edge flex items-center justify-center text-dim hover:text-red-400 hover:border-red-500/30 transition-all"
           >
             <LogOut size={16} />
           </button>

@@ -463,7 +463,7 @@ const AdminUsersPage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-zinc-100 mb-2">User Management</h1>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-100 mb-2">User Management</h1>
         <p className="text-zinc-400">Manage users in your university</p>
       </div>
 
@@ -542,8 +542,8 @@ const AdminUsersPage: React.FC = () => {
 
                   {/* User Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-lg font-semibold text-zinc-100 truncate">
+                    <div className="flex flex-wrap items-center gap-2 mb-1 min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold text-zinc-100 truncate max-w-full">
                         {user.fullName
                           ? (user.fullName.length > 30
                             ? user.fullName.substring(0, 30) + '...'
@@ -562,7 +562,7 @@ const AdminUsersPage: React.FC = () => {
                     {user.fullName && (
                       <p className="text-zinc-400 text-xs">@{user.username}</p>
                     )}
-                    <div className="flex items-center gap-4 text-zinc-400 text-sm">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-zinc-400 text-xs sm:text-sm">
                       {currentUser?.role === 'super-admin' && (
                         <div className="flex items-center gap-1">
                           <School className="w-4 h-4 text-blue-400" />

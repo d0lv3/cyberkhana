@@ -32,10 +32,12 @@ const Button: React.FC<ButtonProps> = ({
   ].join(' ');
 
   // Size classes
+  // Mirrors components/ui/EnhancedButton — this second copy is still imported
+  // by src/components/PointDecayInfo, so it needs the same touch minimums.
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-xs rounded-md gap-1.5',
-    md: 'px-4 py-2 text-sm rounded-lg gap-2',
-    lg: 'px-6 py-3 text-base rounded-lg gap-2.5',
+    sm: 'px-3 py-1.5 text-xs rounded-md gap-1.5 touch:min-h-tap touch:px-4 touch:py-2.5',
+    md: 'px-4 py-2 text-sm rounded-lg gap-2 touch:min-h-tap touch:px-5 touch:py-2.5',
+    lg: 'px-6 py-3 text-base rounded-lg gap-2.5 touch:min-h-tap',
     xl: 'px-8 py-4 text-lg rounded-xl gap-3',
   };
 

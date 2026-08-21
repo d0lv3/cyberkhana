@@ -45,14 +45,16 @@ const ManagementLayout: React.FC = () => {
       ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       <div className="inline-flex items-center gap-2 rounded-full border border-edge bg-panel px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-brand-neon">
         <ShieldCheck size={12} />
         Management
       </div>
 
-      {/* Sub-nav tabs */}
-      <div className="flex gap-1 overflow-x-auto border-b border-edge">
+      {/* Sub-nav tabs. Six of them never fit a phone, so the strip scrolls
+          horizontally rather than wrapping into a second row that would push
+          the page content down on every admin screen. */}
+      <div className="scroll-x flex gap-1 border-b border-edge">
         {tabs.map(({ to, label, icon: Icon, end }) => (
           <NavLink
             key={to}
@@ -60,7 +62,7 @@ const ManagementLayout: React.FC = () => {
             end={end}
             className={({ isActive }) =>
               [
-                'inline-flex items-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 -mb-px transition-colors',
+                'inline-flex items-center gap-2 whitespace-nowrap px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 -mb-px transition-colors select-none touch:min-h-tap',
                 isActive
                   ? 'border-brand text-brand bg-brand/8'
                   : 'border-transparent text-muted hover:text-fg-soft hover:bg-surface-hover',

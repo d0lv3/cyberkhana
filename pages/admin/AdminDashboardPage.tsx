@@ -176,53 +176,53 @@ const AdminDashboardPage: React.FC = () => {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-zinc-100 mb-2">Admin Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-100 mb-2">Admin Dashboard</h1>
         <p className="text-zinc-400">Overview of your university's CTF platform</p>
       </div>
 
       {/* Main Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <Card className="p-5 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-blue-500/20 rounded-lg">
+        <Card className="p-3 sm:p-5 bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 min-w-0">
+            <div className="p-1.5 sm:p-2 bg-blue-500/20 rounded-lg shrink-0">
               <Users className="w-5 h-5 text-blue-400" />
             </div>
-            <span className="text-zinc-400 text-sm">Total Users</span>
+            <span className="text-zinc-400 text-xs sm:text-sm leading-tight min-w-0">Total Users</span>
           </div>
-          <p className="text-3xl font-bold text-zinc-100">{stats.totalUsers}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-zinc-100">{stats.totalUsers}</p>
           <p className="text-xs text-zinc-500 mt-1">{stats.activeUsersToday} active solvers</p>
         </Card>
 
-        <Card className="p-5 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-emerald-500/20 rounded-lg">
+        <Card className="p-3 sm:p-5 bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20">
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 min-w-0">
+            <div className="p-1.5 sm:p-2 bg-emerald-500/20 rounded-lg shrink-0">
               <Target className="w-5 h-5 text-emerald-400" />
             </div>
-            <span className="text-zinc-400 text-sm">Challenges</span>
+            <span className="text-zinc-400 text-xs sm:text-sm leading-tight min-w-0">Challenges</span>
           </div>
-          <p className="text-3xl font-bold text-zinc-100">{stats.publishedChallenges}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-zinc-100">{stats.publishedChallenges}</p>
           <p className="text-xs text-zinc-500 mt-1">{stats.unpublishedChallenges} unpublished</p>
         </Card>
 
-        <Card className="p-5 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-purple-500/20 rounded-lg">
+        <Card className="p-3 sm:p-5 bg-gradient-to-br from-purple-500/10 to-purple-500/5 border-purple-500/20">
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 min-w-0">
+            <div className="p-1.5 sm:p-2 bg-purple-500/20 rounded-lg shrink-0">
               <Trophy className="w-5 h-5 text-purple-400" />
             </div>
-            <span className="text-zinc-400 text-sm">Competitions</span>
+            <span className="text-zinc-400 text-xs sm:text-sm leading-tight min-w-0">Competitions</span>
           </div>
-          <p className="text-3xl font-bold text-zinc-100">{stats.totalCompetitions}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-zinc-100">{stats.totalCompetitions}</p>
           <p className="text-xs text-emerald-400 mt-1">{stats.activeCompetitions} active</p>
         </Card>
 
-        <Card className="p-5 bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border-yellow-500/20">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 bg-yellow-500/20 rounded-lg">
+        <Card className="p-3 sm:p-5 bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border-yellow-500/20">
+          <div className="flex items-center gap-2 sm:gap-3 mb-3 min-w-0">
+            <div className="p-1.5 sm:p-2 bg-yellow-500/20 rounded-lg shrink-0">
               <Flag className="w-5 h-5 text-yellow-400" />
             </div>
-            <span className="text-zinc-400 text-sm">Total Solves</span>
+            <span className="text-zinc-400 text-xs sm:text-sm leading-tight min-w-0">Total Solves</span>
           </div>
-          <p className="text-3xl font-bold text-zinc-100">{stats.totalSolves}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-zinc-100">{stats.totalSolves}</p>
           <p className="text-xs text-zinc-500 mt-1">across all challenges</p>
         </Card>
       </div>
@@ -423,14 +423,14 @@ const AdminDashboardPage: React.FC = () => {
 
       {/* Competition Status */}
       {stats.activeCompetitions > 0 || stats.pendingCompetitions > 0 ? (
-        <Card className="p-6 mb-8 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-500/20">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-500/20 rounded-lg">
+        <Card className="p-4 sm:p-6 mb-8 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-500/20">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-1.5 sm:p-2 bg-purple-500/20 rounded-lg shrink-0">
                 <Trophy className="w-6 h-6 text-purple-400" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-zinc-100">Competition Status</h3>
+              <div className="min-w-0">
+                <h3 className="text-base sm:text-lg font-bold text-zinc-100">Competition Status</h3>
                 <p className="text-sm text-zinc-400">
                   {stats.activeCompetitions} active, {stats.pendingCompetitions} pending
                 </p>

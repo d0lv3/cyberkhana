@@ -17,18 +17,27 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout, user: userProp }) => {
   const isEdgeToEdge = location.pathname.match(/^\/(challenges|dashboard)/);
 
   return (
-    <div className="flex h-screen text-fg-soft bg-base">
+    <div className="flex app-shell text-fg-soft bg-base">
       <Sidebar user={user} />
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header user={user} onLogout={onLogout} />
-        <main className={`flex-1 overflow-y-auto ${isEdgeToEdge ? 'p-0' : 'p-4 sm:p-6 md:p-8'}`}>
-          {/* pb on mobile keeps content clear of the fixed bottom nav */}
-          <div className={`${isEdgeToEdge ? 'max-w-none' : 'max-w-7xl'} mx-auto pb-16 md:pb-0`}>
+        {/* overflow-x-hidden, not auto: a child that outgrows the phone should
+            scroll inside its own box, never pan the whole shell sideways and
+            take the header with it. */}
+        <main
+          className={`flex-1 overflow-y-auto overflow-x-hidden scroll-contain ${
+            isEdgeToEdge ? 'p-0' : 'p-4 sm:p-6 md:p-8'
+          }`}
+        >
+          {/* Clears the fixed bottom nav (56px) plus the home indicator. */}
+          <div
+            className={`${isEdgeToEdge ? 'max-w-none' : 'max-w-7xl'} mx-auto min-w-0 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-0`}
+          >
              <Outlet />
           </div>
         </main>
       </div>
-      <MobileNav user={user} />
+      <MobileNav user={user} onLogout={onLogout} />
     </div>
   );
 };

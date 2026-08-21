@@ -211,11 +211,14 @@ const NewDashboardPage: React.FC = () => {
           ))}
         </div>
 
-        {/* ── MAIN DASHBOARD SPLIT ── */}
+        {/* ── MAIN DASHBOARD SPLIT ──
+            min-w-0 on the columns: a grid item's min-width defaults to auto,
+            so the widest thing in either column sets that column's floor and
+            pushes the layout past the screen instead of wrapping. */}
         <div className="grid lg:grid-cols-[1fr_340px] gap-6">
-          
+
           {/* LEFT COLUMN: Main Focus */}
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             
             {/* CyberKhana Academy — external */}
             <motion.a
@@ -277,7 +280,7 @@ const NewDashboardPage: React.FC = () => {
           </div>
 
           {/* RIGHT COLUMN: Activity & Analysis */}
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             
             {/* Operator Assessment profile snippet */}
             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }} className="bg-panel border border-edge rounded-2xl p-5">

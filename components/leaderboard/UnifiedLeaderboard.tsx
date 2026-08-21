@@ -246,10 +246,15 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
           </section>
         )}
 
+        {/* min-w-0 on the grid children is load-bearing: a grid item's
+            min-width defaults to auto, so without it the table below sets the
+            column's minimum width, its overflow-x-auto wrapper never gets
+            narrower than its own content and so never scrolls, and the whole
+            page pans sideways instead. */}
         <section className="grid lg:grid-cols-[minmax(0,1fr)_260px] gap-5">
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0">
             <div className="flex flex-wrap gap-3">
-              <div className="relative flex-1 min-w-[220px]">
+              <div className="relative flex-1 min-w-0 sm:min-w-[220px]">
                 <Search className="w-4 h-4 text-muted-alt absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   value={search}
@@ -260,14 +265,17 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
               </div>
             </div>
 
+            {/* On a phone the table drops to three columns and fits outright,
+                so nobody has to drag a table sideways to read a ranking.
+                Flags-pwned rejoins it from sm up, where there is room. */}
             <div className="rounded-xl border border-edge bg-[#131b2a] overflow-x-auto">
-              <table className="w-full min-w-[560px]">
+              <table className="w-full sm:min-w-[560px]">
                 <thead className="border-b border-edge bg-[#111a29]">
                   <tr>
-                    <th className="text-left px-4 py-3 text-xs tracking-wider text-dim">RANK</th>
-                    <th className="text-left px-4 py-3 text-xs tracking-wider text-dim">PLAYER</th>
-                    <th className="text-left px-4 py-3 text-xs tracking-wider text-dim">POINTS</th>
-                    <th className="text-left px-4 py-3 text-xs tracking-wider text-dim">FLAGS PWNED</th>
+                    <th className="text-left px-2 sm:px-4 py-3 text-xs tracking-wider text-dim">RANK</th>
+                    <th className="text-left px-2 sm:px-4 py-3 text-xs tracking-wider text-dim">PLAYER</th>
+                    <th className="text-left px-2 sm:px-4 py-3 text-xs tracking-wider text-dim">POINTS</th>
+                    <th className="hidden sm:table-cell text-left px-4 py-3 text-xs tracking-wider text-dim">FLAGS PWNED</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -281,20 +289,20 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
                         onClick={() => onSelectEntry?.(entry, rank)}
                         className={`border-b border-[#1f2a40] ${isCurrent ? 'bg-[#1c2a1a]' : 'hover:bg-surface-hover'} transition-colors ${onSelectEntry ? 'cursor-pointer' : ''}`}
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-2 sm:px-4 py-3">
                           <div className="flex items-center gap-2">{rankIcon(rank)}</div>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-full bg-inset border border-[#33405c] flex items-center justify-center text-brand-neon text-sm font-bold">
+                        <td className="px-2 sm:px-4 py-3">
+                          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                            <div className="w-8 h-8 flex-shrink-0 rounded-full bg-inset border border-[#33405c] flex items-center justify-center text-brand-neon text-sm font-bold">
                               {entry.player.charAt(0).toUpperCase()}
                             </div>
                             <div className="min-w-0 flex items-center gap-2">
-                              <span className="truncate max-w-[180px] font-semibold text-[#e5ecfb]" title={entry.player}>
+                              <span className="truncate max-w-[110px] sm:max-w-[180px] font-semibold text-[#e5ecfb]" title={entry.player}>
                                 {entry.player}
                               </span>
                               {entry.playerTag ? (
-                                <span className="inline-flex max-w-[180px] items-center rounded-full border border-[#3a4864] bg-panel px-2 py-0.5 text-[11px] font-semibold text-muted">
+                                <span className="hidden sm:inline-flex max-w-[180px] items-center rounded-full border border-[#3a4864] bg-panel px-2 py-0.5 text-[11px] font-semibold text-muted">
                                   <span className="truncate" title={entry.playerTag}>{entry.playerTag}</span>
                                 </span>
                               ) : null}
@@ -302,8 +310,8 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-[#dce5f9] font-semibold">{entry.points}</td>
-                        <td className="px-4 py-3 text-[#dce5f9]">{entry.flagsPwned}/{flagsTarget}</td>
+                        <td className="px-2 sm:px-4 py-3 text-[#dce5f9] font-semibold">{entry.points}</td>
+                        <td className="hidden sm:table-cell px-4 py-3 text-[#dce5f9]">{entry.flagsPwned}/{flagsTarget}</td>
                       </tr>
                     );
                   })}
@@ -312,7 +320,7 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
             </div>
           </div>
 
-          <aside className="space-y-4">
+          <aside className="space-y-4 min-w-0">
             <div className="rounded-xl border border-edge bg-surface p-4">
               <p className="text-xs tracking-wider text-dim">OVERALL PROGRESS</p>
               <p className="text-3xl font-black text-fg mt-2">{currentPlayer ? `${currentPlayer.flagsPwned}/${flagsTarget}` : '0/0'}</p>

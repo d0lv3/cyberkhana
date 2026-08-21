@@ -357,8 +357,12 @@ const EnhancedChallengesPage: React.FC = () => {
                     className="group border-b border-edge last:border-b-0 hover:bg-surface cursor-pointer select-none transition-colors p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
                   >
                     
-                    {/* Left: Status & Identity */}
-                    <div className="flex items-center gap-4 flex-1">
+                    {/* Left: Status & Identity.
+                        min-w-0 next to flex-1: a flex item's min-width is
+                        auto, so without it the title and description set a
+                        floor wider than the phone and shove the row
+                        off-screen rather than truncating. */}
+                    <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 w-full">
                       <div className={`w-12 h-12 mt-1 rounded-lg flex items-center justify-center border overflow-hidden shrink-0 transition-colors ${
                         solved ? 'bg-brand-neon/10 border-brand-neon/30' : 'bg-inset border-edge group-hover:border-info'
                       }`}>
@@ -381,8 +385,8 @@ const EnhancedChallengesPage: React.FC = () => {
                       </div>
                       
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-3 mb-1">
-                          <h3 className="text-lg font-black text-fg truncate group-hover:text-brand-neon transition-colors">{challenge.title}</h3>
+                        <div className="flex items-center gap-3 mb-1 min-w-0">
+                          <h3 className="text-base sm:text-lg font-black text-fg truncate group-hover:text-brand-neon transition-colors">{challenge.title}</h3>
                           <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] uppercase font-black tracking-widest bg-inset border border-edge text-dim">
                             {challenge.category}
                           </span>
@@ -392,7 +396,7 @@ const EnhancedChallengesPage: React.FC = () => {
                     </div>
 
                     {/* Right: Metrics & CTA */}
-                    <div className="flex items-center w-full md:w-auto gap-6 sm:gap-12 shrink-0 border-t md:border-t-0 border-edge pt-4 md:pt-0 pl-16 md:pl-0">
+                    <div className="flex items-center justify-between md:justify-start w-full md:w-auto gap-4 sm:gap-12 shrink-0 border-t md:border-t-0 border-edge pt-3 md:pt-0 ps-0 sm:ps-16 md:ps-0">
                       
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: diffColor }} />

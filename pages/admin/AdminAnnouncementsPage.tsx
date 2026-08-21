@@ -117,9 +117,9 @@ const AdminAnnouncementsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
         <div>
-          <h1 className="text-4xl font-bold text-zinc-100 mb-2">Announcements</h1>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-100 mb-2">Announcements</h1>
           <p className="text-zinc-400">Keep your students informed</p>
         </div>
         <Button onClick={() => openModal()}>

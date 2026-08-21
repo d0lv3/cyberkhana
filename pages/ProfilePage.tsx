@@ -137,7 +137,7 @@ const ProfilePage: React.FC = () => {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="relative rounded-2xl border border-edge bg-panel overflow-hidden p-6 md:p-8"
+        className="relative rounded-2xl border border-edge bg-panel overflow-hidden p-4 sm:p-6 md:p-8"
       >
         {/* BG glow */}
         <div className="absolute top-0 right-0 w-72 h-72 bg-[#6f56d9]/5 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
@@ -159,8 +159,12 @@ const ProfilePage: React.FC = () => {
             />
           </div>
 
-          {/* Name + meta */}
-          <div className="flex-1 min-w-0">
+          {/* Name + meta.
+              w-full matters on mobile: the parent is flex-col there, so
+              flex-1 governs height and `items-start` lets this block size to
+              its own content on the cross axis — which is how it ended up
+              wider than the card. */}
+          <div className="flex-1 w-full min-w-0">
             {isEditingName ? (
               <div className="mb-2">
                 <div className="flex items-center gap-2">
@@ -198,14 +202,18 @@ const ProfilePage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2 mb-2">
-                <h1 className="text-3xl font-black text-fg truncate max-w-sm" title={displayName}>
+              <div className="flex items-center gap-2 mb-2 min-w-0">
+                {/* max-w-sm is 384px, wider than this card's content box on a
+                    phone, so truncate never engaged and a long name pushed the
+                    whole row out of the card instead. */}
+                <h1 className="text-2xl sm:text-3xl font-black text-fg truncate max-w-full" title={displayName}>
                   {displayName}
                 </h1>
                 <button
                   onClick={() => { setEditedFullName(user?.fullName || ''); setIsEditingName(true); setNameError(''); }}
-                  className="p-1.5 text-faint hover:text-brand hover:bg-surface-hover rounded transition-colors"
+                  className="shrink-0 inline-flex items-center justify-center p-1.5 touch:min-h-tap touch:min-w-tap text-faint hover:text-brand hover:bg-surface-hover rounded transition-colors"
                   title="Edit name"
+                  aria-label="Edit name"
                 >
                   <Edit2 size={14} />
                 </button>
@@ -227,13 +235,14 @@ const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Stat pillars */}
-          <div className="flex items-center gap-4">
-            <div className="text-center px-5 py-4 rounded-xl bg-inset border border-edge">
+          {/* Stat pillars. Full width and split evenly on a phone, where they
+              sit under the name rather than beside it. */}
+          <div className="grid grid-cols-2 md:flex md:items-center gap-3 sm:gap-4 w-full md:w-auto">
+            <div className="text-center px-4 sm:px-5 py-4 rounded-xl bg-inset border border-edge">
               <p className="text-2xl font-black text-brand-neon">{stats.points.toLocaleString()}</p>
               <p className="text-[10px] text-dim uppercase tracking-wider mt-0.5">Points</p>
             </div>
-            <div className="text-center px-5 py-4 rounded-xl bg-inset border border-edge">
+            <div className="text-center px-4 sm:px-5 py-4 rounded-xl bg-inset border border-edge">
               <p className="text-2xl font-black text-info">{stats.solvedCount}</p>
               <p className="text-[10px] text-dim uppercase tracking-wider mt-0.5">Solved</p>
             </div>

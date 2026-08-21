@@ -38,7 +38,7 @@ const PointDecayInfo: React.FC<PointDecayInfoProps> = ({ challenge, user }) => {
             Challenge points start at <span className="text-emerald-400 font-semibold">{initialPoints}</span> and decrease as more people solve it.
           </p>
 
-          <div className="grid grid-cols-2 gap-4 mb-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-3">
             <div className="bg-zinc-800/50 rounded-lg p-3">
               <p className="text-zinc-400 text-xs mb-1">Current Points</p>
               <p className="text-2xl font-bold text-emerald-400">{info.currentPoints}</p>

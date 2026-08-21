@@ -365,8 +365,8 @@ const AdminCompetitionsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-4xl font-bold text-zinc-100">Manage Competitions</h1>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-100">Manage Competitions</h1>
         <Button onClick={() => openModal()}>Create Competition</Button>
       </div>
 
@@ -378,11 +378,13 @@ const AdminCompetitionsPage: React.FC = () => {
 
       <div className="grid gap-4">
         {competitions.map((competition) => (
-          <Card key={competition._id} className="p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <h3 className="text-xl font-bold text-zinc-100 mb-2">{competition.name}</h3>
-                <div className="flex gap-4 text-sm text-zinc-500 flex-wrap">
+          <Card key={competition._id} className="p-4 sm:p-6">
+            {/* Stacked until lg: the action cluster on its own is wider than a
+                phone, so side-by-side could only ever overflow. */}
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
+              <div className="min-w-0">
+                <h3 className="text-lg sm:text-xl font-bold text-zinc-100 mb-2 break-words">{competition.name}</h3>
+                <div className="flex gap-x-4 gap-y-1 text-sm text-zinc-500 flex-wrap">
                   {competition.requiresSecurityCode !== false ? (
                     <span>Security Code: <span className="text-emerald-400 font-mono">{competition.securityCode}</span></span>
                   ) : (
@@ -405,7 +407,7 @@ const AdminCompetitionsPage: React.FC = () => {
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <Button
                   variant="outline"
                   onClick={() => navigate(`/admin/competitions/${competition._id}/monitor`)}

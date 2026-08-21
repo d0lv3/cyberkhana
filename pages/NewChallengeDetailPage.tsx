@@ -245,7 +245,7 @@ const NewChallengeDetailPage: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 md:px-8 w-full relative z-10">
           <button
             onClick={() => navigate('/challenges')}
-            className="group flex items-center gap-2 text-muted hover:text-brand-neon mb-8 transition-colors duration-300"
+            className="group flex items-center gap-2 touch:min-h-tap text-muted hover:text-brand-neon mb-6 sm:mb-8 transition-colors duration-300 select-none"
           >
             <div className="p-2 rounded-lg bg-edge/50 border border-edge group-hover:border-brand-neon/50 transition-colors">
               <ArrowLeft className="w-4 h-4" />
@@ -253,8 +253,8 @@ const NewChallengeDetailPage: React.FC = () => {
             <span className="font-semibold tracking-tight uppercase text-sm">Return to Grid</span>
           </button>
 
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-            <div className="flex-1 space-y-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-8 min-w-0">
+            <div className="flex-1 min-w-0 space-y-4">
               <div className="flex flex-wrap items-center gap-3">
                 {categoryStyle.customIcon ? (
                   <div className="w-10 h-10 rounded-lg overflow-hidden border border-current opacity-90 shadow-lg">
@@ -295,7 +295,9 @@ const NewChallengeDetailPage: React.FC = () => {
 
             <div className="flex flex-col items-center md:items-end gap-2 shrink-0">
               <div className="relative group">
-                <div className="absolute -inset-4 bg-brand-neon/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                {/* Decorative glow — pointer-events-none so it can't eat a tap
+                    aimed at the points it sits on top of. */}
+                <div className="pointer-events-none absolute -inset-4 bg-brand-neon/10 rounded-full blur-2xl opacity-0 group-hover:opacity-100 transition-opacity" />
                 <div className="relative bg-panel/80 backdrop-blur-xl border border-edge p-6 rounded-3xl flex flex-col items-center min-w-[140px] shadow-2xl">
                   <span className="text-4xl font-black text-brand-neon leading-none drop-shadow-[0_0_10px_rgba(159,239,0,0.3)]">
                     {challenge.currentPoints || challenge.points}

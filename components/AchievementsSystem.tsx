@@ -203,9 +203,9 @@ const AchievementsSystem: React.FC<AchievementsSystemProps> = ({ userStats, onCl
                     : 'bg-zinc-700/30 border-zinc-700'
                 }`}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 min-w-0">
                   <div
-                    className={`p-3 rounded-lg ${
+                    className={`p-2.5 sm:p-3 rounded-lg shrink-0 ${
                       isUnlocked ? 'bg-emerald-500/20' : 'bg-zinc-700'
                     }`}
                   >
@@ -215,7 +215,7 @@ const AchievementsSystem: React.FC<AchievementsSystemProps> = ({ userStats, onCl
                       <Lock className="w-6 h-6 text-zinc-500" />
                     )}
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <h3
                       className={`font-semibold ${
                         isUnlocked ? 'text-zinc-100' : 'text-zinc-500'

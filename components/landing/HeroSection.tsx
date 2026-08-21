@@ -101,7 +101,7 @@ const HeroSection: React.FC = () => {
   const { t, isArabic } = useLang();
 
   return (
-    <section className="relative h-screen w-full bg-base overflow-hidden">
+    <section className="relative app-hero w-full bg-base overflow-hidden">
       {/* Subtle grid background */}
       <div className="absolute inset-0 opacity-[0.04]" style={{
         backgroundImage: `linear-gradient(rgba(159,239,0,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(159,239,0,0.3) 1px, transparent 1px)`,

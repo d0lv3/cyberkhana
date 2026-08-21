@@ -30,10 +30,15 @@ const Button: React.FC<ButtonProps> = ({
     'select-none',
   ].join(' ');
 
+  // `touch:` is a pointer-type query, not a width one — the thing that has to
+  // fit is the finger, and a tablet in landscape is wider than a laptop. On a
+  // mouse these keep their designed density; on a finger they grow to the
+  // 44px minimum, with padding growing alongside so the label stays optically
+  // centred instead of floating inside a stretched box.
   const sizeClasses = {
-    sm: 'px-3 py-1.5 text-xs rounded-md gap-1.5',
-    md: 'px-4 py-2 text-sm rounded-lg gap-2',
-    lg: 'px-6 py-2.5 text-base rounded-lg gap-2.5',
+    sm: 'px-3 py-1.5 text-xs rounded-md gap-1.5 touch:min-h-tap touch:px-4 touch:py-2.5',
+    md: 'px-4 py-2 text-sm rounded-lg gap-2 touch:min-h-tap touch:px-5 touch:py-2.5',
+    lg: 'px-6 py-2.5 text-base rounded-lg gap-2.5 touch:min-h-tap',
     xl: 'px-8 py-3.5 text-lg rounded-xl gap-3',
   };
 

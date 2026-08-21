@@ -47,28 +47,35 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({ items }) => {
   if (breadcrumbs.length <= 1) return null;
 
   return (
+    /* A deep trail is wider than a phone, so the row scrolls instead of
+       wrapping — a breadcrumb folded onto three lines stops reading as a
+       trail. Each crumb is a real tap target on touch rather than 16px of
+       bare text. */
     <nav
       aria-label="Breadcrumb"
-      className="flex items-center space-x-2 text-sm mb-6"
+      className="scroll-x flex items-center gap-x-2 text-sm mb-4 sm:mb-6"
     >
       <Link
         to="/dashboard"
-        className="flex items-center text-zinc-400 hover:text-emerald-400 transition-colors"
+        aria-label="Home"
+        className="inline-flex shrink-0 items-center justify-center touch:min-h-tap touch:min-w-tap text-zinc-400 hover:text-emerald-400 transition-colors"
       >
         <Home size={16} />
       </Link>
       {breadcrumbs.map((item, index) => (
         <React.Fragment key={index}>
-          <ChevronRight size={16} className="text-zinc-600" />
+          <ChevronRight size={16} className="shrink-0 text-zinc-600" />
           {item.path ? (
             <Link
               to={item.path}
-              className="text-zinc-400 hover:text-emerald-400 transition-colors"
+              className="inline-flex shrink-0 items-center touch:min-h-tap whitespace-nowrap text-zinc-400 hover:text-emerald-400 transition-colors"
             >
               {item.label}
             </Link>
           ) : (
-            <span className="text-zinc-200 font-medium">{item.label}</span>
+            <span className="inline-flex shrink-0 items-center touch:min-h-tap whitespace-nowrap text-zinc-200 font-medium">
+              {item.label}
+            </span>
           )}
         </React.Fragment>
       ))}

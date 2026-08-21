@@ -47,10 +47,137 @@
   ::-webkit-scrollbar-track { background: #0d1117; }
   ::-webkit-scrollbar-thumb { background: #263248; border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: #354562; }
+
+  /* ── Touch / small-screen base ──────────────────────────────
+     Behaviour that only shows up on a phone and can't be expressed per
+     component. */
+
+  html {
+    /* Stops iOS inflating body copy when the phone turns landscape, which
+       reflows the whole page at a size nobody chose. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    /* The grey box Android paints over any tapped element. We draw our own
+       :active states, and the two together read as a rendering bug. */
+    -webkit-tap-highlight-color: transparent;
+    /* Flags, hashes, base64 and URLs are everywhere in this product, and an
+       unbreakable token is the most common reason a phone-width page starts
+       scrolling sideways. */
+    overflow-wrap: break-word;
+  }
+
+  /* Safari zooms the viewport when a focused field's text is under 16px, and
+     never zooms back out. Our fields are text-sm/text-xs by design, so opt
+     out on touch only; pointer devices keep the intended density. */
+  @media (pointer: coarse) {
+    input:not([type='checkbox']):not([type='radio']),
+    select,
+    textarea {
+      font-size: 16px;
+    }
+
+    /* Fields are as much a tap target as buttons are, and ours land around
+       38px from padding alone. */
+    input:not([type='checkbox']):not([type='radio']):not([type='range']),
+    select {
+      min-height: 44px;
+    }
+  }
 }
 
 /* ── UTILITIES ─────────────────────────────────────────────── */
 @layer utilities {
+  /* Full-height app shell.
+     100vh on a phone is the LARGE viewport — the height the page would have
+     if the browser's address bar were hidden — so a 100vh shell always runs
+     its last row underneath the browser chrome. 100dvh tracks what is
+     actually visible. The vh line stays first as the fallback for anything
+     that doesn't know dvh. */
+  .app-shell {
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  /* Same idea for pages that grow past one screen. */
+  .app-min-shell {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* Full-bleed hero. svh, not dvh: dvh grows and shrinks as the phone's
+     address bar hides on scroll, which would make the hero resize under the
+     reader's finger. svh is the height with the browser chrome showing — it
+     never changes, and it guarantees the hero fits without the CTA landing
+     under the chrome. */
+  .app-hero {
+    height: 100vh;
+    height: 100svh;
+  }
+  .app-hero-min {
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+
+  /* Keeps a fixed bottom bar clear of the home indicator. */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Grows a control's touch target without changing a pixel of its layout.
+     For controls that are deliberately small — icon buttons, indicator pips —
+     where a 44px box would wreck the design but an 8px target is not usable.
+     The pseudo-element takes no space, so surrounding spacing is unaffected;
+     only the hit region grows.
+
+     Use `tap-expand` for an ISOLATED control. In a dense row it would overlap
+     its neighbours' hit regions, which is worse than a small target: instead
+     of missing, you hit the wrong thing. */
+  @media (pointer: coarse) {
+    .tap-expand,
+    .tap-expand-y {
+      position: relative;
+    }
+    .tap-expand::after,
+    .tap-expand-y::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      height: max(100%, 44px);
+    }
+    .tap-expand::after {
+      width: max(100%, 44px);
+    }
+    /* Vertical-only, for a row of pips: full height to tap against, but only
+       a few px wider than the pip so adjacent targets never overlap. */
+    .tap-expand-y::after {
+      width: calc(100% + 8px);
+    }
+  }
+
+  /* Momentum scrolling that doesn't chain to the page behind it — stops a
+     scrolled-to-end drawer or sheet from dragging the document with it. */
+  .scroll-contain {
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Horizontal strip of chips/tabs that runs off the edge on a phone.
+     Scrolls, snaps, and hides its scrollbar. */
+  .scroll-x {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+  .scroll-x::-webkit-scrollbar { display: none; }
+
   /* Custom scrollbar class */
   .custom-scrollbar::-webkit-scrollbar { width: 8px; }
   .custom-scrollbar::-webkit-scrollbar-track { background: #121a2a; }

@@ -426,16 +426,16 @@ const AdminChallengesPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-4xl font-bold text-zinc-100">Manage Challenges</h1>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-100">Manage Challenges</h1>
         <Button onClick={() => openModal()}>Create Challenge</Button>
       </div>
 
       {/* Filter Tabs */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-6">
         <button
           onClick={() => setFilter('all')}
-          className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
+          className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors touch:min-h-tap select-none ${
             filter === 'all' ? 'bg-emerald-500 text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
           }`}
         >
@@ -443,7 +443,7 @@ const AdminChallengesPage: React.FC = () => {
         </button>
         <button
           onClick={() => setFilter('published')}
-          className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
+          className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors touch:min-h-tap select-none ${
             filter === 'published' ? 'bg-emerald-500 text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
           }`}
         >
@@ -451,7 +451,7 @@ const AdminChallengesPage: React.FC = () => {
         </button>
         <button
           onClick={() => setFilter('unpublished')}
-          className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${
+          className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors touch:min-h-tap select-none ${
             filter === 'unpublished' ? 'bg-emerald-500 text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
           }`}
         >
@@ -522,11 +522,13 @@ const AdminChallengesPage: React.FC = () => {
 
       <div className="grid gap-4">
         {filteredChallenges.map((challenge) => (
-          <Card key={challenge._id} className="p-6">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <h3 className="text-xl font-bold text-zinc-100">{challenge.title}</h3>
+          <Card key={challenge._id} className="p-4 sm:p-6">
+            {/* Stacked until lg: the action cluster on its own is wider than a
+                phone, so side-by-side could only ever overflow. */}
+            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-2">
+                  <h3 className="text-lg sm:text-xl font-bold text-zinc-100 break-words">{challenge.title}</h3>
                   <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                     challenge.isPublished
                       ? 'bg-emerald-500/20 text-emerald-400'
@@ -538,7 +540,7 @@ const AdminChallengesPage: React.FC = () => {
                 <p className="text-zinc-400 mb-2 break-words overflow-hidden line-clamp-2">
                   {challenge.description}
                 </p>
-                <div className="flex gap-4 text-sm text-zinc-500">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-500">
                   <span>Category: {challenge.category}</span>
                   <span>Points: {(challenge as any).currentPoints || challenge.points}</span>
                   <span>Solves: {challenge.solves}</span>

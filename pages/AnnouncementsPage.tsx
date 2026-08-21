@@ -72,7 +72,7 @@ const AnnouncementsPage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-zinc-100 mb-2">Announcements</h1>
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-100 mb-2">Announcements</h1>
         <p className="text-zinc-400">Stay updated with the latest news and updates</p>
       </div>
 

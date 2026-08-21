@@ -256,7 +256,7 @@ const SuperAdminPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold text-zinc-100 mb-2">Super Admin Panel</h1>
+      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-100 mb-2">Super Admin Panel</h1>
       <p className="text-zinc-400 mb-6">Create universities and copy challenges between them</p>
 
       {error && (
