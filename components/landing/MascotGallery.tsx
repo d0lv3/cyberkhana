@@ -58,11 +58,11 @@ const MascotGallery = () => {
   const { t } = useLang();
 
   return (
-    <section className="py-24 md:py-32 bg-deep">
+    <section className="py-16 sm:py-24 md:py-32 bg-deep">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center">
           <h2
-            className="text-4xl md:text-5xl text-fg font-extrabold"
+            className="text-3xl sm:text-4xl md:text-5xl text-fg font-extrabold"
             style={{ fontFamily: "'Montserrat', sans-serif" }}
           >
             {t('mascots.heading')}

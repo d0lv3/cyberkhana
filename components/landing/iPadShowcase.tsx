@@ -15,7 +15,7 @@ const iPadShowcase = () => {
               className="h-16 md:h-24 w-auto object-contain mx-auto"
             />
             <h2
-              className="text-3xl md:text-5xl text-fg font-bold mt-4"
+              className="text-2xl sm:text-3xl md:text-5xl text-fg font-bold mt-4"
               style={{ fontWeight: 700 }}
             >
               {t('ipad.title')}

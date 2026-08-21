@@ -189,11 +189,11 @@ export default function FoundingStory() {
   const { t } = useLang();
 
   return (
-    <section className="bg-base py-24 md:py-32">
+    <section className="bg-base py-16 sm:py-24 md:py-32">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2
-            className="text-4xl md:text-5xl font-extrabold text-fg mb-3"
+            className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-fg mb-3"
             style={{ fontWeight: 800 }}
           >
             {t('story.heading')}

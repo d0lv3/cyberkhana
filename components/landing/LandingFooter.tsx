@@ -7,7 +7,7 @@ function CTABlock() {
   const { t } = useLang();
 
   return (
-    <section className="py-24 md:py-32 relative overflow-hidden">
+    <section className="py-16 sm:py-24 md:py-32 relative overflow-hidden">
       <img
         src="/assets/landing/cta-arena-gate.jpg"
         alt=""
@@ -24,7 +24,7 @@ function CTABlock() {
         className="relative z-10 text-center px-6"
       >
         <h2
-          className="text-3xl md:text-5xl text-fg"
+          className="text-2xl sm:text-3xl md:text-5xl text-fg"
           style={{
             fontWeight: 800,
           }}

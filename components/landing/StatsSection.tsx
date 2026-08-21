@@ -57,7 +57,7 @@ function CounterCard({ value, suffix, labelKey }: StatItem) {
   return (
     <div ref={ref} className="text-center p-6">
       <div
-        className="text-4xl md:text-5xl font-black text-brand-neon"
+        className="text-3xl sm:text-4xl md:text-5xl font-black text-brand-neon"
         style={{
           textShadow: "0 0 20px rgba(159,239,0,0.3)",
         }}
@@ -76,7 +76,7 @@ export default function StatsSection() {
   const { t } = useLang();
 
   return (
-    <section className="py-24 md:py-32 bg-deep relative overflow-hidden">
+    <section className="py-16 sm:py-24 md:py-32 bg-deep relative overflow-hidden">
       <img
         src="/assets/landing/stats-iraq-map.jpg"
         alt=""
@@ -91,7 +91,7 @@ export default function StatsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-3xl md:text-4xl text-fg text-center"
+          className="text-2xl sm:text-3xl md:text-4xl text-fg text-center"
           style={{
             fontWeight: 800,
           }}

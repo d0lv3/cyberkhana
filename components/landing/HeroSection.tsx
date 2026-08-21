@@ -74,14 +74,14 @@ const SpotlightButton: React.FC<{ children: React.ReactNode }> = ({ children }) 
     <span
       onMouseMove={onMove}
       onMouseLeave={() => setSpot((s) => ({ ...s, active: false }))}
-      className="relative inline-flex rounded-2xl p-px transition-all duration-300"
+      className="relative inline-flex w-full sm:w-auto rounded-2xl p-px transition-all duration-300"
       style={{
         background: spot.active
           ? `radial-gradient(140px circle at ${spot.x}% ${spot.y}%, rgba(159,239,0,0.6), rgba(38,50,72,0.65) 70%)`
           : "rgba(38,50,72,0.65)",
       }}
     >
-      <span className="relative inline-flex h-14 items-center justify-center gap-2.5 overflow-hidden rounded-[15px] bg-[#0f1624]/95 px-7 backdrop-blur-sm">
+      <span className="relative inline-flex h-14 w-full sm:w-auto items-center justify-center gap-2.5 overflow-hidden rounded-[15px] bg-[#0f1624]/95 px-6 sm:px-7 backdrop-blur-sm">
         <span
           aria-hidden
           className="pointer-events-none absolute inset-0 transition-opacity duration-300"
@@ -100,8 +100,12 @@ const HeroSection: React.FC = () => {
   const typedText = useTypewriter(TYPEWRITER_WORDS);
   const { t, isArabic } = useLang();
 
+  // app-hero-min, not app-hero: a fixed 100svh box with overflow-hidden was
+  // clipping its own CTAs on any short viewport — in landscape both buttons sat
+  // past the cut and were unreachable. As a minimum height the section still
+  // fills a tall screen but grows rather than hiding content.
   return (
-    <section className="relative app-hero w-full bg-base overflow-hidden">
+    <section className="relative app-hero-min w-full bg-base overflow-hidden">
       {/* Subtle grid background */}
       <div className="absolute inset-0 opacity-[0.04]" style={{
         backgroundImage: `linear-gradient(rgba(159,239,0,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(159,239,0,0.3) 1px, transparent 1px)`,
@@ -111,8 +115,10 @@ const HeroSection: React.FC = () => {
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-base/50 to-base" />
 
-      <div className="relative z-10 flex items-center justify-center h-full">
-        <div className="max-w-4xl mx-auto px-6 w-full text-center">
+      {/* Top padding clears the fixed navbar, which the centred content used to
+          sit directly underneath — the mark was tucked behind it at 375px. */}
+      <div className="relative z-10 flex min-h-[inherit] items-center justify-center px-5 sm:px-6 pt-24 pb-20 sm:pt-28 sm:pb-24">
+        <div className="max-w-4xl mx-auto w-full text-center">
           {/* Logo */}
           <motion.div
             custom={0}
@@ -120,7 +126,7 @@ const HeroSection: React.FC = () => {
             initial="hidden"
             animate="visible"
           >
-            <BrandLogo variant="mark" loading="eager" className="h-20 md:h-28 w-auto mx-auto mb-8" />
+            <BrandLogo variant="mark" loading="eager" className="h-14 sm:h-20 md:h-28 w-auto mx-auto mb-5 sm:mb-8" />
           </motion.div>
 
           {/* Headline */}
@@ -141,7 +147,7 @@ const HeroSection: React.FC = () => {
             variants={fadeUpVariants}
             initial="hidden"
             animate="visible"
-            className="mt-6 text-lg md:text-xl text-muted max-w-2xl mx-auto"          >
+            className="mt-4 sm:mt-6 text-base sm:text-lg md:text-xl text-muted max-w-2xl mx-auto"          >
             {isArabic
               ? 'تعلّم. تدرّب. تنافس. — منصتك لتطوير مهارات الأمن السيبراني.'
               : 'Learn. Practice. Compete. — Your platform to sharpen real cybersecurity skills.'}
@@ -153,7 +159,7 @@ const HeroSection: React.FC = () => {
             variants={fadeUpVariants}
             initial="hidden"
             animate="visible"
-            className="mt-4 text-base md:text-lg text-faint h-8"          >
+            className="mt-3 sm:mt-4 text-sm sm:text-base md:text-lg text-faint h-8"          >
             <span>{typedText}</span>
             <span className="inline-block w-[2px] h-5 bg-brand-neon ml-1 align-middle animate-pulse" />
           </motion.div>
@@ -164,12 +170,12 @@ const HeroSection: React.FC = () => {
             variants={fadeUpVariants}
             initial="hidden"
             animate="visible"
-            className="mt-10 flex flex-wrap justify-center gap-4"
+            className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:flex-wrap justify-center items-stretch sm:items-center gap-3 sm:gap-4"
           >
             <Link
               to="/register"
               aria-label="CyberKhana Main — register or sign in"
-              className="inline-flex transition-transform duration-200 hover:scale-[1.02]"
+              className="inline-flex w-full sm:w-auto transition-transform duration-200 hover:scale-[1.02]"
             >
               <SpotlightButton>
                 <img
@@ -186,7 +192,7 @@ const HeroSection: React.FC = () => {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="CyberKhana Academy (opens in a new tab)"
-              className="inline-flex transition-transform duration-200 hover:scale-[1.02]"
+              className="inline-flex w-full sm:w-auto transition-transform duration-200 hover:scale-[1.02]"
             >
               <SpotlightButton>
                 <BrandLogo variant="academy" alt="CyberKhana Academy" className="h-7 w-auto object-contain" />

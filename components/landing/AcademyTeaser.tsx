@@ -18,7 +18,7 @@ const AcademyTeaser = () => {
 
 
   return (
-    <section className="py-24 md:py-32 bg-base">
+    <section className="py-16 sm:py-24 md:py-32 bg-base">
       <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-12 md:gap-16">
         <motion.div
           className="md:w-1/2"
@@ -33,7 +33,7 @@ const AcademyTeaser = () => {
             className="h-12 w-auto mb-6"
           />
           <h2
-            className="text-3xl md:text-4xl text-fg font-extrabold"
+            className="text-2xl sm:text-3xl md:text-4xl text-fg font-extrabold"
             style={{ fontWeight: 800 }}
           >
             {t('academy.heading')}
