@@ -530,7 +530,7 @@ const CompetitionDashboardPage: React.FC = () => {
                         if (!ended || isAdmin) navigate(`/competition/${id}/challenge/${challenge._id}`);
                       }}
                       className={`group border rounded-xl p-4 md:p-5 transition-all ${
-                        ended && !isAdmin ? 'cursor-default' : 'cursor-pointer hover:border-brand/40'
+                        ended && !isAdmin ? 'cursor-default select-none' : 'cursor-pointer select-none hover:border-brand/40'
                       } ${
                         isSolved && !ended
                           ? 'bg-brand/5 border-brand/20'

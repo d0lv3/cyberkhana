@@ -42,7 +42,12 @@ const EnhancedCard: React.FC<EnhancedCardProps> = ({
         hoverable
           ? `transition-all duration-200 ${glowMap[glowColor] || 'hover:border-edge-light hover:bg-surface-hover'}`
           : '',
-        onClick ? 'cursor-pointer' : '',
+        // A card with an onClick is a control, so it behaves like one: no blue
+        // highlight on a double-click, no selection callout on a long press.
+        // Cards WITHOUT an onClick are containers and stay selectable — challenge
+        // descriptions and hints sit in them, and a player has to be able to copy
+        // hashes and cipher text out.
+        onClick ? 'cursor-pointer select-none' : '',
         className,
       ]
         .filter(Boolean)

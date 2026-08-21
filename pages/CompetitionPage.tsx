@@ -156,7 +156,7 @@ const AdminCompetitionRow: React.FC<{
     <div className="rounded-xl border border-edge bg-panel overflow-hidden">
       {/* Row header */}
       <div
-        className="flex items-center gap-4 p-5 cursor-pointer hover:bg-surface-hover transition-colors"
+        className="flex items-center gap-4 p-5 cursor-pointer select-none hover:bg-surface-hover transition-colors"
         onClick={onToggle}
       >
         <div

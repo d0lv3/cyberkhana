@@ -354,7 +354,7 @@ const EnhancedChallengesPage: React.FC = () => {
                     transition={{ delay: index * 0.02 }}
                     key={challenge._id}
                     onClick={() => navigate(`/challenges/${challenge._id}`)}
-                    className="group border-b border-edge last:border-b-0 hover:bg-surface cursor-pointer transition-colors p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                    className="group border-b border-edge last:border-b-0 hover:bg-surface cursor-pointer select-none transition-colors p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
                   >
                     
                     {/* Left: Status & Identity */}

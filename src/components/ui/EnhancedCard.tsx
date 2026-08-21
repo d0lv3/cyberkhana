@@ -40,7 +40,9 @@ const Card: React.FC<CardProps> = ({
   // Hoverable
   const hoverClasses = hoverable
     ? [
-        'hover:border-zinc-600 hover:shadow-xl cursor-pointer',
+        // select-none: a hoverable card is a control, and a control should not
+        // highlight its own label when you double-click it.
+        'hover:border-zinc-600 hover:shadow-xl cursor-pointer select-none',
         'active:scale-[0.99]',
         'focus-within:ring-2 focus-within:ring-emerald-500 focus-within:ring-opacity-50',
       ].join(' ')

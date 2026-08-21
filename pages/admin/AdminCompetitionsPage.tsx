@@ -771,7 +771,7 @@ const AdminCompetitionsPage: React.FC = () => {
                 <div
                   key={challenge._id}
                   onClick={() => !isAlreadyAdded && toggleChallengeSelection(challenge._id)}
-                  className={`p-5 rounded-lg border transition-all cursor-pointer h-full flex flex-col ${
+                  className={`p-5 rounded-lg border transition-all cursor-pointer select-none h-full flex flex-col ${
                     isSelected
                       ? 'border-emerald-500 bg-emerald-500/10'
                       : isAlreadyAdded
