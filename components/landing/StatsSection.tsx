@@ -83,7 +83,7 @@ export default function StatsSection() {
         loading="lazy"
         className="absolute inset-0 w-full h-full object-cover opacity-20"
       />
-      <div className="absolute inset-0 bg-base/80" />
+      <div className="absolute inset-0 bg-canvas/80" />
 
       <div className="relative z-10 max-w-5xl mx-auto px-6">
         <motion.h2

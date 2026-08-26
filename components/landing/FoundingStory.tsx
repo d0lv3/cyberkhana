@@ -189,7 +189,7 @@ export default function FoundingStory() {
   const { t } = useLang();
 
   return (
-    <section className="bg-base py-16 sm:py-24 md:py-32">
+    <section className="bg-canvas py-16 sm:py-24 md:py-32">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center mb-16">
           <h2

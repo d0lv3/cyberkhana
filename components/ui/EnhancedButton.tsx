@@ -50,7 +50,7 @@ const Button: React.FC<ButtonProps> = ({
       'shadow-md hover:shadow-[0_0_16px_rgba(0,168,89,0.35)]',
     ].join(' '),
     neon: [
-      'bg-brand-neon text-base',
+      'bg-brand-neon text-canvas',
       'hover:bg-[#8dd900]',
       'focus:ring-brand-neon',
       'font-black shadow-md hover:shadow-[0_0_16px_rgba(159,239,0,0.4)]',

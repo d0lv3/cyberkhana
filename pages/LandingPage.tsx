@@ -13,7 +13,7 @@ import LandingFooter from '../components/landing/LandingFooter';
 const LandingPage: React.FC = () => {
   return (
     <LangProvider>
-      <div className="bg-base app-min-shell overflow-x-hidden" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
+      <div className="bg-canvas app-min-shell overflow-x-hidden" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
         <LandingNavbar />
         <HeroSection />
         <div id="platform"><IPadShowcase /></div>

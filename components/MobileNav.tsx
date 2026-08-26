@@ -92,7 +92,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ user, onLogout }) => {
             onClick={() => setSheetOpen(false)}
             className="absolute inset-0 w-full bg-black/60 backdrop-blur-sm animate-fade-in"
           />
-          <div className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-edge-strong bg-base pb-safe animate-slide-in">
+          <div className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-edge-strong bg-canvas pb-safe animate-slide-in">
             <div className="flex items-center justify-between px-5 pt-4 pb-2">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-faint">More</p>
               <button
@@ -150,7 +150,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ user, onLogout }) => {
 
       {/* ── Bottom bar ── */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-base/95 backdrop-blur-md border-t border-edge-strong pb-safe"
+        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-canvas/95 backdrop-blur-md border-t border-edge-strong pb-safe"
         aria-label="Primary"
       >
         <div className="grid grid-cols-5">

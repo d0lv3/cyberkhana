@@ -79,7 +79,7 @@ const EnhancedChallengeCard: React.FC<EnhancedChallengeCardProps> = ({
 
             {/* Solved badge */}
             {isSolved && (
-              <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-0.5 bg-brand text-base text-[9px] font-black rounded uppercase tracking-tight">
+              <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-0.5 bg-brand text-canvas text-[9px] font-black rounded uppercase tracking-tight">
                 <Award size={10} />
                 SOLVED
               </div>

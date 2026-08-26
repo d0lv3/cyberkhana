@@ -196,7 +196,7 @@ const NewChallengeDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-base flex items-center justify-center">
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-brand/20 border-t-brand rounded-full animate-spin" />
           <p className="text-muted font-medium animate-pulse uppercase tracking-widest text-xs">Loading Challenge...</p>
@@ -207,7 +207,7 @@ const NewChallengeDetailPage: React.FC = () => {
 
   if (!challenge) {
     return (
-      <div className="min-h-screen bg-base flex items-center justify-center p-4">
+      <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
         <Card className="max-w-md p-8 text-center border-edge bg-panel">
           <XCircle className="w-16 h-16 text-danger mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-fg mb-2">Challenge Missing</h2>
@@ -226,7 +226,7 @@ const NewChallengeDetailPage: React.FC = () => {
   const CategoryIcon = categoryStyle.icon;
 
   return (
-    <div className="min-h-screen bg-base text-fg-soft pb-24">
+    <div className="min-h-screen bg-canvas text-fg-soft pb-24">
       {/* Hero Header */}
       <div 
         className="relative pt-12 pb-24 border-b border-edge min-h-[400px] flex items-center transition-colors duration-500"
@@ -336,7 +336,7 @@ const NewChallengeDetailPage: React.FC = () => {
               </h2>
 
               <div className="relative z-10">
-                <div className="text-fg-soft text-lg leading-relaxed font-medium whitespace-pre-wrap break-words bg-base/50 p-6 rounded-2xl border border-edge/50">
+                <div className="text-fg-soft text-lg leading-relaxed font-medium whitespace-pre-wrap break-words bg-canvas/50 p-6 rounded-2xl border border-edge/50">
                   {challenge.description}
                 </div>
               </div>
@@ -358,7 +358,7 @@ const NewChallengeDetailPage: React.FC = () => {
                         href={file.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-between p-4 bg-base/80 rounded-xl border border-edge hover:border-brand-neon/30 hover:bg-edge/50 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+                        className="flex items-center justify-between p-4 bg-canvas/80 rounded-xl border border-edge hover:border-brand-neon/30 hover:bg-edge/50 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon focus-visible:ring-offset-2 focus-visible:ring-offset-base"
                       >
                         <div className="flex items-center gap-3">
                           <div className="p-2 rounded-lg bg-edge group-hover:bg-brand-neon/20 group-hover:text-brand-neon">
@@ -403,7 +403,7 @@ const NewChallengeDetailPage: React.FC = () => {
                 </h2>
                 <div className="space-y-6">
                   {challenge.writeup.pdfFile && (
-                    <div className="p-6 bg-base/50 rounded-2xl border border-edge flex items-center justify-between">
+                    <div className="p-6 bg-canvas/50 rounded-2xl border border-edge flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="p-3 bg-red-500/10 text-red-500 rounded-xl">
                           <Download size={24} />
@@ -422,7 +422,7 @@ const NewChallengeDetailPage: React.FC = () => {
                     </div>
                   )}
                   {challenge.writeup.content && (
-                    <div className="prose prose-invert max-w-none text-fg-soft leading-relaxed font-normal bg-base/30 p-8 rounded-2xl border border-edge/50 whitespace-pre-wrap">
+                    <div className="prose prose-invert max-w-none text-fg-soft leading-relaxed font-normal bg-canvas/30 p-8 rounded-2xl border border-edge/50 whitespace-pre-wrap">
                       {challenge.writeup.content}
                     </div>
                   )}
@@ -467,7 +467,7 @@ const NewChallengeDetailPage: React.FC = () => {
                       placeholder="khana{...}"
                       value={flag}
                       onChange={(e) => setFlag(e.target.value)}
-                      className="w-full pl-12 py-4 bg-base border-edge focus:border-brand-neon/50 rounded-2xl transition-all"
+                      className="w-full pl-12 py-4 bg-canvas border-edge focus:border-brand-neon/50 rounded-2xl transition-all"
                     />
                   </div>
 
@@ -515,7 +515,7 @@ const NewChallengeDetailPage: React.FC = () => {
                           key={index}
                           className={`p-5 rounded-2xl border transition-all ${isUnlocked
                             ? 'bg-brand-neon/5 border-brand-neon/20'
-                            : 'bg-base border-edge hover:border-edge/80'
+                            : 'bg-canvas border-edge hover:border-edge/80'
                             }`}
                         >
                           <div className="flex items-center justify-between mb-4">
@@ -568,7 +568,7 @@ const NewChallengeDetailPage: React.FC = () => {
                       key={solver.odId || index}
                       className={`flex items-center gap-4 p-4 rounded-2xl transition-all ${solver.isFirstBlood
                         ? 'bg-amber/10 border border-amber/30'
-                        : 'bg-base/50 border border-edge/50'
+                        : 'bg-canvas/50 border border-edge/50'
                         }`}
                     >
                       <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${solver.isFirstBlood
@@ -591,7 +591,7 @@ const NewChallengeDetailPage: React.FC = () => {
                   ))
                 ) : (
                   <div className="text-center py-10">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-base flex items-center justify-center border border-edge opacity-50">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-canvas flex items-center justify-center border border-edge opacity-50">
                       <Target size={24} className="text-muted" />
                     </div>
                     <p className="text-muted font-bold mb-1">No Solutions Yet</p>
@@ -606,7 +606,7 @@ const NewChallengeDetailPage: React.FC = () => {
 
       {/* Modals */}
       <Modal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} className="max-w-md">
-        <div className="relative p-10 text-center bg-base border border-brand-neon/30 rounded-3xl overflow-hidden">
+        <div className="relative p-10 text-center bg-canvas border border-brand-neon/30 rounded-3xl overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(159,239,0,0.2),transparent)]" />
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-24 h-24 mx-auto mb-8 rounded-full bg-brand-neon/20 flex items-center justify-center border-2 border-brand-neon/30 shadow-[0_0_50px_rgba(159,239,0,0.3)]">
             <CheckCircle className="w-14 h-14 text-brand-neon" />
@@ -620,7 +620,7 @@ const NewChallengeDetailPage: React.FC = () => {
       </Modal>
 
       <Modal isOpen={showHintModal} onClose={() => setShowHintModal(false)} className="max-w-sm">
-        <div className="p-8 bg-base border border-edge rounded-3xl">
+        <div className="p-8 bg-canvas border border-edge rounded-3xl">
           <h3 className="text-xl font-black text-fg mb-4 tracking-tight uppercase italic flex items-center gap-2">
             <Lock className="text-amber" />
             Unlock Hint?

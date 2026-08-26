@@ -6,7 +6,7 @@ const iPadShowcase = () => {
   const { t, isArabic } = useLang();
 
   return (
-    <div className="bg-base">
+    <div className="bg-canvas">
       <ContainerScroll
         titleComponent={
           <div className="flex flex-col items-center">

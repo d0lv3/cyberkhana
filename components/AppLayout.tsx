@@ -17,7 +17,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout, user: userProp }) => {
   const isEdgeToEdge = location.pathname.match(/^\/(challenges|dashboard)/);
 
   return (
-    <div className="flex app-shell text-fg-soft bg-base">
+    <div className="flex app-shell text-fg-soft bg-canvas">
       <Sidebar user={user} />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header user={user} onLogout={onLogout} />

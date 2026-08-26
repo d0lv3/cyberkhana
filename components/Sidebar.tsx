@@ -43,7 +43,7 @@ const Sidebar: React.FC<SidebarProps> = ({ user: userProp }) => {
   ];
 
   return (
-    <aside className="w-60 flex-shrink-0 flex flex-col hidden md:flex h-screen sticky top-0 bg-base border-r border-edge-strong">
+    <aside className="w-60 flex-shrink-0 flex flex-col hidden md:flex h-screen sticky top-0 bg-canvas border-r border-edge-strong">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-edge-strong">
         <BrandLogo

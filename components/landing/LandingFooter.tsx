@@ -14,7 +14,7 @@ function CTABlock() {
         loading="lazy"
         className="absolute inset-0 w-full h-full object-cover opacity-30"
       />
-      <div className="absolute inset-0 bg-base/80" />
+      <div className="absolute inset-0 bg-canvas/80" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -37,7 +37,7 @@ function CTABlock() {
         <div className="flex gap-4 mt-8 justify-center flex-wrap">
           <Link
             to="/register"
-            className="bg-brand-neon text-base font-bold px-8 py-4 rounded-lg hover:bg-[#b8ff3a] transition-all text-lg cursor-pointer"
+            className="bg-brand-neon text-canvas font-bold px-8 py-4 rounded-lg hover:bg-[#b8ff3a] transition-all text-lg cursor-pointer"
           >
             {t('cta.getStarted')}
           </Link>

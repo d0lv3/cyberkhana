@@ -18,7 +18,7 @@ const AcademyTeaser = () => {
 
 
   return (
-    <section className="py-16 sm:py-24 md:py-32 bg-base">
+    <section className="py-16 sm:py-24 md:py-32 bg-canvas">
       <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-12 md:gap-16">
         <motion.div
           className="md:w-1/2"
@@ -87,7 +87,7 @@ const AcademyTeaser = () => {
             href={ACADEMY_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-brand-neon px-6 py-3 font-bold text-base transition-all hover:bg-[#b8ff3a]"
+            className="mt-8 inline-flex items-center justify-center gap-2 rounded-lg bg-brand-neon px-6 py-3 font-bold text-canvas transition-all hover:bg-[#b8ff3a]"
           >
             {t('academy.cta')}
             <ExternalLink size={18} />

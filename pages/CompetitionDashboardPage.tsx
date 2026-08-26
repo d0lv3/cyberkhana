@@ -255,7 +255,7 @@ const CompetitionDashboardPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-base flex items-center justify-center">
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-10 h-10 border-4 border-brand/20 border-t-brand rounded-full animate-spin" />
           <p className="text-muted text-sm">Loading competition...</p>
@@ -266,7 +266,7 @@ const CompetitionDashboardPage: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-base flex items-center justify-center p-4">
+      <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
         <div className="max-w-md w-full text-center">
           <div className="bg-danger/10 border border-danger/30 text-danger px-6 py-4 rounded-xl mb-6">{error}</div>
           <Button onClick={() => navigate('/competition')} className="bg-surface-alt border border-edge text-fg-soft hover:bg-surface">
@@ -280,7 +280,7 @@ const CompetitionDashboardPage: React.FC = () => {
   if (!competition) {
     if (!showSecurityCodeModal) {
       return (
-        <div className="min-h-screen bg-base flex items-center justify-center p-4">
+        <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
           <div className="text-center">
             <p className="text-muted text-lg mb-4">Competition not found</p>
             <Button onClick={() => navigate('/competition')} className="bg-surface-alt border border-edge text-fg-soft">
@@ -293,7 +293,7 @@ const CompetitionDashboardPage: React.FC = () => {
 
     // Security code modal (standalone page)
     return (
-      <div className="min-h-screen bg-base flex items-center justify-center p-4">
+      <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -331,7 +331,7 @@ const CompetitionDashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base text-fg-soft">
+    <div className="min-h-screen bg-canvas text-fg-soft">
 
       {/* Hero Banner */}
       <div
@@ -715,7 +715,7 @@ const CompetitionDashboardPage: React.FC = () => {
       {/* Security Code Modal (overlay) */}
       <AnimatePresence>
         {showSecurityCodeModal && competition && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-base/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-canvas/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <motion.div initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-panel border border-edge rounded-2xl max-w-md w-full p-8 shadow-2xl">
               <div className="text-center mb-8">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber/10 border border-amber/20 flex items-center justify-center">

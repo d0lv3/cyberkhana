@@ -11,7 +11,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
   return (
-    <header className="flex-shrink-0 bg-base/95 border-b border-edge-strong backdrop-blur-md sticky top-0 z-30">
+    <header className="flex-shrink-0 bg-canvas/95 border-b border-edge-strong backdrop-blur-md sticky top-0 z-30">
       <div className="flex items-center justify-between h-14 px-4 sm:px-6">
         {/* Mobile logo */}
         <Link to="/dashboard" aria-label="CyberKhana" className="md:hidden inline-flex items-center justify-center touch:min-h-tap touch:min-w-tap">

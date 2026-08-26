@@ -163,7 +163,7 @@ const EnhancedChallengesPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-base flex items-center justify-center">
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-muted">
           <div className="w-10 h-10 border-4 border-brand/20 border-t-brand rounded-full animate-spin" />
           <p className="tracking-widest uppercase text-xs font-bold text-brand">Loading Matrix...</p>

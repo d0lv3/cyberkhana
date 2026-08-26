@@ -90,7 +90,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
   };
 
   return (
-    <div className="bg-base min-h-screen">
+    <div className="bg-canvas min-h-screen">
       <CyberMatrixHero onCTAClick={() => {
         const registerForm = document.getElementById('register-form');
         if (registerForm) {

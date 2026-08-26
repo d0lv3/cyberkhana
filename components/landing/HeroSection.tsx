@@ -105,7 +105,7 @@ const HeroSection: React.FC = () => {
   // past the cut and were unreachable. As a minimum height the section still
   // fills a tall screen but grows rather than hiding content.
   return (
-    <section className="relative app-hero-min w-full bg-base overflow-hidden">
+    <section className="relative app-hero-min w-full bg-canvas overflow-hidden">
       {/* Subtle grid background */}
       <div className="absolute inset-0 opacity-[0.04]" style={{
         backgroundImage: `linear-gradient(rgba(159,239,0,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(159,239,0,0.3) 1px, transparent 1px)`,
@@ -113,7 +113,7 @@ const HeroSection: React.FC = () => {
       }} />
 
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-base/50 to-base" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-canvas/50 to-canvas" />
 
       {/* Top padding clears the fixed navbar, which the centred content used to
           sit directly underneath — the mark was tucked behind it at 375px. */}

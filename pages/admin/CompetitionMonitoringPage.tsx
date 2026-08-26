@@ -218,7 +218,7 @@ const CompetitionMonitoringPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-base-alt flex flex-col items-center justify-center">
+      <div className="min-h-screen bg-canvas-alt flex flex-col items-center justify-center">
         <div className="animate-spin w-12 h-12 border-4 border-[#33405c] border-t-brand-neon rounded-full mb-4"></div>
         <p className="text-muted font-mono tracking-widest text-sm">Loading dashboard...</p>
       </div>
@@ -226,7 +226,7 @@ const CompetitionMonitoringPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-alt text-fg-soft font-sans selection:bg-brand-neon/30 selection:text-brand-neon overflow-x-hidden">
+    <div className="min-h-screen bg-canvas-alt text-fg-soft font-sans selection:bg-brand-neon/30 selection:text-brand-neon overflow-x-hidden">
       <div className="container mx-auto px-4 py-8">
         
         {/* Top Header */}
@@ -277,7 +277,7 @@ const CompetitionMonitoringPage: React.FC = () => {
               variant="default"
               onClick={() => fetchCompetitionData(true)}
               disabled={refreshing}
-              className="bg-brand-neon text-base-alt hover:bg-[#b0f52b] font-black"
+              className="bg-brand-neon text-canvas-alt hover:bg-[#b0f52b] font-black"
               leftIcon={<RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />}
             >
               Refresh
@@ -396,7 +396,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                                   <p className="font-bold text-[#e5ecfb] group-hover:text-brand transition-colors">{user.username}</p>
                                   {isSharedCompetition && (user.universityName || user.universityCode) && (
                                     <p className="mt-1">
-                                      <span className="inline-flex items-center rounded-full border border-[#33405c] bg-base-alt px-2 py-0.5 text-[10px] font-semibold text-muted">
+                                      <span className="inline-flex items-center rounded-full border border-[#33405c] bg-canvas-alt px-2 py-0.5 text-[10px] font-semibold text-muted">
                                         {user.universityName || user.universityCode}
                                       </span>
                                     </p>
@@ -421,10 +421,10 @@ const CompetitionMonitoringPage: React.FC = () => {
                     <div className="p-4 flex justify-between items-center bg-[#151c29]">
                       <span className="text-xs text-dim">Page {currentPage} / {totalPages}</span>
                       <div className="flex gap-2">
-                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-base-alt hover:bg-surface" disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)}>
+                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-canvas-alt hover:bg-surface" disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)}>
                           <ChevronLeft className="w-4 h-4"/>
                         </Button>
-                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-base-alt hover:bg-surface" disabled={currentPage === totalPages} onClick={() => setCurrentPage(c => c + 1)}>
+                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-canvas-alt hover:bg-surface" disabled={currentPage === totalPages} onClick={() => setCurrentPage(c => c + 1)}>
                           <ChevronRight className="w-4 h-4"/>
                         </Button>
                       </div>
@@ -481,7 +481,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                             <p className="font-bold text-[#e5ecfb] truncate">{user.username}</p>
                             {isSharedCompetition && (user.universityName || user.universityCode) && (
                               <p className="mt-1">
-                                <span className="inline-flex items-center rounded-full border border-[#33405c] bg-base-alt px-2 py-0.5 text-[10px] font-semibold text-muted">
+                                <span className="inline-flex items-center rounded-full border border-[#33405c] bg-canvas-alt px-2 py-0.5 text-[10px] font-semibold text-muted">
                                   {user.universityName || user.universityCode}
                                 </span>
                               </p>
@@ -497,7 +497,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                                 <span className="text-dim">{user.solvedChallenges || 0}/{totalChallenges}</span>
                                 <span className="text-brand">{progressPct}%</span>
                               </div>
-                              <div className="h-1.5 bg-base-alt rounded-full border border-edge overflow-hidden">
+                              <div className="h-1.5 bg-canvas-alt rounded-full border border-edge overflow-hidden">
                                 <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${progressPct}%` }} />
                               </div>
                             </div>
@@ -513,7 +513,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                               initial={{ height: 0, opacity: 0 }}
                               animate={{ height: 'auto', opacity: 1 }}
                               exit={{ height: 0, opacity: 0 }}
-                              className="overflow-hidden bg-base-alt"
+                              className="overflow-hidden bg-canvas-alt"
                             >
                               <div className="p-4 border-t border-edge">
                                 {/* Summary row */}
@@ -541,7 +541,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                                         <div className="flex items-center gap-2">
                                           <CheckCircle2 className="w-4 h-4 text-brand flex-shrink-0" />
                                           <span className="text-[#e5ecfb] font-medium">{act.challengeTitle}</span>
-                                          <span className="text-[10px] text-faint bg-base-alt px-1.5 py-0.5 rounded border border-edge">{act.category}</span>
+                                          <span className="text-[10px] text-faint bg-canvas-alt px-1.5 py-0.5 rounded border border-edge">{act.category}</span>
                                         </div>
                                         <div className="flex items-center gap-3 flex-shrink-0">
                                           <span className="text-brand font-bold text-xs">+{act.points} pts</span>
@@ -577,10 +577,10 @@ const CompetitionMonitoringPage: React.FC = () => {
                     <div className="p-4 flex justify-between items-center bg-[#151c29] border-t border-edge">
                       <span className="text-xs text-dim">Page {currentPage} / {totalPages}</span>
                       <div className="flex gap-2">
-                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-base-alt hover:bg-surface" disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)}>
+                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-canvas-alt hover:bg-surface" disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)}>
                           <ChevronLeft className="w-4 h-4"/>
                         </Button>
-                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-base-alt hover:bg-surface" disabled={currentPage === totalPages} onClick={() => setCurrentPage(c => c + 1)}>
+                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-canvas-alt hover:bg-surface" disabled={currentPage === totalPages} onClick={() => setCurrentPage(c => c + 1)}>
                           <ChevronRight className="w-4 h-4"/>
                         </Button>
                       </div>
@@ -654,7 +654,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                         <span className="text-[#e5ecfb] font-bold">{c.name}</span>
                         <span className="text-dim">{c.solves}/{c.total} <span className={color.replace('bg-', 'text-')}>{pct.toFixed(0)}%</span></span>
                       </div>
-                      <div className="h-1.5 w-full bg-base-alt rounded-full overflow-hidden border border-edge">
+                      <div className="h-1.5 w-full bg-canvas-alt rounded-full overflow-hidden border border-edge">
                         <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className={`h-full ${color} rounded-full`} />
                       </div>
                     </div>
@@ -675,14 +675,14 @@ const CompetitionMonitoringPage: React.FC = () => {
                   const rank = i + 1;
                   return (
                     <div key={user._id} onClick={() => handleViewUser(user)} className="flex items-center gap-3 p-2.5 rounded cursor-pointer hover:bg-[#1f2a40] transition-colors">
-                      <div className="w-7 h-7 flex-shrink-0 rounded bg-base-alt border border-edge-soft flex items-center justify-center">
+                      <div className="w-7 h-7 flex-shrink-0 rounded bg-canvas-alt border border-edge-soft flex items-center justify-center">
                         {rankIcon(rank)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-fg truncate">{user.username}</p>
                         {isSharedCompetition && (user.universityName || user.universityCode) && (
                           <p className="mt-1">
-                            <span className="inline-flex items-center rounded-full border border-[#33405c] bg-base-alt px-2 py-0.5 text-[10px] font-semibold text-muted">
+                            <span className="inline-flex items-center rounded-full border border-[#33405c] bg-canvas-alt px-2 py-0.5 text-[10px] font-semibold text-muted">
                               {user.universityName || user.universityCode}
                             </span>
                           </p>
@@ -740,21 +740,21 @@ const CompetitionMonitoringPage: React.FC = () => {
                    <Button variant="ghost" onClick={() => setSelectedUser(null)} className="text-dim hover:text-white p-1 hover:bg-edge-soft"><X className="w-5 h-5"/></Button>
                 </div>
                 <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
                      <p className="text-3xl font-black text-amber mb-1">{selectedUser.points}</p>
                      <p className="text-[10px] font-mono text-dim">Score</p>
                   </div>
-                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
                      <p className="text-3xl font-black text-brand-neon mb-1">{selectedUser.solvedChallenges || 0}</p>
                      <p className="text-[10px] font-mono text-dim">Solved</p>
                   </div>
-                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
                      <p className="text-3xl font-black text-info mb-1">{leaderboard.findIndex((l: any) => l._id === selectedUser._id) + 1 || '-'}</p>
                      <p className="text-[10px] font-mono text-dim">Rank</p>
                   </div>
                 </div>
                 <div className="flex gap-3 mt-8">
-                  <Button variant="default" className="flex-1 bg-brand-neon text-base-alt font-black hover:bg-[#b0f52b]" onClick={() => navigate(`/profile/${selectedUser._id}`)}>
+                  <Button variant="default" className="flex-1 bg-brand-neon text-canvas-alt font-black hover:bg-[#b0f52b]" onClick={() => navigate(`/profile/${selectedUser._id}`)}>
                     FULL PROFILE
                   </Button>
                   <Button variant="outline" className="flex-1 border-[#3a4864] text-[#dce5f9] hover:bg-edge" onClick={() => setSelectedUser(null)}>
@@ -777,19 +777,19 @@ const CompetitionMonitoringPage: React.FC = () => {
                 </div>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
                      <p className="text-xl font-black text-amber mb-1">{selectedChallenge.currentPoints || selectedChallenge.points}</p>
                      <p className="text-[10px] font-mono text-dim">REWARD</p>
                   </div>
-                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
                      <p className="text-xl font-black text-brand-neon mb-1">{selectedChallenge.solves || 0}</p>
                      <p className="text-[10px] font-mono text-dim">Solves</p>
                   </div>
-                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
                      <p className="text-xl font-black text-info mb-1 uppercase">{selectedChallenge.difficulty || 'N/A'}</p>
                      <p className="text-[10px] font-mono text-dim">RATING</p>
                   </div>
-                  <div className="bg-base-alt p-4 rounded-xl text-center border border-edge-soft">
+                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
                      <p className={`text-xl font-black mb-1 ${(selectedChallenge.solves || 0) > 0 ? 'text-amber' : 'text-dim'}`}>
                        {(selectedChallenge.solves || 0) > 0 ? 'YES' : 'NO'}
                      </p>
@@ -798,7 +798,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                 </div>
 
                 {selectedChallenge.description && (
-                  <div className="mb-8 bg-base-alt border border-edge-soft rounded-xl p-4">
+                  <div className="mb-8 bg-canvas-alt border border-edge-soft rounded-xl p-4">
                     <p className="text-xs font-mono text-faint mb-3 pb-2 border-b border-edge-soft">Description</p>
                     <p className="text-[#dce5f9] text-sm leading-relaxed whitespace-pre-wrap font-mono">
                       {selectedChallenge.description}
@@ -807,7 +807,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                 )}
                 
                 <div className="flex gap-3">
-                  <Button variant="default" className="flex-1 bg-amber text-base-alt font-black hover:bg-[#ffb041]" onClick={() => navigate(`/competitions/${id}/challenges/${selectedChallenge._id}`)}>
+                  <Button variant="default" className="flex-1 bg-amber text-canvas-alt font-black hover:bg-[#ffb041]" onClick={() => navigate(`/competitions/${id}/challenges/${selectedChallenge._id}`)}>
                     View Challenge
                   </Button>
                   <Button variant="outline" className="flex-1 border-[#3a4864] text-[#dce5f9] hover:bg-edge" onClick={() => setSelectedChallenge(null)}>

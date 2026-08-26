@@ -274,7 +274,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-base text-fg-soft pb-16">
+    <div className="min-h-screen bg-canvas text-fg-soft pb-16">
       <div className="container mx-auto px-4 md:px-8 py-8 md:py-10">
         <div className="max-w-6xl mx-auto">
           {/* Header */}
@@ -356,7 +356,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
                   </span>
                 </div>
               </div>
-              <div className="shrink-0 self-start lg:self-center bg-base/70 border border-edge rounded-2xl px-5 py-4 min-w-[132px] text-center">
+              <div className="shrink-0 self-start lg:self-center bg-canvas/70 border border-edge rounded-2xl px-5 py-4 min-w-[132px] text-center">
                 <p className="text-xs uppercase tracking-widest text-muted font-bold mb-1">Current</p>
                 <p className="text-3xl font-black leading-none text-brand-neon">{challenge.currentPoints || challenge.points}</p>
                 <p className="text-[10px] uppercase tracking-wider text-muted mt-1">Points</p>
@@ -374,7 +374,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
 
                 {isCompetitionEnded() ? (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3 p-4 bg-base/70 rounded-xl border border-edge">
+                    <div className="flex items-center gap-3 p-4 bg-canvas/70 rounded-xl border border-edge">
                       <Lock className="w-6 h-6 text-muted" />
                       <div>
                         <p className="text-fg-soft font-semibold">Competition Ended</p>
@@ -406,7 +406,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
                         placeholder="khana{...}"
                         value={flag}
                         onChange={(e) => setFlag(e.target.value)}
-                        className="w-full bg-base border-edge text-fg"
+                        className="w-full bg-canvas border-edge text-fg"
                       />
                     </div>
                     <Button
@@ -461,7 +461,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
                           return (
                             <div
                               key={index}
-                              className="p-4 bg-base/70 border border-edge rounded-xl"
+                              className="p-4 bg-canvas/70 border border-edge rounded-xl"
                             >
                               <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2 text-muted text-sm">
@@ -514,7 +514,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
                     href={(challenge as any).challengeLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-4 bg-base/70 hover:bg-edge/60 rounded-xl border border-edge hover:border-edge-light transition-all"
+                    className="flex items-center gap-3 p-4 bg-canvas/70 hover:bg-edge/60 rounded-xl border border-edge hover:border-edge-light transition-all"
                   >
                     <ExternalLink className="w-5 h-5 text-brand-neon" />
                     <div className="flex-1 min-w-0">
@@ -536,7 +536,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
                         href={file.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3 p-3 bg-base/70 hover:bg-edge/60 rounded-xl border border-edge hover:border-edge-light transition-all"
+                        className="flex items-center gap-3 p-3 bg-canvas/70 hover:bg-edge/60 rounded-xl border border-edge hover:border-edge-light transition-all"
                       >
                         <Download className="w-5 h-5 text-muted" />
                         <span className="text-fg-soft flex-1 break-words">{file.name}</span>
@@ -571,7 +571,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
           </p>
 
           {challenge && (
-            <div className="mb-6 p-3 bg-base/70 rounded-lg border border-edge">
+            <div className="mb-6 p-3 bg-canvas/70 rounded-lg border border-edge">
               <p className="text-fg-soft text-sm mb-1">Challenge</p>
               <p className="text-fg font-semibold break-words">{challenge.title}</p>
               <div className="flex items-center justify-center gap-2 mt-2 text-brand-neon">

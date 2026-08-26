@@ -19,7 +19,7 @@ const LandingNavbar = () => {
     <nav
       className={`fixed top-0 w-full z-50 pt-safe-t transition-all duration-300 ${
         scrolled
-          ? 'bg-base/90 backdrop-blur-xl border-b border-edge/50'
+          ? 'bg-canvas/90 backdrop-blur-xl border-b border-edge/50'
           : 'bg-transparent'
       }`}
     >
@@ -61,12 +61,9 @@ const LandingNavbar = () => {
             {lang === 'en' ? 'AR' : 'EN'}
           </button>
 
-          {/* text-base here meant the palette token (#0d1117), but Tailwind
-              also ships text-base as a font size, so the class was ambiguous
-              and only won on colour by stylesheet order. Name the hex. */}
           <Link
             to="/register"
-            className="inline-flex items-center justify-center min-h-tap bg-brand-neon text-[#0d1117] font-bold px-3 sm:px-5 rounded-lg hover:bg-[#b8ff3a] transition-all text-sm whitespace-nowrap select-none"
+            className="inline-flex items-center justify-center min-h-tap bg-brand-neon text-canvas font-bold px-3 sm:px-5 rounded-lg hover:bg-[#b8ff3a] transition-all text-sm whitespace-nowrap select-none"
           >
             {t('nav.getStarted')}
           </Link>

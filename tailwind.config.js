@@ -18,12 +18,22 @@ export default {
         },
         // ── CyberKhana palette tokens ──
         // Named colors = the exact hexes already in use, so nothing changes
-        // visually. Use these (e.g. bg-base, text-fg, border-edge, bg-brand)
+        // visually. Use these (e.g. bg-canvas, text-fg, border-edge, bg-brand)
         // instead of hardcoded [#hex] values so shades can't drift.
+        //
+        // A token name must not collide with a core utility name, because
+        // Tailwind emits both rules under the same selector and they silently
+        // stack. This surface was called `base` and `text-base` — the font
+        // size everyone writes for 16px — also started painting text
+        // #0d1117, the page background: invisible copy that only appeared on
+        // hover or when selected. Hence `canvas`. Steer clear of the core
+        // scales when naming: xs/sm/base/lg/xl (font size), solid/dashed/
+        // dotted (border style), inner/none (shadow), inset (ring).
+        //
         // Surfaces (dark navy, deepest → lightest)
-        base: '#0d1117',
+        canvas: '#0d1117',
         deep: '#0a0f18',
-        'base-alt': '#111622',
+        'canvas-alt': '#111622',
         panel: '#121a2a',
         surface: '#1a2332',
         'surface-alt': '#182130',

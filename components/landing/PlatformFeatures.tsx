@@ -43,7 +43,7 @@ const PlatformFeatures = () => {
   const { t, isArabic } = useLang();
 
   return (
-    <section className="py-16 sm:py-24 md:py-32 bg-base">
+    <section className="py-16 sm:py-24 md:py-32 bg-canvas">
       <div className="max-w-6xl mx-auto px-6">
         <div className="text-center">
           <h2
@@ -86,7 +86,7 @@ const PlatformFeatures = () => {
                   loading="lazy"
                   className="absolute inset-0 w-full h-full object-cover opacity-20 group-hover:opacity-30 transition-opacity duration-150"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-base via-base/80 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/80 to-transparent" />
                 <div className="relative z-10 p-8">
                   <div
                     className="w-3 h-3 rounded-full"
