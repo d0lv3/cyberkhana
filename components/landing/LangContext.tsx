@@ -37,30 +37,6 @@ const translations: Record<string, Record<Lang, string>> = {
   'ipad.title': { en: "See What's Inside", ar: 'اكتشف ما بالداخل' },
   'ipad.subtitle': { en: 'A platform built for real hackers.', ar: 'منصة مبنية لمحترفي الأمن السيبراني.' },
 
-  // Features
-  'features.heading': { en: 'Your Cyber Arsenal', ar: 'ترسانتك السيبرانية' },
-  'features.subtitle': { en: 'Everything you need to become a real hacker.', ar: 'كل ما تحتاجه لتصبح هاكر حقيقي.' },
-  'features.ctf.title': { en: 'CTF Challenges', ar: 'تحديات CTF' },
-  'features.ctf.desc': {
-    en: 'Real-world challenges across Web Exploitation, Pwn, Cryptography, Reverse Engineering, and Forensics. Every flag captured is a skill earned.',
-    ar: 'تحديات حقيقية في استغلال الويب، Pwn، التشفير، الهندسة العكسية، والتحقيق الجنائي الرقمي. كل علم تلتقطه هو مهارة جديدة.',
-  },
-  'features.comp.title': { en: 'Live Competitions', ar: 'مسابقات مباشرة' },
-  'features.comp.desc': {
-    en: 'Go head-to-head in timed CTF battles. Climb the ranks. Prove your skill under pressure. Real-time leaderboards, real stakes.',
-    ar: 'واجه منافسيك في معارك CTF محددة بوقت. تسلق الترتيب. أثبت مهارتك تحت الضغط. لوحات متصدرين مباشرة، تحدي حقيقي.',
-  },
-  'features.academy.title': { en: 'CyberKhana Academy', ar: 'أكاديمية سايبر خانة' },
-  'features.academy.desc': {
-    en: 'Structured learning paths from beginner to expert. Interactive modules. Hands-on labs. Courses in both Arabic and English.',
-    ar: 'مسارات تعلم منظمة من المبتدئ إلى الخبير. وحدات تفاعلية. مختبرات عملية. دورات بالعربية والإنجليزية.',
-  },
-  'features.leaderboard.title': { en: 'Leaderboards & Rankings', ar: 'لوحات المتصدرين والتصنيفات' },
-  'features.leaderboard.desc': {
-    en: 'Real-time rankings, university comparisons, achievement badges, and tier progression. Your reputation, quantified.',
-    ar: 'تصنيفات مباشرة، مقارنات بين الجامعات، شارات إنجاز، وتقدم في المستويات. سمعتك، بالأرقام.',
-  },
-
   // Mascots
   'mascots.heading': { en: 'Meet The Categories', ar: 'تعرّف على التخصصات' },
   'mascots.subtitle': { en: 'Six domains. Choose your path.', ar: 'ستة مجالات. اختر تخصصك.' },

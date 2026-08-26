@@ -3,7 +3,6 @@ import { LangProvider } from '../components/landing/LangContext';
 import LandingNavbar from '../components/landing/LandingNavbar';
 import HeroSection from '../components/landing/HeroSection';
 import IPadShowcase from '../components/landing/iPadShowcase';
-import PlatformFeatures from '../components/landing/PlatformFeatures';
 
 import AcademyTeaser from '../components/landing/AcademyTeaser';
 import StatsSection from '../components/landing/StatsSection';
@@ -16,7 +15,6 @@ const LandingPage: React.FC = () => {
         <LandingNavbar />
         <HeroSection />
         <div id="platform"><IPadShowcase /></div>
-        <div id="features"><PlatformFeatures /></div>
         <div id="academy"><AcademyTeaser /></div>
         <div id="stats"><StatsSection /></div>
         <LandingFooter />
