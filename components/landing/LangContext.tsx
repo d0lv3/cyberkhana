@@ -19,38 +19,23 @@ const translations: Record<string, Record<Lang, string>> = {
   'hero.cta.enter': { en: 'Get Started', ar: 'ابدأ الآن' },
   'hero.cta.login': { en: 'I Have An Account', ar: 'لدي حساب' },
 
+  // Product cards (hero)
+  'product.platform.name': { en: 'CyberKhana Platform', ar: 'منصة سايبر خانة' },
+  'product.platform.cta': { en: 'CyberKhana', ar: 'سايبر خانة' },
+  'product.platform.body': {
+    en: 'The competition and community model. One student ambassador per university gets admin control of their own campus dashboard, where they author CTF challenges, run competitions, publish announcements, and track how their community is progressing. Each ambassador runs a weekly two hour workshop: one hour of theory on a single topic, then one hour of live capture the flag where students immediately apply it. Six challenge categories, Very Easy to Expert difficulty, dynamic scoring, first blood tracking, purchasable hints, plus per university and national leaderboards. This is the awareness model and the distribution channel. Roughly 300 students at two universities use it today.',
+    ar: 'نموذج المنافسة والمجتمع. لكل جامعة سفير طالب واحد يحصل على صلاحيات إدارة لوحة تحكم حرمه الجامعي، حيث يكتب تحديات CTF، ويدير المسابقات، وينشر الإعلانات، ويتابع تقدّم مجتمعه. كل سفير يقدّم ورشة أسبوعية من ساعتين: ساعة نظرية في موضوع واحد، ثم ساعة التقاط أعلام مباشرة يطبّق فيها الطلاب ما تعلّموه فوراً. ست فئات من التحديات، ومستويات من سهل جداً إلى خبير، ونظام نقاط ديناميكي، وتتبّع لأول حل، وتلميحات قابلة للشراء، إضافة إلى لوحات متصدرين على مستوى الجامعة وعلى المستوى الوطني. هذا هو نموذج التوعية وقناة الانتشار. يستخدمه اليوم نحو 300 طالب في جامعتين.',
+  },
+  'product.academy.name': { en: 'CyberKhana Academy', ar: 'أكاديمية سايبر خانة' },
+  'product.academy.cta': { en: 'CyberKhana Academy', ar: 'أكاديمية سايبر خانة' },
+  'product.academy.body': {
+    en: 'The learning model. A weekly workshop cannot build a security engineer, so the Academy is where students go the other six days of the week. Structured in order: Fundamentals first, then Modules on specific topics, then Paths built around a career track such as SOC Analyst or Penetration Tester. Everything is hands on and runs in the browser: students write and execute real Python, C and Bash inside the lesson, watch packets move through a live network simulation, and practice in an in browser terminal & more.',
+    ar: 'نموذج التعلّم. ورشة أسبوعية واحدة لا تصنع مهندس أمن سيبراني، ولذلك فالأكاديمية هي وجهة الطلاب في الأيام الستة الأخرى من الأسبوع. مرتّبة بالتسلسل: الأساسيات أولاً، ثم وحدات في مواضيع محددة، ثم مسارات مبنية على مسار مهني مثل محلل مركز عمليات الأمن أو مختبِر اختراق. كل شيء عملي ويعمل داخل المتصفح: يكتب الطلاب وينفّذون شيفرة حقيقية بلغات Python وC وBash داخل الدرس، ويشاهدون الحزم تتحرك في محاكاة شبكة حية، ويتدربون على طرفية داخل المتصفح والمزيد.',
+  },
+
   // iPad
   'ipad.title': { en: "See What's Inside", ar: 'اكتشف ما بالداخل' },
   'ipad.subtitle': { en: 'A platform built for real hackers.', ar: 'منصة مبنية لمحترفي الأمن السيبراني.' },
-
-  // Story
-  'story.heading': { en: 'Born From Frustration, Built With Fire', ar: 'ولدت من الإحباط، وبُنيت بالشغف' },
-  'story.subtitle': { en: 'The story of how two students decided to change everything.', ar: 'قصة طالبين قررا تغيير كل شيء.' },
-  'story.node1.title': { en: 'The Spark', ar: 'الشرارة' },
-  'story.node1.text': {
-    en: 'Abdullah Alnuaimy, a cybersecurity engineering student, looked around his lecture hall and saw a disconnect. Outdated slides. Theoretical exams. Zero hands-on practice. He knew there had to be a better way to learn how to hack — and how to defend.',
-    ar: 'عبدالله النعيمي، طالب هندسة أمن سيبراني، نظر حوله في قاعة المحاضرات ورأى فجوة كبيرة. شرائح قديمة، امتحانات نظرية، ولا أي تطبيق عملي. أدرك أنه لا بد من طريقة أفضل.',
-  },
-  'story.node2.title': { en: 'The First Move', ar: 'الخطوة الأولى' },
-  'story.node2.text': {
-    en: "He launched a cybersecurity club with a dead-simple formula: one hour of theory, one hour of live CTF practice. Every week. No excuses. Word spread fast — students who had never touched a terminal were submitting flags within weeks.",
-    ar: 'أطلق نادي أمن سيبراني بمعادلة بسيطة: ساعة نظري وساعة تطبيق عملي CTF كل أسبوع. انتشر الخبر بسرعة — طلاب لم يفتحوا Terminal من قبل بدأوا يحلون تحديات خلال أسابيع.',
-  },
-  'story.node3.title': { en: 'The Alliance', ar: 'الشراكة' },
-  'story.node3.text': {
-    en: 'Abdulrahman Majid, a fellow cybersecurity student from the University of Mosul, heard about the movement. Two minds, one mission. Together they began building a platform that could scale beyond a single classroom.',
-    ar: 'عبدالرحمن ماجد، طالب أمن سيبراني من جامعة الموصل، سمع عن الفكرة وأعجبته. عقلان بهدف واحد. معاً بدأوا ببناء منصة تصل لكل الطلاب.',
-  },
-  'story.node4.title': { en: 'The Platform', ar: 'المنصة' },
-  'story.node4.text': {
-    en: 'CyberKhana was born — a full-stack CTF platform with real challenges, live competitions, and leaderboards. Over 300 students joined from across Iraqi universities. It was no longer just a club. It was a movement.',
-    ar: 'ولدت سايبر خانة — منصة CTF متكاملة بتحديات حقيقية، مسابقات مباشرة، ولوحة متصدرين. أكثر من 300 طالب انضموا من جامعات عراقية مختلفة. لم تعد مجرد نادي، بل أصبحت حركة.',
-  },
-  'story.node5.title': { en: 'The Academy', ar: 'الأكاديمية' },
-  'story.node5.text': {
-    en: "CyberKhana Academy launched with interactive modules, structured courses, guided learning paths, and full Arabic language support. The vision: every student in Iraq — and eventually the Middle East — deserves world-class cybersecurity education, in their own language.",
-    ar: 'أطلقنا أكاديمية سايبر خانة بدورات تفاعلية، مسارات تعلم منظمة، ودعم كامل للعربية. الرؤية: كل طالب في العراق والشرق الأوسط يستحق تعليم أمن سيبراني بمستوى عالمي، بلغته.',
-  },
 
   // Features
   'features.heading': { en: 'Your Cyber Arsenal', ar: 'ترسانتك السيبرانية' },
