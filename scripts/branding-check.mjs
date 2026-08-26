@@ -13,13 +13,36 @@ function fail(message) {
   failures.push(`FAIL ${message}`);
 }
 
+/** Missing file => null, not a stack trace. This suite spent several commits
+ *  crashing on a renamed component instead of reporting it, and a crash reads
+ *  like a broken script rather than a failed check. */
 function readText(filePath) {
-  return fs.readFileSync(filePath, 'utf8');
+  try {
+    return fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    fail(`Expected file is missing: ${path.relative(rootDir, filePath)}`);
+    return null;
+  }
 }
 
 function toAbsolutePublicPath(urlPath) {
-  const cleanPath = urlPath.startsWith('/') ? urlPath.slice(1) : urlPath;
+  // Icon hrefs carry a cache-busting suffix (favicon.ico?v=2). That is part of
+  // the URL, never part of the filename, so drop it before touching disk.
+  const withoutSuffix = urlPath.split(/[?#]/)[0];
+  const cleanPath = withoutSuffix.startsWith('/') ? withoutSuffix.slice(1) : withoutSuffix;
   return path.join(rootDir, 'public', cleanPath);
+}
+
+/** Named (quoted) font families in every font-family declaration of a stylesheet. */
+function declaredFontFamilies(css) {
+  const families = new Set();
+  for (const [, list] of css.matchAll(/font-family:\s*([^;}]+)/gi)) {
+    for (const [, family] of list.matchAll(/'([^']+)'|"([^"]+)"/g)) {
+      if (family) families.add(family.trim());
+    }
+  }
+  return [...families];
 }
 
 function run() {
@@ -27,15 +50,21 @@ function run() {
   const appTsxPath = path.join(rootDir, 'App.tsx');
   const indexTsxPath = path.join(rootDir, 'index.tsx');
   const appLayoutPath = path.join(rootDir, 'components', 'AppLayout.tsx');
-  const adminLayoutPath = path.join(rootDir, 'components', 'AdminLayout.tsx');
+  const managementLayoutPath = path.join(rootDir, 'components', 'ManagementLayout.tsx');
   const indexCssPath = path.join(rootDir, 'index.css');
 
   const indexHtml = readText(indexHtmlPath);
   const appTsx = readText(appTsxPath);
   const indexTsx = readText(indexTsxPath);
   const appLayout = readText(appLayoutPath);
-  const adminLayout = readText(adminLayoutPath);
+  const managementLayout = readText(managementLayoutPath);
   const indexCss = readText(indexCssPath);
+
+  // Bail out cleanly rather than throwing on `null.includes(...)` below.
+  if ([indexHtml, appTsx, indexTsx, appLayout, managementLayout, indexCss].includes(null)) {
+    report();
+    return;
+  }
 
   // 1) App load smoke checks (entrypoint + mount target)
   if (indexHtml.includes('<div id="root"></div>') && indexHtml.includes('src="/index.tsx"')) {
@@ -92,32 +121,62 @@ function run() {
   }
 
   // 4) Font declarations
-  const hasGoogleFontLink = /fonts\.googleapis\.com/i.test(indexHtml);
-  const hasInterInCss = /font-family:\s*'Inter'\s*,\s*sans-serif/i.test(indexCss);
-  if (hasGoogleFontLink && hasInterInCss) {
-    pass('Font source and CSS font-family declaration are present');
+  // Derived from the stylesheet rather than hardcoded: this check named 'Inter'
+  // and went quietly green-to-red when the brand moved to Poppins. Ask the real
+  // question instead — is every family we style with actually being loaded?
+  const declaredFamilies = declaredFontFamilies(indexCss);
+  if (declaredFamilies.length === 0) {
+    fail('No named font-family declared in index.css');
   } else {
-    fail('Missing font declaration (Google Fonts link and/or CSS font-family)');
+    const unloaded = declaredFamilies.filter((family) => {
+      const googleName = family.replace(/ /g, '+');
+      const requestedFromGoogle = indexHtml.includes(`family=${googleName}`) || indexCss.includes(`family=${googleName}`);
+      const selfHosted = new RegExp(`@font-face[^}]*['"]${family}['"]`, 'i').test(indexCss);
+      return !requestedFromGoogle && !selfHosted;
+    });
+
+    if (unloaded.length === 0) {
+      pass(`Every declared font family is loaded: ${declaredFamilies.join(', ')}`);
+    } else {
+      fail(`Font family styled but never loaded: ${unloaded.join(', ')}`);
+    }
   }
 
   // 5) Key layout render wiring checks
-  const appRoutesLayouts = appTsx.includes('element={<AppLayout') && appTsx.includes('element={<AdminLayout');
-  if (appRoutesLayouts) {
-    pass('App routes include AppLayout and AdminLayout wiring');
+  // Roles share one shell now: AppLayout is the outer chrome for everyone, and
+  // the management area is a nested route inside it, behind ManagementGate.
+  if (appTsx.includes('element={<AppLayout')) {
+    pass('App routes mount AppLayout as the application shell');
   } else {
-    fail('App routes missing AppLayout or AdminLayout wiring');
+    fail('App routes missing AppLayout wiring');
   }
 
-  const layoutsHaveOutletAndMain = [appLayout, adminLayout].every(
-    (content) => content.includes('<Outlet />') && content.includes('<main')
-  );
-
-  if (layoutsHaveOutletAndMain) {
-    pass('Key layout components contain main content area and outlet');
+  if (appTsx.includes('<ManagementLayout') && appTsx.includes('<ManagementGate>')) {
+    pass('Management area is mounted behind ManagementGate');
   } else {
-    fail('Key layout components missing <main> and/or <Outlet /> structure');
+    fail('Management area missing ManagementLayout and/or its ManagementGate role check');
   }
 
+  if (appLayout.includes('<main') && appLayout.includes('<Outlet />')) {
+    pass('AppLayout provides the main content area and an outlet');
+  } else {
+    fail('AppLayout missing <main> and/or <Outlet /> structure');
+  }
+
+  // ManagementLayout renders *inside* AppLayout's <main>, so it must not open a
+  // second one — a page with two <main> landmarks is a screen-reader trap.
+  if (managementLayout.includes('<Outlet />') && !managementLayout.includes('<main')) {
+    pass('ManagementLayout nests an outlet without opening a second <main>');
+  } else if (!managementLayout.includes('<Outlet />')) {
+    fail('ManagementLayout missing <Outlet /> for its nested admin routes');
+  } else {
+    fail('ManagementLayout opens a second <main> inside AppLayout');
+  }
+
+  report();
+}
+
+function report() {
   console.log('\nBranding Regression Checks\n');
   checks.forEach((line) => console.log(line));
 
