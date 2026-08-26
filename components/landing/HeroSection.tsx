@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowDown, ArrowRight, ExternalLink } from "lucide-react";
-import { Link } from "react-router-dom";
+import PlatformLink from "./PlatformLink";
 import { useLang } from "./LangContext";
 import BrandLogo from "../ui/BrandLogo";
 
@@ -148,10 +148,10 @@ const ProductCard: React.FC<ProductCardProps> = ({
         <p className="mt-4 flex-1 text-sm leading-relaxed text-muted">{body}</p>
 
         {to ? (
-          <Link to={to} className={ctaClasses}>
+          <PlatformLink to={to} className={ctaClasses}>
             {cta}
             <ArrowRight className="h-4 w-4 rtl:rotate-180" aria-hidden />
-          </Link>
+          </PlatformLink>
         ) : (
           <a href={href} target="_blank" rel="noopener noreferrer" className={ctaClasses}>
             {cta}

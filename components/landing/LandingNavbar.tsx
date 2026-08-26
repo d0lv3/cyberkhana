@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import PlatformLink from './PlatformLink';
 import { useLang } from './LangContext';
 
 const LandingNavbar = () => {
@@ -46,12 +47,12 @@ const LandingNavbar = () => {
 
         <div className="flex items-center gap-1 sm:gap-4">
           {/* Was a bare text link measuring 40x24 — under any usable target. */}
-          <Link
+          <PlatformLink
             to="/login"
             className="inline-flex items-center px-2 sm:px-0 min-h-tap text-sm sm:text-base text-fg-soft hover:text-brand transition-colors font-medium select-none"
           >
             {t('nav.login')}
-          </Link>
+          </PlatformLink>
 
           <button
             onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
@@ -61,12 +62,12 @@ const LandingNavbar = () => {
             {lang === 'en' ? 'AR' : 'EN'}
           </button>
 
-          <Link
+          <PlatformLink
             to="/register"
             className="inline-flex items-center justify-center min-h-tap bg-brand-neon text-canvas font-bold px-3 sm:px-5 rounded-lg hover:bg-[#b8ff3a] transition-all text-sm whitespace-nowrap select-none"
           >
             {t('nav.getStarted')}
-          </Link>
+          </PlatformLink>
         </div>
       </div>
     </nav>
