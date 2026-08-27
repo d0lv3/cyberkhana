@@ -1,7 +1,7 @@
 const linuxCourse = {
   "id": "linux",
   "title": "Linux Course in Cybersecurity",
-  "description": "A comprehensive course covering Linux fundamentals, terminal mastery, networking, scripting, and cybersecurity use-cases — built for aspiring penetration testers and security engineers.",
+  "description": "A comprehensive course covering Linux fundamentals, terminal mastery, networking, scripting, and cybersecurity use-cases, built for aspiring penetration testers and security engineers.",
   "thumbnail": "courseThumbnail",
   "modules": [
     {
@@ -30,7 +30,7 @@ const linuxCourse = {
           "quiz": null,
           "notes": [
             "Unix was created in 1969 at AT&T Bell Labs",
-            "GNU Project (1983) — free software movement by Richard Stallman",
+            "GNU Project (1983), free software movement by Richard Stallman",
             "Linux kernel created by Linus Torvalds in 1991",
             "Linux = GNU tools + Linux kernel"
           ]
@@ -45,22 +45,22 @@ const linuxCourse = {
           "notes": [
             "Linux is open-source: free to use, modify, and distribute",
             "Dominates servers (90%+ of the internet runs on Linux)",
-            "Essential for cybersecurity — most pentesting tools are Linux-native",
+            "Essential for cybersecurity, most pentesting tools are Linux-native",
             "Lightweight, customizable, and secure compared to other OSes"
           ]
         },
         {
           "id": "1.4",
           "title": "Linux Distros",
-          "subtitle": "Ubuntu, Kali, CentOS, Fedora — when to use each",
+          "subtitle": "Ubuntu, Kali, CentOS, Fedora, when to use each",
           "videoId": "_GIBjo514YM",
           "duration": "14:20",
           "quiz": null,
           "notes": [
-            "Ubuntu — beginner-friendly, great for learning and development",
-            "Kali Linux — purpose-built for penetration testing and ethical hacking",
-            "CentOS/Rocky Linux — server-oriented, enterprise stability",
-            "Fedora — cutting-edge packages, good for developers",
+            "Ubuntu, beginner-friendly, great for learning and development",
+            "Kali Linux, purpose-built for penetration testing and ethical hacking",
+            "CentOS/Rocky Linux, server-oriented, enterprise stability",
+            "Fedora, cutting-edge packages, good for developers",
             "Choose your distro based on your use case, not popularity"
           ]
         },
@@ -72,9 +72,9 @@ const linuxCourse = {
           "duration": "18:50",
           "quiz": null,
           "notes": [
-            "VMware/VirtualBox — run Linux inside a virtual machine (safest for beginners)",
-            "WSL (Windows Subsystem for Linux) — run Linux directly on Windows",
-            "Dual boot — install Linux alongside Windows on the same machine",
+            "VMware/VirtualBox, run Linux inside a virtual machine (safest for beginners)",
+            "WSL (Windows Subsystem for Linux), run Linux directly on Windows",
+            "Dual boot, install Linux alongside Windows on the same machine",
             "Always allocate at least 2GB RAM and 20GB disk space for VMs"
           ]
         }
@@ -108,9 +108,9 @@ const linuxCourse = {
           "quiz": "Quiz2.2",
           "notes": [
             "Linux file system starts at `/` (root directory)",
-            "`/home` — user home directories",
-            "`/etc` — system configuration files",
-            "`/var` — variable data like logs",
+            "`/home`, user home directories",
+            "`/etc`, system configuration files",
+            "`/var`, variable data like logs",
             "`pwd` shows current directory, `ls` lists contents, `cd` changes directory",
             "Use `cd ..` to go up one level, `cd ~` to go home"
           ]
@@ -125,7 +125,7 @@ const linuxCourse = {
           "notes": [
             "`touch` creates an empty file, `mkdir` creates a directory",
             "`cp` copies files, `mv` moves or renames them",
-            "`rm` deletes files — use `-r` for directories, `-f` to force",
+            "`rm` deletes files, use `-r` for directories, `-f` to force",
             "`cat` displays file contents, `tree` shows directory structure",
             "`man <command>` opens the manual page for any command"
           ]
@@ -178,7 +178,7 @@ const linuxCourse = {
           "notes": [
             "Every file has owner, group, and others permissions",
             "`ls -l` shows permissions like `-rwxr-xr--` (read/write/execute)",
-            "`chmod` changes permissions — numeric (755) or symbolic (u+x)",
+            "`chmod` changes permissions, numeric (755) or symbolic (u+x)",
             "`chown` changes file ownership: `chown user:group file`",
             "Execute permission (`x`) is needed to run scripts"
           ]
@@ -193,7 +193,7 @@ const linuxCourse = {
           "notes": [
             "`root` is the superuser with unrestricted access (UID 0)",
             "`sudo` runs a single command with root privileges",
-            "Never log in as root for daily tasks — use `sudo` instead",
+            "Never log in as root for daily tasks, use `sudo` instead",
             "`/etc/sudoers` controls who can use sudo",
             "`su` switches to another user (or root if no username given)"
           ]
@@ -250,7 +250,7 @@ const linuxCourse = {
           "notes": [
             "IPv4 addresses are 32-bit (e.g., 192.168.1.1), IPv6 are 128-bit",
             "`ip a` (or `ifconfig`) shows network interfaces and their IPs",
-            "Loopback `127.0.0.1` (localhost) — always refers to the local machine",
+            "Loopback `127.0.0.1` (localhost), always refers to the local machine",
             "`ping` tests connectivity to a host and measures round-trip time",
             "Private IP ranges: 10.x.x.x, 172.16-31.x.x, 192.168.x.x"
           ]
@@ -281,7 +281,7 @@ const linuxCourse = {
             "Ports are numbered endpoints (0-65535) for network services",
             "Well-known ports: 22 (SSH), 80 (HTTP), 443 (HTTPS), 21 (FTP)",
             "`lsof -i` shows open network connections and listening ports",
-            "`nmap` scans hosts for open ports — essential pentesting tool",
+            "`nmap` scans hosts for open ports, essential pentesting tool",
             "`nmap -sV` detects service versions running on open ports"
           ]
         }
@@ -300,7 +300,7 @@ const linuxCourse = {
           "quiz": "Quiz6.1",
           "notes": [
             "Scripts start with `#!/bin/bash` (shebang line)",
-            "Variables: `NAME=\"value\"` — access with `$NAME`",
+            "Variables: `NAME=\"value\"`, access with `$NAME`",
             "If statements: `if [ condition ]; then ... fi`",
             "Loops: `for i in 1 2 3; do ... done`",
             "Make scripts executable with `chmod +x script.sh`",
@@ -339,7 +339,7 @@ const linuxCourse = {
           "notes": [
             "`ps aux` shows all running processes with details",
             "`top` displays real-time process activity (CPU, memory usage)",
-            "`kill <PID>` sends SIGTERM to a process — `kill -9` forces kill",
+            "`kill <PID>` sends SIGTERM to a process, `kill -9` forces kill",
             "`jobs` lists background processes in the current shell",
             "Use `&` to run a command in the background: `command &`",
             "`fg` brings a background job to foreground"
@@ -390,8 +390,8 @@ const linuxCourse = {
           "quiz": "Quiz8.2",
           "notes": [
             "Logs are stored in `/var/log/` directory",
-            "`/var/log/auth.log` — authentication attempts (login, sudo, SSH)",
-            "`/var/log/syslog` — general system events",
+            "`/var/log/auth.log`, authentication attempts (login, sudo, SSH)",
+            "`/var/log/syslog`, general system events",
             "`journalctl` queries the systemd journal for all logged messages",
             "`dmesg` shows kernel ring buffer messages (hardware/driver events)",
             "`tail -f /var/log/auth.log` watches logs in real-time"
@@ -405,10 +405,10 @@ const linuxCourse = {
           "duration": "14:55",
           "quiz": "Quiz8.3",
           "notes": [
-            "\"Permission denied\" — check file permissions with `ls -l`",
-            "\"Command not found\" — ensure the package is installed or check your PATH",
-            "\"User is not in the sudoers file\" — add user to sudo group",
-            "\"Cannot execute binary\" — ensure the file has `+x` permission",
+            "\"Permission denied\", check file permissions with `ls -l`",
+            "\"Command not found\", ensure the package is installed or check your PATH",
+            "\"User is not in the sudoers file\", add user to sudo group",
+            "\"Cannot execute binary\", ensure the file has `+x` permission",
             "Always check logs (`journalctl`, `/var/log/`) when troubleshooting"
           ]
         }
@@ -471,11 +471,11 @@ const linuxCourse = {
           "duration": "10:30",
           "quiz": null,
           "notes": [
-            "Guided training rooms — beginner-friendly, structured labs",
-            "HackTheBox — more advanced, real-world-like challenges",
-            "eJPT (eLearnSecurity Junior Penetration Tester) — great entry-level cert",
+            "Guided training rooms, beginner-friendly, structured labs",
+            "HackTheBox, more advanced, real-world-like challenges",
+            "eJPT (eLearnSecurity Junior Penetration Tester), great entry-level cert",
             "Next topics to study: privilege escalation, web exploitation, Active Directory",
-            "Keep practicing — consistency is key in cybersecurity"
+            "Keep practicing, consistency is key in cybersecurity"
           ]
         }
       ]

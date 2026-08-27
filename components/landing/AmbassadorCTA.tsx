@@ -29,7 +29,7 @@ const AmbassadorCTA = () => {
   const { t, isArabic } = useLang();
 
   const subject = encodeURIComponent(
-    isArabic ? 'طلب سفير — سايبر خانة' : 'Ambassador application — CyberKhana'
+    isArabic ? 'طلب سفير: سايبر خانة' : 'Ambassador application: CyberKhana'
   );
   const body = encodeURIComponent(
     isArabic

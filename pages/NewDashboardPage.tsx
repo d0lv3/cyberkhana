@@ -171,14 +171,14 @@ const NewDashboardPage: React.FC = () => {
               </span>
             </h1>
             <p className="mt-3 text-muted font-medium">
-              {user?.universityName || user?.universityCode} — {stats.solvedCount > 0 ? `${stats.solvedCount} Operations Successful` : 'Awaiting First Operation'}
+              {user?.universityName || user?.universityCode}, {stats.solvedCount > 0 ? `${stats.solvedCount} Operations Successful` : 'Awaiting First Operation'}
             </p>
           </div>
 
           <div className="relative z-10 flex gap-4 w-full md:w-auto">
             <div className="flex-1 md:w-32 bg-inset border border-edge rounded-xl p-4 text-center">
               <p className="text-[10px] uppercase font-bold text-dim mb-1">Global Rank</p>
-              <p className="text-2xl font-black text-amber">#{stats.rank || '—'}</p>
+              <p className="text-2xl font-black text-amber">#{stats.rank || '-'}</p>
             </div>
             <div className="flex-1 md:w-32 bg-inset border border-edge rounded-xl p-4 text-center">
               <p className="text-[10px] uppercase font-bold text-dim mb-1">Total Score</p>
@@ -191,9 +191,9 @@ const NewDashboardPage: React.FC = () => {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { label: 'Flags Captured', value: stats.solvedCount, icon: <Flag className="w-5 h-5 text-info" />, bg: 'bg-info/10', border: 'border-info/20' },
-            { label: 'Percentile', value: topPercent !== null ? `Top ${topPercent}%` : '—', icon: <Activity className="w-5 h-5 text-violet" />, bg: 'bg-violet/10', border: 'border-violet/20' },
+            { label: 'Percentile', value: topPercent !== null ? `Top ${topPercent}%` : '-', icon: <Activity className="w-5 h-5 text-violet" />, bg: 'bg-violet/10', border: 'border-violet/20' },
             { label: 'Global Rank', value: stats.rank ? `#${stats.rank}` : 'Unranked', icon: <Trophy className="w-5 h-5 text-brand-neon" />, bg: 'bg-brand-neon/10', border: 'border-brand-neon/20' },
-            { label: 'Focus Area', value: stats.favoriteCategory ? stats.favoriteCategory.split(' ')[0] : '—', icon: <Target className="w-5 h-5 text-amber" />, bg: 'bg-amber/10', border: 'border-amber/20' },
+            { label: 'Focus Area', value: stats.favoriteCategory ? stats.favoriteCategory.split(' ')[0] : '-', icon: <Target className="w-5 h-5 text-amber" />, bg: 'bg-amber/10', border: 'border-amber/20' },
           ].map((stat, i) => (
             <motion.div 
               key={stat.label}
@@ -237,7 +237,7 @@ const NewDashboardPage: React.FC = () => {
                     <h2 className="text-sm font-black uppercase tracking-widest text-fg">CyberKhana Academy</h2>
                   </div>
                   <h3 className="text-2xl font-black text-brand-neon">Structured Learning Paths</h3>
-                  <p className="text-sm text-muted mt-2 mb-6 max-w-md">Go deeper with guided theory and hands-on labs on the CyberKhana Academy — build the foundations behind every flag you capture.</p>
+                  <p className="text-sm text-muted mt-2 mb-6 max-w-md">Go deeper with guided theory and hands-on labs on the CyberKhana Academy, build the foundations behind every flag you capture.</p>
 
                   <span className="inline-flex items-center gap-2 px-6 py-2 rounded border border-brand-neon/50 text-brand-neon group-hover:bg-brand-neon/10 text-xs font-bold uppercase tracking-widest transition-colors">
                     Open Academy
@@ -300,7 +300,7 @@ const NewDashboardPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex justify-between text-[10px] uppercase font-bold text-dim mb-1">
-                    <span>Specialization: {stats.favoriteCategory || '—'}</span>
+                    <span>Specialization: {stats.favoriteCategory || '-'}</span>
                     {stats.favoriteCategory && <span className="text-info">{specializationPct}%</span>}
                   </div>
                   <div className="h-1.5 rounded-full bg-inset overflow-hidden">

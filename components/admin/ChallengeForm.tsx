@@ -271,7 +271,7 @@ const ChallengeForm: React.FC<ChallengeFormProps> = ({ challenge, onSave, onCanc
               >
                 {DECAY_PRESETS.map(preset => (
                   <option key={preset.label} value={preset.label}>
-                    {preset.label} — {preset.description}
+                    {preset.label}, {preset.description}
                   </option>
                 ))}
                 {decayPreset === 'Custom' && (

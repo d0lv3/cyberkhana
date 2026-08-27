@@ -446,7 +446,7 @@ const CompetitionDashboardPage: React.FC = () => {
               <span className="text-xs text-dim">Your Rank</span>
               <Award className="w-4 h-4 text-amber" />
             </div>
-            <p className="text-2xl font-black text-fg">{userRank > 0 ? `#${userRank}` : '—'}</p>
+            <p className="text-2xl font-black text-fg">{userRank > 0 ? `#${userRank}` : '-'}</p>
             <p className="text-[10px] text-faint mt-1">of {leaderboard.length} participants</p>
           </div>
           <div className="bg-panel border border-edge rounded-xl p-5">

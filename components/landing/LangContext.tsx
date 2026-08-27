@@ -46,8 +46,8 @@ const translations: Record<string, Record<Lang, string>> = {
   },
   'how.step1.title': { en: 'A student takes their campus', ar: 'طالب يتولّى حرمه الجامعي' },
   'how.step1.body': {
-    en: 'One ambassador per university, given admin control of their own campus dashboard — not a shared one.',
-    ar: 'سفير واحد لكل جامعة، يحصل على صلاحيات إدارة لوحة تحكم حرمه الجامعي — لا لوحة مشتركة.',
+    en: 'One ambassador per university, given admin control of their own campus dashboard, not a shared one.',
+    ar: 'سفير واحد لكل جامعة، يحصل على صلاحيات إدارة لوحة تحكم حرمه الجامعي، لا لوحة مشتركة.',
   },
   'how.step2.title': { en: 'They build the challenges', ar: 'يبني التحديات' },
   'how.step2.body': {
@@ -69,8 +69,8 @@ const translations: Record<string, Record<Lang, string>> = {
   'amb.eyebrow': { en: 'Bring CyberKhana to your university', ar: 'أحضر سايبر خانة إلى جامعتك' },
   'amb.heading': { en: 'Become Your Campus Ambassador', ar: 'كن سفير حرمك الجامعي' },
   'amb.body': {
-    en: 'Every university on CyberKhana started with one student who asked. You get admin control of your campus dashboard, the challenge authoring tools, and a community that grows around what you build. No prior teaching experience needed — just the willingness to run two hours a week.',
-    ar: 'كل جامعة على سايبر خانة بدأت بطالب واحد سأل. ستحصل على صلاحيات إدارة لوحة تحكم حرمك الجامعي، وأدوات كتابة التحديات، ومجتمع ينمو حول ما تبنيه. لا حاجة لخبرة تدريس سابقة — فقط الاستعداد لتقديم ساعتين أسبوعياً.',
+    en: 'Every university on CyberKhana started with one student who asked. You get admin control of your campus dashboard, the challenge authoring tools, and a community that grows around what you build. No prior teaching experience needed, just the willingness to run two hours a week.',
+    ar: 'كل جامعة على سايبر خانة بدأت بطالب واحد سأل. ستحصل على صلاحيات إدارة لوحة تحكم حرمك الجامعي، وأدوات كتابة التحديات، ومجتمع ينمو حول ما تبنيه. لا حاجة لخبرة تدريس سابقة، فقط الاستعداد لتقديم ساعتين أسبوعياً.',
   },
   'amb.cta': { en: 'Apply to be an ambassador', ar: 'قدّم لتكون سفيراً' },
   'amb.note': {

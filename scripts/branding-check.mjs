@@ -123,7 +123,7 @@ function run() {
   // 4) Font declarations
   // Derived from the stylesheet rather than hardcoded: this check named 'Inter'
   // and went quietly green-to-red when the brand moved to Poppins. Ask the real
-  // question instead — is every family we style with actually being loaded?
+  // question instead, is every family we style with actually being loaded?
   const declaredFamilies = declaredFontFamilies(indexCss);
   if (declaredFamilies.length === 0) {
     fail('No named font-family declared in index.css');
