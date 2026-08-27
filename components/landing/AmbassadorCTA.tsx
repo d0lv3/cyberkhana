@@ -11,11 +11,12 @@ import { useLang } from './LangContext';
  * in a spreadsheet. Swap this one constant for a form URL when the volume makes
  * an inbox the wrong place for them.
  *
- * This address has to exist. A mailto: pointing at a mailbox nobody has created
- * fails silently — the sender's client opens, the mail leaves, and it bounces
- * somewhere none of us are looking.
+ * It is a personal address on a public page, which is a fair trade while the
+ * numbers are small — but it is public, so it will be scraped, and it names a
+ * person rather than the project. A forwarding address on the domain would fix
+ * both without changing anything else here.
  */
-const APPLY_EMAIL = 'ambassadors@cyberkhana.tech';
+const APPLY_EMAIL = 'abod4bus@gmail.com';
 
 /**
  * The ask, at the foot of the page.
