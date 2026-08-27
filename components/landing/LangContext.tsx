@@ -15,7 +15,10 @@ const translations: Record<string, Record<Lang, string>> = {
   'nav.getStarted': { en: 'Get Started', ar: 'ابدأ الآن' },
 
   // Hero
-  'hero.headline': { en: "Revolutionizing Cybersecurity Education in Iraq", ar: 'تغيير واقع تعليم الامن السبراني في العراق' },
+  'hero.headline': {
+    en: 'Taking cybersecurity education in universities to the next level',
+    ar: 'نرتقي بتعليم الأمن السيبراني في الجامعات إلى المستوى التالي',
+  },
   'hero.cta.enter': { en: 'Get Started', ar: 'ابدأ الآن' },
   'hero.cta.login': { en: 'I Have An Account', ar: 'لدي حساب' },
 
