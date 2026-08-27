@@ -1,57 +1,5 @@
-import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
 import { useLang } from './LangContext';
 
-
-function CTABlock() {
-  const { t } = useLang();
-
-  return (
-    <section className="py-16 sm:py-24 md:py-32 relative overflow-hidden">
-      <img
-        src="/assets/landing/cta-arena-gate.jpg"
-        alt=""
-        loading="lazy"
-        className="absolute inset-0 w-full h-full object-cover opacity-30"
-      />
-      <div className="absolute inset-0 bg-canvas/80" />
-
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.7 }}
-        className="relative z-10 text-center px-6"
-      >
-        <h2
-          className="text-2xl sm:text-3xl md:text-5xl text-fg"
-          style={{
-            fontWeight: 800,
-          }}
-        >
-          {t('cta.heading')}
-        </h2>
-        <p className="text-muted text-lg mt-4">
-          {t('cta.subtitle')}
-        </p>
-        <div className="flex gap-4 mt-8 justify-center flex-wrap">
-          <Link
-            to="/register"
-            className="bg-brand-neon text-canvas font-bold px-8 py-4 rounded-lg hover:bg-[#b8ff3a] transition-all text-lg cursor-pointer"
-          >
-            {t('cta.getStarted')}
-          </Link>
-          <Link
-            to="/login"
-            className="border border-edge text-fg-soft px-8 py-4 rounded-lg hover:border-brand hover:text-brand transition-all text-lg cursor-pointer"
-          >
-            {t('cta.signIn')}
-          </Link>
-        </div>
-      </motion.div>
-    </section>
-  );
-}
 
 function Footer() {
   const { t } = useLang();
@@ -84,10 +32,5 @@ function Footer() {
 }
 
 export default function LandingFooter() {
-  return (
-    <>
-      <CTABlock />
-      <Footer />
-    </>
-  );
+  return <Footer />;
 }

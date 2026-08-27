@@ -19,49 +19,56 @@ const translations: Record<string, Record<Lang, string>> = {
   'hero.cta.enter': { en: 'Get Started', ar: 'ابدأ الآن' },
   'hero.cta.login': { en: 'I Have An Account', ar: 'لدي حساب' },
 
-  // Product cards (hero)
-  'product.platform.name': { en: 'CyberKhana Platform', ar: 'منصة سايبر خانة' },
-  'product.platform.cta': { en: 'CyberKhana', ar: 'سايبر خانة' },
-  'product.platform.body': {
-    en: 'The competition and community model. One student ambassador per university gets admin control of their own campus dashboard, where they author CTF challenges, run competitions, publish announcements, and track how their community is progressing. Each ambassador runs a weekly two hour workshop: one hour of theory on a single topic, then one hour of live capture the flag where students immediately apply it. Six challenge categories, Very Easy to Expert difficulty, dynamic scoring, first blood tracking, purchasable hints, plus per university and national leaderboards. This is the awareness model and the distribution channel. Roughly 300 students at two universities use it today.',
-    ar: 'نموذج المنافسة والمجتمع. لكل جامعة سفير طالب واحد يحصل على صلاحيات إدارة لوحة تحكم حرمه الجامعي، حيث يكتب تحديات CTF، ويدير المسابقات، وينشر الإعلانات، ويتابع تقدّم مجتمعه. كل سفير يقدّم ورشة أسبوعية من ساعتين: ساعة نظرية في موضوع واحد، ثم ساعة التقاط أعلام مباشرة يطبّق فيها الطلاب ما تعلّموه فوراً. ست فئات من التحديات، ومستويات من سهل جداً إلى خبير، ونظام نقاط ديناميكي، وتتبّع لأول حل، وتلميحات قابلة للشراء، إضافة إلى لوحات متصدرين على مستوى الجامعة وعلى المستوى الوطني. هذا هو نموذج التوعية وقناة الانتشار. يستخدمه اليوم نحو 300 طالب في جامعتين.',
-  },
-  'product.academy.name': { en: 'CyberKhana Academy', ar: 'أكاديمية سايبر خانة' },
-  'product.academy.cta': { en: 'CyberKhana Academy', ar: 'أكاديمية سايبر خانة' },
-  'product.academy.body': {
-    en: 'The learning model. A weekly workshop cannot build a security engineer, so the Academy is where students go the other six days of the week. Structured in order: Fundamentals first, then Modules on specific topics, then Paths built around a career track such as SOC Analyst or Penetration Tester. Everything is hands on and runs in the browser: students write and execute real Python, C and Bash inside the lesson, watch packets move through a live network simulation, and practice in an in browser terminal & more.',
-    ar: 'نموذج التعلّم. ورشة أسبوعية واحدة لا تصنع مهندس أمن سيبراني، ولذلك فالأكاديمية هي وجهة الطلاب في الأيام الستة الأخرى من الأسبوع. مرتّبة بالتسلسل: الأساسيات أولاً، ثم وحدات في مواضيع محددة، ثم مسارات مبنية على مسار مهني مثل محلل مركز عمليات الأمن أو مختبِر اختراق. كل شيء عملي ويعمل داخل المتصفح: يكتب الطلاب وينفّذون شيفرة حقيقية بلغات Python وC وBash داخل الدرس، ويشاهدون الحزم تتحرك في محاكاة شبكة حية، ويتدربون على طرفية داخل المتصفح والمزيد.',
+  // The model, in the hero. Short on purpose — the section below walks it
+  // through properly, and a hero that has to be read is a hero nobody reads.
+  'hero.model': {
+    en: 'One student ambassador per university, running their own campus dashboard: authoring CTF challenges, holding a weekly workshop, and taking their community up the national leaderboard.',
+    ar: 'سفير طالب واحد لكل جامعة، يدير لوحة تحكم حرمه الجامعي: يكتب تحديات CTF، ويقيم ورشة أسبوعية، ويرتقي بمجتمعه في لوحة المتصدرين الوطنية.',
   },
 
   // iPad
   'ipad.title': { en: "See What's Inside", ar: 'اكتشف ما بالداخل' },
   'ipad.subtitle': { en: 'A platform built for real hackers.', ar: 'منصة مبنية لمحترفي الأمن السيبراني.' },
 
-  // Mascots
-  'mascots.heading': { en: 'Meet The Categories', ar: 'تعرّف على التخصصات' },
-  'mascots.subtitle': { en: 'Six domains. Choose your path.', ar: 'ستة مجالات. اختر تخصصك.' },
-  'mascots.web': { en: 'Web Exploitation', ar: 'اختراق الويب' },
-  'mascots.web.tag': { en: 'Spin the web. Break the web.', ar: 'اكتشف ثغرات تطبيقات الويب.' },
-  'mascots.crypto': { en: 'Cryptography', ar: 'التشفير' },
-  'mascots.crypto.tag': { en: 'Every cipher has a weakness.', ar: 'كل شيفرة لها نقطة ضعف.' },
-  'mascots.forensics': { en: 'Forensics', ar: 'التحقيق الرقمي' },
-  'mascots.forensics.tag': { en: 'The evidence never lies.', ar: 'الأدلة الرقمية لا تكذب.' },
-  'mascots.reversing': { en: 'Reverse Engineering', ar: 'الهندسة العكسية' },
-  'mascots.reversing.tag': { en: 'Unravel the machine.', ar: 'حلّل البرنامج من الداخل.' },
-  'mascots.pwn': { en: 'Binary Exploitation', ar: 'اختراق الأنظمة' },
-  'mascots.pwn.tag': { en: 'Own the stack. Own the system.', ar: 'تحكّم بالنظام بالكامل.' },
-  'mascots.all': { en: 'All Domains', ar: 'جميع المجالات' },
-  'mascots.all.tag': { en: 'Master all. Fear none.', ar: 'أتقن الجميع. بلا حدود.' },
+  // How it works
+  'how.heading': { en: 'How It Works', ar: 'كيف تعمل' },
+  'how.subtitle': {
+    en: 'Four steps, repeating every week on every campus.',
+    ar: 'أربع خطوات، تتكرر كل أسبوع في كل حرم جامعي.',
+  },
+  'how.step1.title': { en: 'A student takes their campus', ar: 'طالب يتولّى حرمه الجامعي' },
+  'how.step1.body': {
+    en: 'One ambassador per university, given admin control of their own campus dashboard — not a shared one.',
+    ar: 'سفير واحد لكل جامعة، يحصل على صلاحيات إدارة لوحة تحكم حرمه الجامعي — لا لوحة مشتركة.',
+  },
+  'how.step2.title': { en: 'They build the challenges', ar: 'يبني التحديات' },
+  'how.step2.body': {
+    en: 'Authoring CTF challenges across six categories, from Very Easy to Expert, plus competitions and announcements for their community.',
+    ar: 'يكتب تحديات CTF في ست فئات، من سهل جداً إلى خبير، إضافة إلى المسابقات والإعلانات لمجتمعه.',
+  },
+  'how.step3.title': { en: 'Two hours, every week', ar: 'ساعتان كل أسبوع' },
+  'how.step3.body': {
+    en: 'An hour of theory on a single topic, then an hour of live capture the flag where students apply it immediately.',
+    ar: 'ساعة نظرية في موضوع واحد، ثم ساعة التقاط أعلام مباشرة يطبّق فيها الطلاب ما تعلّموه فوراً.',
+  },
+  'how.step4.title': { en: 'The scores go national', ar: 'النتائج تصل للمستوى الوطني' },
+  'how.step4.body': {
+    en: 'Dynamic scoring, first blood tracking and purchasable hints feed both a campus leaderboard and a national one.',
+    ar: 'نظام نقاط ديناميكي، وتتبّع لأول حل، وتلميحات قابلة للشراء، تغذّي لوحة متصدري الجامعة ولوحة المتصدرين الوطنية.',
+  },
 
-  // Academy
-  'academy.heading': { en: 'Learn Cybersecurity. Your Way. Your Language.', ar: 'تعلم الأمن السيبراني. بطريقتك. بلغتك.' },
-  'academy.bullet1': { en: 'Interactive hands-on modules', ar: 'وحدات تفاعلية عملية' },
-  'academy.bullet2': { en: 'Structured beginner-to-expert paths', ar: 'مسارات منظمة من المبتدئ إلى الخبير' },
-  'academy.bullet3': { en: 'Full Arabic language support', ar: 'دعم كامل للغة العربية' },
-  'academy.bullet4': { en: 'Linux, Networking, Web Security & more', ar: 'لينكس، الشبكات، أمن الويب والمزيد' },
-  'academy.bullet5': { en: 'Progress tracking & achievements', ar: 'تتبع التقدم والإنجازات' },
-  'academy.arabicCallout': { en: 'Learn cybersecurity in your language', ar: 'تعلم الأمن السيبراني بلغتك' },
-  'academy.cta': { en: 'Start Learning', ar: 'ابدأ التعلم' },
+  // Ambassadors
+  'amb.eyebrow': { en: 'Bring CyberKhana to your university', ar: 'أحضر سايبر خانة إلى جامعتك' },
+  'amb.heading': { en: 'Become Your Campus Ambassador', ar: 'كن سفير حرمك الجامعي' },
+  'amb.body': {
+    en: 'Every university on CyberKhana started with one student who asked. You get admin control of your campus dashboard, the challenge authoring tools, and a community that grows around what you build. No prior teaching experience needed — just the willingness to run two hours a week.',
+    ar: 'كل جامعة على سايبر خانة بدأت بطالب واحد سأل. ستحصل على صلاحيات إدارة لوحة تحكم حرمك الجامعي، وأدوات كتابة التحديات، ومجتمع ينمو حول ما تبنيه. لا حاجة لخبرة تدريس سابقة — فقط الاستعداد لتقديم ساعتين أسبوعياً.',
+  },
+  'amb.cta': { en: 'Apply to be an ambassador', ar: 'قدّم لتكون سفيراً' },
+  'amb.note': {
+    en: 'Tell us your university, your year, and why you want to run it.',
+    ar: 'أخبرنا باسم جامعتك، وسنتك الدراسية، ولماذا تريد أن تقودها.',
+  },
 
   // Stats
   'stats.heading': { en: 'A Growing Movement', ar: 'حركة متنامية' },
@@ -71,16 +78,11 @@ const translations: Record<string, Record<Lang, string>> = {
   'stats.competitions': { en: 'Competitions', ar: 'مسابقات' },
 
   // CTA / Footer
-  'cta.heading': { en: 'Ready to Level Up?', ar: 'مستعد للتطور؟' },
-  'cta.subtitle': { en: 'Join 300+ students already sharpening their skills.', ar: 'انضم لأكثر من 300 طالب يطورون مهاراتهم الآن.' },
-  'cta.getStarted': { en: 'Get Started', ar: 'ابدأ الآن' },
-  'cta.signIn': { en: 'Sign In', ar: 'تسجيل الدخول' },
-  'footer.founded': { en: 'Founded by Abdullah Alnuaimy & Abdulrahman Majid', ar: 'تأسست على يد عبدالله النعيمي وعبدالرحمن ماجد' },
+  'footer.founded': { en: 'Founded by Abdullah Alnuaimy', ar: 'تأسست على يد عبدالله النعيمي' },
   'footer.builtIn': { en: 'Built in Iraq', ar: 'صُنعت في العراق' },
   'footer.copyright': { en: '© 2026 CyberKhana. All rights reserved.', ar: '© 2026 سايبر خانة. جميع الحقوق محفوظة.' },
   'footer.challenges': { en: 'Challenges', ar: 'التحديات' },
   'footer.competitions': { en: 'Competitions', ar: 'المسابقات' },
-  'footer.academy': { en: 'Academy', ar: 'الأكاديمية' },
   'footer.leaderboard': { en: 'Leaderboard', ar: 'المتصدرين' },
 };
 
