@@ -26,6 +26,11 @@ const translations: Record<string, Record<Lang, string>> = {
     ar: 'سفير طالب واحد لكل جامعة، يدير لوحة تحكم حرمه الجامعي: يكتب تحديات CTF، ويقيم ورشة أسبوعية، ويرتقي بمجتمعه في لوحة المتصدرين الوطنية.',
   },
 
+  'hero.proof': {
+    en: '300+ students · 2 universities · live now',
+    ar: '+300 طالب · جامعتان · مباشر الآن',
+  },
+
   // iPad
   'ipad.title': { en: "See What's Inside", ar: 'اكتشف ما بالداخل' },
   'ipad.subtitle': { en: 'A platform built for real hackers.', ar: 'منصة مبنية لمحترفي الأمن السيبراني.' },
