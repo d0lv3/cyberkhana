@@ -86,6 +86,10 @@ const translations: Record<string, Record<Lang, string>> = {
   'stats.competitions': { en: 'Competitions', ar: 'مسابقات' },
 
   // CTA / Footer
+  'footer.tagline': {
+    en: 'Revolutionizing the Iraqi cybersecurity education landscape.',
+    ar: 'نُحدث ثورة في مشهد تعليم الأمن السيبراني في العراق.',
+  },
   'footer.founded': { en: 'Founded by Abdullah Alnuaimy', ar: 'تأسست على يد عبدالله النعيمي' },
   'footer.builtIn': { en: 'Built in Iraq', ar: 'صُنعت في العراق' },
   'footer.copyright': { en: '© 2026 CyberKhana. All rights reserved.', ar: '© 2026 سايبر خانة. جميع الحقوق محفوظة.' },

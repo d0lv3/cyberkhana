@@ -65,39 +65,45 @@ const HeroSection = () => {
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
           {/* ── the half you read ── */}
           <div className="text-start">
-            <motion.img
+            {/* Mark and headline as one unit, divided by a rule. The square mark
+                rather than the wordmark: set beside type this size, a wordmark
+                would be a second piece of lettering competing with the sentence
+                next to it. The rule stretches to whatever height the headline
+                wraps to, so it reads as a division between two things rather
+                than a fixed tick sitting near them. */}
+            <motion.div
               custom={0}
               variants={fadeUpVariants}
               initial="hidden"
               animate="visible"
-              src="/assets/brand/cyberkhana-text-logo.png"
-              alt="CyberKhana"
-              className="h-8 w-auto sm:h-10"
-            />
+              className="flex items-stretch gap-4 sm:gap-5"
+            >
+              <img
+                src="/assets/brand/cyberkhana-mark-sq.png"
+                alt="CyberKhana"
+                className="h-12 w-auto flex-shrink-0 self-center sm:h-16"
+              />
+              <span aria-hidden className="w-px flex-shrink-0 bg-edge" />
+              <h1
+                className="text-2xl font-extrabold leading-tight text-fg sm:text-3xl lg:text-4xl"
+                style={{ fontWeight: 800 }}
+              >
+                {t("hero.headline")}
+              </h1>
+            </motion.div>
 
-            <motion.h1
+            <motion.p
               custom={1}
               variants={fadeUpVariants}
               initial="hidden"
               animate="visible"
-              className="mt-6 text-3xl font-extrabold leading-tight text-fg sm:text-4xl lg:text-5xl"
-              style={{ fontWeight: 800 }}
-            >
-              {t("hero.headline")}
-            </motion.h1>
-
-            <motion.p
-              custom={2}
-              variants={fadeUpVariants}
-              initial="hidden"
-              animate="visible"
-              className="mt-5 max-w-xl text-sm leading-relaxed text-muted sm:text-base"
+              className="mt-6 max-w-xl text-sm leading-relaxed text-muted sm:text-base"
             >
               {t("hero.model")}
             </motion.p>
 
             <motion.div
-              custom={3}
+              custom={2}
               variants={fadeUpVariants}
               initial="hidden"
               animate="visible"
@@ -121,7 +127,7 @@ const HeroSection = () => {
             </motion.div>
 
             <motion.p
-              custom={4}
+              custom={3}
               variants={fadeUpVariants}
               initial="hidden"
               animate="visible"

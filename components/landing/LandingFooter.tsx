@@ -1,3 +1,4 @@
+import ConnectBar from './ConnectBar';
 import { useLang } from './LangContext';
 
 
@@ -15,6 +16,8 @@ function Footer() {
             className="h-8 w-auto"
           />
         </div>
+
+        <ConnectBar />
 
         <div className="border-t border-edge/50 my-8" />
 
