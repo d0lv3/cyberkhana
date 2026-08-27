@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import type { FC } from "react";
 import { motion } from "framer-motion";
 import { useLang } from './LangContext';
 
@@ -50,7 +51,7 @@ const stats: StatItem[] = [
   { value: 10, suffix: "+", label: "Competitions", labelKey: "stats.competitions" },
 ];
 
-function CounterCard({ value, suffix, labelKey }: StatItem) {
+const CounterCard: FC<StatItem> = ({ value, suffix, labelKey }) => {
   const { count, ref } = useCountUp(value);
   const { t } = useLang();
 
@@ -70,7 +71,7 @@ function CounterCard({ value, suffix, labelKey }: StatItem) {
       </div>
     </div>
   );
-}
+};
 
 export default function StatsSection() {
   const { t } = useLang();
