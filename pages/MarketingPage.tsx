@@ -9,15 +9,23 @@ import LandingFooter from '../components/landing/LandingFooter';
 
 /**
  * ┌─────────────────────────────────────────────────────────────────────────┐
- * │  app.cyberkhana.tech — what a logged-out visitor to the platform sees.  │
- * │  Built by `npm run build`, previewed by `npm run dev`                   │
+ * │  cyberkhana.tech — the umbrella page for the project as a whole.        │
+ * │  Built by `npm run build:marketing`, previewed by `npm run dev:marketing`│
  * └─────────────────────────────────────────────────────────────────────────┘
  *
- * The other one is pages/MarketingPage.tsx, the umbrella page on the apex.
- * See the note there for how the two relate and how to fork a section when one
- * needs to differ. Editing this file affects the platform only.
+ * The other one is pages/LandingPage.tsx, which is what a logged-out visitor
+ * sees on app.cyberkhana.tech. The two start identical on purpose — same
+ * design, so neither begins from scratch — but they are separate files now:
+ * changing the order of sections here, dropping one, or adding one, does
+ * nothing to the platform.
+ *
+ * The sections themselves are still shared out of components/landing/. That is
+ * deliberate: a bug fixed there is fixed on both sites. When a section needs to
+ * genuinely differ between the two, fork that one file into a Marketing variant
+ * and swap the import below — one section at a time, rather than duplicating
+ * the whole page up front.
  */
-const LandingPage: React.FC = () => {
+const MarketingPage: React.FC = () => {
   return (
     <LangProvider>
       <div className="bg-canvas app-min-shell overflow-x-hidden" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
@@ -32,4 +40,4 @@ const LandingPage: React.FC = () => {
   );
 };
 
-export default LandingPage;
+export default MarketingPage;
