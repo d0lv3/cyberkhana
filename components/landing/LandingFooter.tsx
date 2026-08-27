@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import PlatformLink from "./PlatformLink";
+import { Link } from "react-router-dom";
 import { useLang } from './LangContext';
 
 
@@ -35,18 +35,18 @@ function CTABlock() {
           {t('cta.subtitle')}
         </p>
         <div className="flex gap-4 mt-8 justify-center flex-wrap">
-          <PlatformLink
+          <Link
             to="/register"
             className="bg-brand-neon text-canvas font-bold px-8 py-4 rounded-lg hover:bg-[#b8ff3a] transition-all text-lg cursor-pointer"
           >
             {t('cta.getStarted')}
-          </PlatformLink>
-          <PlatformLink
+          </Link>
+          <Link
             to="/login"
             className="border border-edge text-fg-soft px-8 py-4 rounded-lg hover:border-brand hover:text-brand transition-all text-lg cursor-pointer"
           >
             {t('cta.signIn')}
-          </PlatformLink>
+          </Link>
         </div>
       </motion.div>
     </section>

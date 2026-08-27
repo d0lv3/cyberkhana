@@ -10,7 +10,6 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
-dist-marketing
 *.local
 
 # Editor directories and files
@@ -28,8 +27,6 @@ dist-marketing
 .env
 .env.*
 !.env.example
-# Not a secret: it only selects which of the two sites a build is.
-!.env.marketing
 
 # User uploads (runtime data — restored to the server volume, not git)
 uploads
