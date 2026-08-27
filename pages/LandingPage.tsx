@@ -13,9 +13,11 @@ import LandingFooter from '../components/landing/LandingFooter';
  * │  Built by `npm run build`, previewed by `npm run dev`                   │
  * └─────────────────────────────────────────────────────────────────────────┘
  *
- * The other one is pages/MarketingPage.tsx, the umbrella page on the apex.
- * See the note there for how the two relate and how to fork a section when one
- * needs to differ. Editing this file affects the platform only.
+ * cyberkhana.tech — the umbrella page on the apex — is a separate repo now
+ * (d0lv3/cyberkhana-marketing). It carries its own copy of components/landing/,
+ * deliberately: the two pages are free to diverge, and editing anything here
+ * affects the platform only. A genuine *bug* in a shared section is worth
+ * fixing in both.
  */
 const LandingPage: React.FC = () => {
   return (
