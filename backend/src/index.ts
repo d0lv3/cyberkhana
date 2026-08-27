@@ -43,12 +43,25 @@ const expandLocalOriginAliases = (origin: string) => {
   return Array.from(aliases);
 };
 
-const allowedSocketOrigins = Array.from(new Set([
+/**
+ * Every browser origin allowed to call this API, for both HTTP and Socket.IO.
+ *
+ * These were two lists; Socket.IO had an allowlist and HTTP reflected whatever
+ * Origin it was sent. One list means they cannot drift again — the Socket.IO
+ * one had already gone stale, still naming the apex and an old server IP while
+ * missing app.cyberkhana.tech, the only host that serves the platform today.
+ *
+ * Adding an origin here is rarely the right fix. The platform calls the API at
+ * a relative /api on its own hostname, and `npm run dev` proxies /api to this
+ * server, so in both cases the browser sees one origin and CORS never applies.
+ * Use FRONTEND_URL for a genuinely separate frontend host.
+ */
+const allowedOrigins = Array.from(new Set([
   'http://localhost:3000',
   'http://127.0.0.1:3000',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
-  'http://164.92.186.62',
+  'https://app.cyberkhana.tech',
   'https://cyberkhana.tech',
   'https://www.cyberkhana.tech',
   ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map((origin) => origin.trim()) : [])
@@ -57,6 +70,10 @@ const allowedSocketOrigins = Array.from(new Set([
   .flatMap(expandLocalOriginAliases)
   .map(normalizeOrigin)));
 
+/** No Origin header at all — curl, Postman, a mobile app, server-to-server. */
+const isAllowedOrigin = (origin?: string) =>
+  !origin || allowedOrigins.includes(normalizeOrigin(origin));
+
 // Create HTTP server for Socket.IO
 const httpServer = createServer(app);
 
@@ -64,7 +81,7 @@ const httpServer = createServer(app);
 const io = new SocketIOServer(httpServer, {
   cors: {
     origin: (origin, callback) => {
-      if (!origin || allowedSocketOrigins.includes(normalizeOrigin(origin))) {
+      if (isAllowedOrigin(origin)) {
         return callback(null, true);
       }
       return callback(new Error('Origin not allowed by Socket.IO CORS'));
@@ -145,12 +162,21 @@ const strictLoginLimiter = rateLimit({
 app.use(helmet());
 app.use(cookieParser()); // Use cookie-parser
 
-// Security: CORS configuration - Allow all origins for CTF platform
+// Security: CORS is an allowlist, not a mirror.
+//
+// This used to answer every Origin with itself while also sending
+// credentials: true, which tells a browser that any website may read
+// authenticated responses from this API. The login cookie is sameSite: 'strict'
+// so it was never actually sent cross-site — but that made a cookie attribute
+// the only thing preventing account takeover, and cookie auth was already live
+// here (auth.ts reads req.cookies.token before the Authorization header).
+//
+// Refusing is `callback(null, false)`, not an Error: it withholds the
+// Access-Control-Allow-Origin header so the browser blocks the response, rather
+// than turning every stray request into a 500 in the logs.
 const corsOptions = {
-  origin: function (origin: any, callback: any) {
-    // Allow requests with no origin (like mobile apps, Postman, etc.)
-    // and allow all origins for the CTF platform
-    callback(null, true);
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    callback(null, isAllowedOrigin(origin));
   },
   credentials: true,
   optionsSuccessStatus: 200
