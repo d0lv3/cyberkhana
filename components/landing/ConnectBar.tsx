@@ -43,20 +43,24 @@ const ConnectBar = () => {
         </p>
       </div>
 
-      <div className="flex w-full flex-col items-center justify-center gap-2 sm:flex-row sm:flex-wrap md:w-auto md:justify-end">
+      {/* The product button and the social set wrap as units, never as four
+          loose buttons — letting them wrap individually is what left one
+          stranded alone on its own row on the umbrella site. */}
+      <div className="flex w-full flex-col items-stretch gap-2 md:w-auto">
         <a
           href={ACADEMY_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-brand/40 bg-brand/10 px-3.5 py-2 text-xs font-bold text-brand transition-all hover:bg-brand/20 hover:shadow-[0_0_16px_rgba(0,168,89,0.25)] touch:min-h-tap sm:w-auto"
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-brand/40 bg-brand/10 px-3.5 py-2 text-xs font-bold text-brand transition-all hover:bg-brand/20 hover:shadow-[0_0_16px_rgba(0,168,89,0.25)] touch:min-h-tap"
         >
           <Globe size={13} aria-hidden />
           {isArabic ? 'أكاديمية سايبر خانة' : 'CyberKhana Academy'}
           <ExternalLink size={11} aria-hidden />
         </a>
 
-        {/* An even three-up on a phone, back in the row from sm. */}
-        <div className="grid w-full grid-cols-3 gap-2 sm:contents">
+        {/* An even three-up at every width, and one grid so they wrap together
+            rather than one at a time. */}
+        <div className="grid w-full grid-cols-3 gap-2">
           {SOCIALS.map(({ label, Icon, href }) => (
             <a
               key={label}
