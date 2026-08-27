@@ -8,18 +8,9 @@ function Footer() {
   return (
     <footer className="bg-deep border-t border-edge">
       <div className="max-w-6xl mx-auto px-6 py-12">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <img
-            src="/assets/brand/cyberkhana-text-logo.png"
-            alt="CyberKhana"
-            loading="lazy"
-            className="h-8 w-auto"
-          />
-        </div>
-
         <ConnectBar />
 
-        <div className="border-t border-edge/50 my-8" />
+        <div className="my-8" />
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-faint text-xs">
           <span>{t('footer.founded')}</span>

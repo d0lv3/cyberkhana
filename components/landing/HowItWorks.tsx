@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { GraduationCap, PenTool, Users, Trophy } from 'lucide-react';
 
+import SpotlightCard from './SpotlightCard';
 import { useLang } from './LangContext';
 
 const STEPS = [
@@ -53,28 +54,36 @@ const HowItWorks = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="relative flex h-full flex-col rounded-2xl border border-edge bg-panel p-6"
+              className="h-full"
             >
-              <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
-                  <Icon className="h-5 w-5" aria-hidden />
-                </span>
-                {/* The step number, kept quiet. It carries the order without
-                    competing with the heading beneath it. */}
+              <SpotlightCard className="group h-full rounded-2xl border border-edge bg-panel transition-colors duration-300 hover:border-brand/40">
+                {/* The step number as a ghost behind the card rather than a
+                    chip inside it. It has to be legible enough to establish the
+                    order and quiet enough not to be read as content — a numeral
+                    this size at this weight is scenery until you look for it. */}
                 <span
-                  className="font-mono text-3xl font-bold leading-none text-edge-light"
                   aria-hidden
+                  className="pointer-events-none absolute -top-3 select-none font-mono text-[5.5rem] font-black leading-none text-edge/40 transition-colors duration-300 group-hover:text-edge-light/50 ltr:right-2 rtl:left-2"
                 >
                   {i + 1}
                 </span>
-              </div>
 
-              <h3 className="mt-5 text-base font-extrabold text-fg" style={{ fontWeight: 800 }}>
-                {t(`how.${key}.title`)}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">
-                {t(`how.${key}.body`)}
-              </p>
+                <div className="relative flex h-full flex-col p-6">
+                  <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border border-brand/25 bg-brand/10 text-brand transition-colors duration-300 group-hover:border-brand/50 group-hover:text-brand-neon">
+                    <Icon className="h-5 w-5" aria-hidden />
+                  </span>
+
+                  <h3
+                    className="mt-5 text-base font-extrabold text-fg"
+                    style={{ fontWeight: 800 }}
+                  >
+                    {t(`how.${key}.title`)}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">
+                    {t(`how.${key}.body`)}
+                  </p>
+                </div>
+              </SpotlightCard>
             </motion.li>
           ))}
         </ol>

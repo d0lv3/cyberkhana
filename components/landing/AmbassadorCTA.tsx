@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Mail } from 'lucide-react';
+import { GraduationCap, Mail } from 'lucide-react';
 
 import { useLang } from './LangContext';
 
@@ -48,6 +48,17 @@ const AmbassadorCTA = () => {
           background:
             'radial-gradient(60% 55% at 50% 0%, rgba(0,168,89,0.16), transparent 70%)',
         }}
+      />
+
+      {/* The cap as a watermark. White at three percent rather than the brand
+          green: green here would compete with the button, which is the one
+          thing in this section that has to be found. Big enough to read as a
+          shape behind the words and faint enough never to be read as content —
+          and clipped by the section, so it does not add height. */}
+      <GraduationCap
+        aria-hidden
+        strokeWidth={1}
+        className="pointer-events-none absolute -bottom-16 start-[-3rem] h-[22rem] w-[22rem] text-white/[0.03] sm:start-[-2rem] sm:h-[26rem] sm:w-[26rem]"
       />
 
       <motion.div
