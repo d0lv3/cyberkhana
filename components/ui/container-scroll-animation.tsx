@@ -7,6 +7,7 @@ export const ContainerScroll = ({
   children,
   frameClassName,
   screenClassName,
+  frameSizeClassName,
 }: {
   titleComponent: string | React.ReactNode;
   children: React.ReactNode;
@@ -14,6 +15,12 @@ export const ContainerScroll = ({
   frameClassName?: string;
   /** The inset behind the screenshot, visible only where the image doesn't reach. */
   screenClassName?: string;
+  /**
+   * The frame's proportions. Defaults to the fixed heights this was written
+   * with, which are portrait on a phone — fine for a form, wrong for a
+   * landscape screenshot, which gets cropped to about half its width.
+   */
+  frameSizeClassName?: string;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
@@ -60,6 +67,7 @@ export const ContainerScroll = ({
           scale={scale}
           frameClassName={frameClassName}
           screenClassName={screenClassName}
+          {...(frameSizeClassName ? { frameSizeClassName } : {})}
         >
           {children}
         </Card>
@@ -88,6 +96,7 @@ export const Card = ({
   children,
   frameClassName = "border-zinc-700 bg-zinc-800",
   screenClassName = "bg-zinc-900",
+  frameSizeClassName = 'h-[30rem] md:h-[40rem]',
 }: {
   rotate: MotionValue<number>;
   scale: MotionValue<number>;
@@ -95,6 +104,7 @@ export const Card = ({
   children: React.ReactNode;
   frameClassName?: string;
   screenClassName?: string;
+  frameSizeClassName?: string;
 }) => {
   return (
     <motion.div
@@ -104,7 +114,7 @@ export const Card = ({
         boxShadow:
           "0 0 #0000004d, 0 9px 20px #0000004a, 0 37px 37px #00000042, 0 84px 50px #00000026, 0 149px 60px #0000000a, 0 233px 65px #00000003",
       }}
-      className={`max-w-5xl -mt-12 mx-auto h-[30rem] md:h-[40rem] w-full border-4 p-2 md:p-6 rounded-[30px] shadow-2xl ${frameClassName}`}
+      className={`max-w-5xl -mt-12 mx-auto ${frameSizeClassName} w-full border-4 p-2 md:p-6 rounded-[30px] shadow-2xl ${frameClassName}`}
     >
       <div className={`h-full w-full overflow-hidden rounded-2xl md:rounded-2xl md:p-4 ${screenClassName}`}>
         {children}

@@ -11,6 +11,11 @@ const iPadShowcase = () => {
         // A lighter bezel than the default zinc-700/800: the frame sat almost
         // the same value as the page behind it, so the device read as a flat
         // rectangle rather than something holding a screen.
+        // Landscape on a phone. The default frame is a fixed 30rem tall, which
+        // at phone widths is a portrait box — and covering a portrait box with
+        // a landscape screenshot showed barely half its width. An aspect ratio
+        // close to the shot's own means the frame holds the whole dashboard.
+        frameSizeClassName="aspect-[16/10] md:aspect-auto md:h-[40rem]"
         frameClassName="border-zinc-500 bg-zinc-700"
         screenClassName="bg-zinc-800"
         titleComponent={
