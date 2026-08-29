@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { userService } from '../services/userService';
-import { Target, Calendar, Edit2, Check, X, Shield, Flag, UserRound } from 'lucide-react';
+import { Target, Calendar, Edit2, Check, X, Shield, Flag, Camera } from 'lucide-react';
 import AchievementsSystem from '../components/AchievementsSystem';
 import { categoryAccent } from '../components/challenges/ChallengeArt';
-import AvatarPicker from '../components/account/AvatarPicker';
+import AvatarDialog from '../components/account/AvatarDialog';
 import CyberAvatar, { presetFor } from '../components/ui/CyberAvatar';
 
 /* `profileIcon` is required by the API and defaults to 'default' on the model,
@@ -38,6 +38,7 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   const [profileIcon, setProfileIcon] = useState(NO_PICTURE);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [savingIcon, setSavingIcon] = useState(false);
   const [iconError, setIconError] = useState('');
 
@@ -118,16 +119,16 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  /* Saves on selection rather than behind a Save button: one field, one
-     action, and the picture the member just tapped is already the preview. */
-  const handlePickIcon = async (next: string) => {
+  /* Commits the dialog's draft. Nothing is written while the member is still
+     looking at the grid — Cancel has to be able to leave the account exactly
+     as it was. */
+  const handleSaveIcon = async (next: string) => {
     const value = next || NO_PICTURE;
-    const previous = profileIcon;
-    setProfileIcon(value);
     setSavingIcon(true);
     setIconError('');
     try {
       await userService.updateProfileIcon(value);
+      setProfileIcon(value);
       const updated = { ...user, profileIcon: value };
       setUser(updated);
       // Header, sidebar and leaderboard all read the cached user, so they need
@@ -136,8 +137,8 @@ const ProfilePage: React.FC = () => {
       const merged = { ...stored, profileIcon: value };
       localStorage.setItem('user', JSON.stringify(merged));
       window.dispatchEvent(new CustomEvent('userUpdate', { detail: merged }));
+      setPickerOpen(false);
     } catch (err: any) {
-      setProfileIcon(previous);
       setIconError(err?.message || 'Could not save your picture');
     } finally {
       setSavingIcon(false);
@@ -174,18 +175,39 @@ const ProfilePage: React.FC = () => {
         <div className="absolute top-0 end-0 w-72 h-72 bg-brand/[0.06] rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
-          {/* Octagon avatar — the picture chosen below, in the frame. */}
+          {/* Octagon avatar, and the way you change it.
+              The picture is the control: pressing the thing you want to replace
+              is a shorter path than hunting for a card lower down the page, and
+              the badge is there so the affordance is visible without a hover —
+              this has to work on a phone, where there is no hover at all. */}
           <div className="relative flex-shrink-0">
-            <div
-              className="w-24 h-24 md:w-28 md:h-28 overflow-hidden bg-inset border-2 border-brand/40 flex items-center justify-center"
-              style={{ clipPath: shapePath }}
+            <button
+              type="button"
+              onClick={() => {
+                setIconError('');
+                setPickerOpen(true);
+              }}
+              aria-label="Change your picture"
+              title="Change your picture"
+              className="group relative block focus:outline-none"
             >
-              {selectedPreset ? (
-                <CyberAvatar preset={selectedPreset} className="w-full h-full" title={displayName} />
-              ) : (
-                <span className="text-4xl font-black text-brand-neon">{initial}</span>
-              )}
-            </div>
+              <span
+                className="relative flex h-24 w-24 md:h-28 md:w-28 items-center justify-center overflow-hidden border-2 border-brand/40 bg-inset transition-colors group-hover:border-brand group-focus-visible:border-brand"
+                style={{ clipPath: shapePath }}
+              >
+                {selectedPreset ? (
+                  <CyberAvatar preset={selectedPreset} className="h-full w-full" title={displayName} />
+                ) : (
+                  <span className="text-4xl font-black text-brand-neon">{initial}</span>
+                )}
+                <span className="absolute inset-0 flex items-center justify-center bg-canvas/70 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+                  <Camera size={22} className="text-fg" />
+                </span>
+              </span>
+              <span className="absolute -bottom-0.5 -end-0.5 flex h-8 w-8 items-center justify-center rounded-full border-2 border-panel bg-brand text-white shadow-md transition-transform group-hover:scale-110">
+                <Camera size={14} />
+              </span>
+            </button>
           </div>
 
           {/* Name + meta.
@@ -279,32 +301,6 @@ const ProfilePage: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* ── PROFILE PICTURE ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05, duration: 0.4 }}
-        className="rounded-xl border border-edge bg-panel overflow-hidden"
-      >
-        <div className="flex items-center gap-2 px-5 py-4 border-b border-edge">
-          <UserRound size={15} className="text-muted" />
-          <h2 className="text-sm font-bold text-fg">Profile picture</h2>
-          {savingIcon && <span className="ms-auto text-xs text-muted">Saving…</span>}
-          {!savingIcon && iconError && <span className="ms-auto text-xs text-red-400">{iconError}</span>}
-        </div>
-        <div className="p-5">
-          <p className="mb-4 text-sm text-muted">
-            Shown on your profile, in the sidebar and on the leaderboard.
-          </p>
-          <AvatarPicker
-            value={selectedPreset ? profileIcon : ''}
-            onChange={handlePickIcon}
-            displayName={displayName}
-            disabled={savingIcon}
-          />
-        </div>
-      </motion.div>
-
       {/* ── OPERATOR BRIEFING ── */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -395,6 +391,16 @@ const ProfilePage: React.FC = () => {
           </div>
         </motion.div>
       )}
+
+      <AvatarDialog
+        open={pickerOpen}
+        value={selectedPreset ? profileIcon : ''}
+        displayName={displayName}
+        saving={savingIcon}
+        error={iconError}
+        onClose={() => setPickerOpen(false)}
+        onSave={handleSaveIcon}
+      />
 
       {/* ── ACHIEVEMENTS ── */}
       <motion.div

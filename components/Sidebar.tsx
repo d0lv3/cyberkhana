@@ -57,10 +57,17 @@ const Sidebar: React.FC<SidebarProps> = ({ user: userProp, collapsed, onToggle }
   const iconClass = (extra: string, key: string) =>
     `flex-shrink-0 transition-colors ${shake.key === key ? 'nav-shake' : ''} ${extra}`;
 
+  /* The aside's own z-40 is load-bearing, not decoration. `position: sticky`
+     makes this element a stacking context, so the toggle's z-40 is trapped
+     inside it and counts for nothing against the page: the Challenges hero
+     (z-10) and its sticky category bar (z-30) painted straight over the half of
+     the button that overhangs the rail. Raising the aside lifts the whole
+     subtree above them; the header is z-30 and the Academy dialog z-80, so
+     nothing else moves. */
   return (
     <>
       <aside
-        className={`hidden md:flex relative flex-col flex-shrink-0 h-screen sticky top-0 bg-canvas border-r border-edge-strong transition-[width] duration-300 ease-in-out ${
+        className={`hidden md:flex relative z-40 flex-col flex-shrink-0 h-screen sticky top-0 bg-canvas border-r border-edge-strong transition-[width] duration-300 ease-in-out ${
           collapsed ? 'w-[68px]' : 'w-60'
         }`}
       >
@@ -80,9 +87,6 @@ const Sidebar: React.FC<SidebarProps> = ({ user: userProp, collapsed, onToggle }
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-5 space-y-0.5 overflow-y-auto overflow-x-hidden">
-          {!collapsed && (
-            <p className="px-3 mb-3 text-[11px] font-semibold tracking-wide text-faint">Navigation</p>
-          )}
           {navItems.map((item) => {
             const Icon = item.icon;
 

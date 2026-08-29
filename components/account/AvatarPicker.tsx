@@ -11,12 +11,14 @@ interface AvatarPickerProps {
 }
 
 /**
- * Picture chooser for the profile.
+ * The grid of choices. Owned by AvatarDialog, which supplies the draft value
+ * and the Save/Cancel around it.
  *
  * Every option is a tile in one grid, "no picture" included — it is drawn the
  * way the initial will actually appear rather than hidden behind a Remove
  * button, because choosing the letter is the same decision as choosing the
- * ghost. Selection saves immediately; there is no form around this to submit.
+ * ghost. Four columns on a phone and seven on a desktop both land tiles well
+ * over the 44px target.
  *
  * The same thirteen drawings the Academy offers, so a member who picked one
  * there finds themselves here.

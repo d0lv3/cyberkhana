@@ -107,3 +107,56 @@ export const Shadow: React.FC<{ x: number; y: number; rx: number; ry: number; bl
   const [cx, cy] = iso(x, y, 0);
   return <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="#000" opacity="0.42" filter={`url(#${blur})`} />;
 };
+
+/* ── round solids ──
+ * A circle of radius r on a ground plane projects to an axis-aligned ellipse:
+ * parametrising x=r·cos t, y=r·sin t gives screen offsets
+ *   sx = 0.866·r·(cos t − sin t)   amplitude r·√2·0.866 = 1.2247r
+ *   sy = 0.5·r·(cos t + sin t)     amplitude r·√2·0.5   = 0.7071r
+ * and the two are 90° out of phase, so no rotation is needed.
+ */
+export const ELLIPSE_RX = Math.SQRT2 * COS30;
+export const ELLIPSE_RY = Math.SQRT2 * 0.5;
+
+/** Screen point on the rim of a circle of radius r, at world angle t (radians). */
+export const rimPoint = (
+  cx: number, cy: number, z: number, r: number, t: number,
+): [number, number] => {
+  const [ox, oy] = iso(cx + r * Math.cos(t), cy + r * Math.sin(t), z);
+  return [ox, oy];
+};
+
+/** True when the rim point at angle t faces the camera (front half of the ellipse). */
+export const facesViewer = (t: number) => Math.cos(t) + Math.sin(t) > 0;
+
+interface CylinderProps {
+  /** Centre of the circular footprint, in world coordinates. */
+  cx: number; cy: number; z: number;
+  r: number; h: number;
+  accent: string;
+  lift?: number;
+  /** Fill for the curved side; defaults to a flat mid-shade. */
+  bodyFill?: string;
+}
+
+/** An upright cylinder: curved side, then the top cap over it. */
+export const Cylinder: React.FC<CylinderProps> = ({
+  cx, cy, z, r, h, accent, lift = 0, bodyFill,
+}) => {
+  const c = shades(accent, lift);
+  const rx = r * ELLIPSE_RX;
+  const ry = r * ELLIPSE_RY;
+  const [bx, by] = iso(cx, cy, z);
+  const [tx, ty] = iso(cx, cy, z + h);
+  return (
+    <g>
+      {/* Built from three whole shapes rather than one arc-flagged outline: the
+          base ellipse, the wall over its back half, then the cap. Same
+          silhouette, and no sweep flag to get backwards. */}
+      <ellipse cx={bx} cy={by} rx={rx} ry={ry} fill={bodyFill ?? c.left} />
+      <rect x={tx - rx} y={ty} width={rx * 2} height={by - ty} fill={bodyFill ?? c.left} />
+      <ellipse cx={tx} cy={ty} rx={rx} ry={ry} fill={c.top} />
+      <ellipse cx={tx} cy={ty} rx={rx} ry={ry} fill="none" stroke={c.line} strokeWidth="0.9" opacity="0.5" />
+    </g>
+  );
+};

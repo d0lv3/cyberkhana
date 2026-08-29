@@ -11,6 +11,8 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
+  const displayName = user.fullName || user.displayName || user.username || user.name;
+
   return (
     <header className="flex-shrink-0 bg-canvas/95 border-b border-edge-strong backdrop-blur-md sticky top-0 z-30">
       <div className="flex items-center justify-between h-14 px-4 sm:px-6">
@@ -24,14 +26,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
 
         {/* Right side controls */}
         <div className="flex items-center gap-2">
-          {/* User info */}
-          <div className="hidden sm:flex flex-col items-end mr-1">
-            <p className="text-xs font-semibold text-fg-soft truncate max-w-[140px]" title={user.fullName || user.displayName || user.username || user.name}>
-              {user.fullName || user.displayName || user.username || user.name}
-            </p>
-            <p className="text-[10px] text-brand-neon font-bold">{user.points ?? 0} pts</p>
-          </div>
-
           {/* Announcements */}
           <Link
             to="/announcements"
@@ -41,19 +35,33 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
             <Bell size={16} />
           </Link>
 
-          {/* Profile — wears the picture the member actually chose, so the
-              header is where they see it took effect. */}
+          {/* Profile.
+              One control, not three: the picture, the name and the score were
+              a label, a link and a button sitting next to each other and all
+              standing for the same person. They are now the single thing you
+              press to reach your profile — which is also where the picture is
+              chosen, so this is where you see the choice took effect.
+              Below sm the name and score drop and the avatar carries it. */}
           <Link
             to="/profile"
             aria-label="My profile"
-            className="rounded-lg border border-edge transition-colors hover:border-brand/40"
+            className="group flex items-center gap-2.5 rounded-lg border border-edge bg-panel p-1 pe-1 sm:pe-3 transition-colors hover:border-brand/40 hover:bg-surface-hover"
           >
             <Avatar
               profileIcon={(user as any)?.profileIcon}
-              name={user.fullName || user.displayName || user.username || user.name}
-              className="w-9 h-9 touch:w-11 touch:h-11 rounded-lg border-0"
+              name={displayName}
+              className="w-8 h-8 touch:w-10 touch:h-10 rounded-md border-0"
               initialClassName="text-sm"
             />
+            <span className="hidden sm:flex min-w-0 flex-col leading-tight">
+              <span
+                className="truncate max-w-[140px] text-xs font-semibold text-fg-soft transition-colors group-hover:text-fg"
+                title={displayName}
+              >
+                {displayName}
+              </span>
+              <span className="text-[11px] font-bold text-brand-neon">{user.points ?? 0} pts</span>
+            </span>
           </Link>
 
           {/* Logout */}

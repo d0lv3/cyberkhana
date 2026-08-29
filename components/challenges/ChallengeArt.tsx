@@ -1,5 +1,7 @@
 import React, { useId } from 'react';
-import { Box, SHADE, Shadow, faceLeft, faceTop, iso, mix, shades, WHITE } from '../art/iso';
+import {
+  Box, Cylinder, SHADE, Shadow, faceLeft, faceTop, facesViewer, iso, mix, rimPoint, shades, WHITE,
+} from '../art/iso';
 
 /* ── Category art ──
  *
@@ -164,32 +166,78 @@ const PwnScene: React.FC<SceneProps> = ({ accent, detailed, uid }) => {
   );
 };
 
-/** A padlock on a plinth, with cipher tiles orbiting it. */
+/** A cipher-rotor stack: three lettered wheels, one of them turned. */
 const CryptoScene: React.FC<SceneProps> = ({ accent, detailed, uid }) => {
   const c = shades(accent);
-  const shackle = (() => {
-    const [ax, ay] = iso(16, 30, 40);
-    const [bx, by] = iso(44, 30, 40);
-    const [tx, ty] = iso(30, 30, 70);
-    return `M${ax} ${ay} Q${tx} ${ty - 8} ${bx} ${by}`;
-  })();
+  const R = 21;
+  /* Each wheel is a ring of ticks. Only the front half of the rim is drawn —
+     the back half is behind the solid — and one tick per wheel is lit. The lit
+     ones do not line up, which is the whole idea: the wheels have been turned
+     against each other, and that offset is what a substitution cipher is. */
+  const wheels = [
+    { z: 6, h: 15, offset: 0.0, litIndex: 3 },
+    { z: 21, h: 15, offset: 0.42, litIndex: 5 },
+    { z: 36, h: 15, offset: 0.9, litIndex: 2 },
+  ];
+  const TICKS = 12;
+
   return (
     <g>
-      <Shadow x={30} y={30} rx={52} ry={25} blur={`blur-${uid}`} />
-      <Box x={2} y={2} z={0} w={56} d={56} h={7} accent={accent} lift={-0.12} />
-      <path d={shackle} fill="none" stroke={c.top} strokeWidth="8" strokeLinecap="round" opacity="0.95" />
-      <path d={shackle} fill="none" stroke={mix(accent, WHITE, 0.62)} strokeWidth="2.4" strokeLinecap="round" opacity="0.5" />
-      <Box x={10} y={12} z={7} w={40} d={36} h={30} accent={accent} lift={0.05} />
-      {detailed && (
-        <g transform={faceLeft(10, 48, 37)}>
-          <circle cx="20" cy="14" r="5.4" fill="#0b1220" opacity="0.85" />
-          <path d="M20 17 L17.6 25 L22.4 25 Z" fill="#0b1220" opacity="0.85" />
+      <Shadow x={30} y={30} rx={50} ry={24} blur={`blur-${uid}`} />
+      <Box x={2} y={2} z={0} w={56} d={56} h={6} accent={accent} lift={-0.16} />
+
+      {wheels.map((w, i) => (
+        <g key={i}>
+          <Cylinder cx={30} cy={30} z={w.z} r={R} h={w.h} accent={accent} lift={0.02 - i * 0.03} />
+          {/* rim ticks, front half only */}
+          <g>
+            {Array.from({ length: TICKS }).map((_, k) => {
+              const t = w.offset + (k / TICKS) * Math.PI * 2;
+              if (!facesViewer(t)) return null;
+              const [px, py] = rimPoint(30, 30, w.z + w.h * 0.5, R, t);
+              const lit = k === w.litIndex;
+              return (
+                <rect
+                  key={k}
+                  x={px - 1.3}
+                  y={py - (lit ? 5 : 3.5)}
+                  width="2.6"
+                  height={lit ? 10 : 7}
+                  rx="1.3"
+                  fill={lit ? '#ffffff' : '#0b1220'}
+                  opacity={lit ? 0.95 : 0.5}
+                />
+              );
+            })}
+          </g>
         </g>
-      )}
+      ))}
+
+      {/* Axle + groove. Without them the top wheel is a plain amber disc and the
+          whole stack reads as coins; the concentric ring is what says the
+          wheels turn about a shaft. */}
+      <ellipse
+        cx={iso(30, 30, 51)[0]}
+        cy={iso(30, 30, 51)[1]}
+        rx={R * 0.52 * 1.2247}
+        ry={R * 0.52 * 0.7071}
+        fill="none"
+        stroke={mix(accent, SHADE, 0.45)}
+        strokeWidth="1.6"
+        opacity="0.8"
+      />
+      <Cylinder cx={30} cy={30} z={51} r={5} h={7} accent={accent} lift={0.16} />
+
       {detailed && (
         <>
-          <Box x={62} y={-4} z={16} w={13} d={13} h={4} accent={accent} lift={0.16} edges={false} />
-          <Box x={-16} y={40} z={28} w={11} d={11} h={4} accent={accent} lift={0.2} edges={false} />
+          {/* The key, drawn face-on beside the stack: a key is a silhouette,
+              and extruding one turns it into an unreadable stub. */}
+          <g transform={`translate(${iso(66, 4, 20)[0]},${iso(66, 4, 20)[1]})`}>
+            <circle cx="0" cy="0" r="9" fill="none" stroke={c.top} strokeWidth="4.5" />
+            <circle cx="0" cy="0" r="3" fill={mix(accent, SHADE, 0.55)} />
+            <path d="M0 9 L0 34" stroke={c.top} strokeWidth="4.5" strokeLinecap="round" />
+            <path d="M0 24 L8 24 M0 31 L6 31" stroke={c.top} strokeWidth="3.4" strokeLinecap="round" />
+          </g>
         </>
       )}
     </g>
@@ -243,33 +291,100 @@ const ReversingScene: React.FC<SceneProps> = ({ accent, detailed, uid }) => {
   );
 };
 
-/** Stacked disk images with a lens hovering over the evidence. */
+/* One fingerprint, drawn at whatever size the caller needs. Reused at two
+   scales so the lens can genuinely magnify what is under it. */
+const ridges = (k: number) => [
+  `M${-15 * k} ${5 * k} a${15 * k} ${17 * k} 0 0 1 ${30 * k} 0`,
+  `M${-11 * k} ${8 * k} a${11 * k} ${13 * k} 0 0 1 ${22 * k} 0`,
+  `M${-7 * k} ${10 * k} a${7 * k} ${9 * k} 0 0 1 ${14 * k} 0`,
+  `M${-3 * k} ${12 * k} a${3 * k} ${5 * k} 0 0 1 ${6 * k} 0`,
+  `M${-15 * k} ${13 * k} a${15 * k} ${15 * k} 0 0 0 ${9 * k} ${8 * k}`,
+  `M${15 * k} ${13 * k} a${15 * k} ${15 * k} 0 0 1 ${-9 * k} ${8 * k}`,
+];
+
+/** A print lifted off an evidence slab, and the lens that is reading it. */
 const ForensicsScene: React.FC<SceneProps> = ({ accent, detailed, uid }) => {
   const c = shades(accent);
+  const lens = { r: 25, cx: 32, cy: 26 };
   return (
     <g>
-      <Shadow x={28} y={28} rx={54} ry={26} blur={`blur-${uid}`} />
-      <Box x={0} y={0} z={0} w={56} d={56} h={7} accent={accent} lift={-0.14} />
-      <Box x={3} y={3} z={9} w={50} d={50} h={6} accent={accent} lift={-0.06} opacity={0.94} />
-      <Box x={6} y={6} z={17} w={44} d={44} h={6} accent={accent} lift={0.02} opacity={0.94} />
-      {detailed && (
-        <g transform={faceTop(6, 6, 23)} opacity="0.6">
-          {/* platter tracks on the top layer */}
-          <g fill="none" stroke="#0b1220" strokeWidth="1.4">
-            <circle cx="22" cy="22" r="17" />
-            <circle cx="22" cy="22" r="11" />
-          </g>
-          <circle cx="22" cy="22" r="3.4" fill="#0b1220" />
+      <Shadow x={30} y={30} rx={54} ry={26} blur={`blur-${uid}`} />
+      <Box x={0} y={0} z={0} w={60} d={60} h={7} accent={accent} lift={-0.16} />
+      <Box x={4} y={4} z={7} w={52} d={52} h={5} accent={accent} lift={-0.02} />
+
+      {/* The print itself, lying on the slab. */}
+      <g transform={faceTop(4, 4, 12)}>
+        <g
+          transform="translate(26,26)"
+          fill="none"
+          stroke="#0b1220"
+          strokeWidth="2"
+          strokeLinecap="round"
+          opacity="0.72"
+        >
+          {ridges(1).map((d, i) => (
+            <path key={i} d={d} />
+          ))}
         </g>
-      )}
-      {/* the lens, tilted into the world on the top plane */}
-      <g transform={faceTop(14, 14, 52)}>
-        <circle cx="20" cy="20" r="19" fill={accent} opacity="0.16" />
-        <circle cx="20" cy="20" r="19" fill="none" stroke={c.top} strokeWidth="5" />
-        <circle cx="20" cy="20" r="19" fill="none" stroke={mix(accent, WHITE, 0.7)} strokeWidth="1.4" opacity="0.6" />
-        <path d="M33 33 L47 47" stroke={c.top} strokeWidth="7" strokeLinecap="round" />
-        {detailed && <path d="M10 14 a13 13 0 0 1 10 -6" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" opacity="0.5" />}
+        {detailed && (
+          <g stroke={c.line} strokeWidth="0.8" opacity="0.35" fill="none">
+            <path d="M6 6 h10 M6 6 v10 M46 46 h-10 M46 46 v-10" />
+          </g>
+        )}
       </g>
+
+      {/* The lens, floating clear of the slab. What shows through it is the
+          same print at 1.9x — the magnification is the point, and drawing the
+          glass empty made it read as a bangle. */}
+      <g transform={faceTop(lens.cx - 20, lens.cy - 20, 46)}>
+        <defs>
+          <clipPath id={`lens-${uid}`}>
+            <circle cx="20" cy="20" r={lens.r - 4} />
+          </clipPath>
+        </defs>
+
+        <circle cx="20" cy="20" r={lens.r - 4} fill="#0b1220" opacity="0.92" />
+        <g clipPath={`url(#lens-${uid})`}>
+          <g
+            transform="translate(20,17) scale(1.9)"
+            fill="none"
+            stroke={accent}
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            opacity="0.95"
+          >
+            {ridges(1).map((d, i) => (
+              <path key={i} d={d} />
+            ))}
+          </g>
+          {detailed && (
+            /* a diagonal glare, so the disc reads as glass rather than a hole */
+            <path d="M-6 8 L24 -22 L34 -12 L4 18 Z" fill="#ffffff" opacity="0.07" />
+          )}
+        </g>
+
+        {/* barrel */}
+        <circle cx="20" cy="20" r={lens.r - 4} fill="none" stroke={c.top} strokeWidth="5" />
+        <circle cx="20" cy="20" r={lens.r - 1.2} fill="none" stroke={mix(accent, WHITE, 0.7)} strokeWidth="1.2" opacity="0.55" />
+      </g>
+
+      {/* Grip, in screen space rather than on the top plane: a 45deg line drawn
+          into the plane projects to a near-vertical stub that reads as a stem
+          holding the lens up, not as something you hold. */}
+      {(() => {
+        const [lx, ly] = iso(lens.cx, lens.cy, 46);
+        const k = (lens.r - 4) * 0.72;
+        return (
+          <g strokeLinecap="round">
+            <path d={`M${lx + k} ${ly + k} L${lx + k * 2.4} ${ly + k * 2.4}`} stroke={c.top} strokeWidth="8" />
+            <path
+              d={`M${lx + k * 1.35} ${ly + k * 1.35} L${lx + k * 2.2} ${ly + k * 2.2}`}
+              stroke={mix(accent, SHADE, 0.4)}
+              strokeWidth="3.2"
+            />
+          </g>
+        );
+      })()}
     </g>
   );
 };
