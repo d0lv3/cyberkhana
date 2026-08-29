@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { userService } from '../services/userService';
-import { Target, Calendar, Edit2, Check, X, Shield, Zap, Flag, Trophy, Award } from 'lucide-react';
+import { Target, Calendar, Edit2, Check, X, Shield, Flag, UserRound } from 'lucide-react';
 import AchievementsSystem from '../components/AchievementsSystem';
+import { categoryAccent } from '../components/challenges/ChallengeArt';
+import AvatarPicker from '../components/account/AvatarPicker';
+import CyberAvatar, { presetFor } from '../components/ui/CyberAvatar';
+
+/* `profileIcon` is required by the API and defaults to 'default' on the model,
+   so "no picture" is that sentinel rather than an empty string — which the
+   endpoint rejects outright. Neither resolves to a preset, so both land on the
+   initial. */
+const NO_PICTURE = 'default';
 
 interface UserStats {
   points: number;
@@ -22,21 +31,15 @@ interface CategoryStats {
   points: number;
 }
 
-const categoryAccents: Record<string, string> = {
-  'Web Exploitation': '#60a5fa',
-  'Reverse Engineering': '#a855f7',
-  Cryptography: '#f97316',
-  'Binary Exploitation': '#f43f5e',
-  Forensics: '#34d399',
-  'Social Engineering': '#fbbf24',
-  Miscellaneous: '#9aa5bf',
-};
-
 const ProfilePage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState<UserStats>({ points: 0, solvedCount: 0 });
   const [categoryStats, setCategoryStats] = useState<CategoryStats[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [profileIcon, setProfileIcon] = useState(NO_PICTURE);
+  const [savingIcon, setSavingIcon] = useState(false);
+  const [iconError, setIconError] = useState('');
 
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedFullName, setEditedFullName] = useState('');
@@ -69,6 +72,7 @@ const ProfilePage: React.FC = () => {
           achievements: profile.achievements || [],
         });
         setUser({ ...parsedUser, ...profile });
+        setProfileIcon(profile.profileIcon || NO_PICTURE);
 
         if (profile.solvedChallengesDetails?.length > 0) {
           const map = new Map<string, { count: number; points: number }>();
@@ -114,6 +118,32 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  /* Saves on selection rather than behind a Save button: one field, one
+     action, and the picture the member just tapped is already the preview. */
+  const handlePickIcon = async (next: string) => {
+    const value = next || NO_PICTURE;
+    const previous = profileIcon;
+    setProfileIcon(value);
+    setSavingIcon(true);
+    setIconError('');
+    try {
+      await userService.updateProfileIcon(value);
+      const updated = { ...user, profileIcon: value };
+      setUser(updated);
+      // Header, sidebar and leaderboard all read the cached user, so they need
+      // to hear about this without a reload.
+      const stored = JSON.parse(localStorage.getItem('user') || '{}');
+      const merged = { ...stored, profileIcon: value };
+      localStorage.setItem('user', JSON.stringify(merged));
+      window.dispatchEvent(new CustomEvent('userUpdate', { detail: merged }));
+    } catch (err: any) {
+      setProfileIcon(previous);
+      setIconError(err?.message || 'Could not save your picture');
+    } finally {
+      setSavingIcon(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto px-4 py-8 space-y-4">
@@ -126,6 +156,7 @@ const ProfilePage: React.FC = () => {
 
   const displayName = user?.fullName || user?.displayName || user?.username || 'Operator';
   const initial = displayName.charAt(0).toUpperCase();
+  const selectedPreset = presetFor(profileIcon);
   const maxCategoryCount = Math.max(...categoryStats.map((c) => c.count), 1);
   const shapePath = 'polygon(25% 6%,75% 6%,94% 25%,94% 75%,75% 94%,25% 94%,6% 75%,6% 25%)';
 
@@ -140,23 +171,21 @@ const ProfilePage: React.FC = () => {
         className="relative rounded-2xl border border-edge bg-panel overflow-hidden p-4 sm:p-6 md:p-8"
       >
         {/* BG glow */}
-        <div className="absolute top-0 right-0 w-72 h-72 bg-[#6f56d9]/5 rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-brand/4 rounded-full translate-y-1/2 -translate-x-1/4 pointer-events-none" />
+        <div className="absolute top-0 end-0 w-72 h-72 bg-brand/[0.06] rounded-full -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
-          {/* Octagon avatar */}
+          {/* Octagon avatar — the picture chosen below, in the frame. */}
           <div className="relative flex-shrink-0">
             <div
-              className="w-24 h-24 md:w-28 md:h-28 bg-inset border-2 border-[#6f56d9]/40 flex items-center justify-center"
+              className="w-24 h-24 md:w-28 md:h-28 overflow-hidden bg-inset border-2 border-brand/40 flex items-center justify-center"
               style={{ clipPath: shapePath }}
             >
-              <span className="text-4xl font-black text-brand-neon">{initial}</span>
+              {selectedPreset ? (
+                <CyberAvatar preset={selectedPreset} className="w-full h-full" title={displayName} />
+              ) : (
+                <span className="text-4xl font-black text-brand-neon">{initial}</span>
+              )}
             </div>
-            {/* Frame glow */}
-            <div
-              className="absolute inset-0 bg-[#6f56d9]/20 pointer-events-none"
-              style={{ clipPath: shapePath }}
-            />
           </div>
 
           {/* Name + meta.
@@ -240,13 +269,39 @@ const ProfilePage: React.FC = () => {
           <div className="grid grid-cols-2 md:flex md:items-center gap-3 sm:gap-4 w-full md:w-auto">
             <div className="text-center px-4 sm:px-5 py-4 rounded-xl bg-inset border border-edge">
               <p className="text-2xl font-black text-brand-neon">{stats.points.toLocaleString()}</p>
-              <p className="text-[10px] text-dim uppercase tracking-wider mt-0.5">Points</p>
+              <p className="text-xs text-dim mt-0.5">Points</p>
             </div>
             <div className="text-center px-4 sm:px-5 py-4 rounded-xl bg-inset border border-edge">
-              <p className="text-2xl font-black text-info">{stats.solvedCount}</p>
-              <p className="text-[10px] text-dim uppercase tracking-wider mt-0.5">Solved</p>
+              <p className="text-2xl font-black text-fg">{stats.solvedCount}</p>
+              <p className="text-xs text-dim mt-0.5">Solved</p>
             </div>
           </div>
+        </div>
+      </motion.div>
+
+      {/* ── PROFILE PICTURE ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05, duration: 0.4 }}
+        className="rounded-xl border border-edge bg-panel overflow-hidden"
+      >
+        <div className="flex items-center gap-2 px-5 py-4 border-b border-edge">
+          <UserRound size={15} className="text-muted" />
+          <h2 className="text-sm font-bold text-fg">Profile picture</h2>
+          {savingIcon && <span className="ms-auto text-xs text-muted">Saving…</span>}
+          {!savingIcon && iconError && <span className="ms-auto text-xs text-red-400">{iconError}</span>}
+        </div>
+        <div className="p-5">
+          <p className="mb-4 text-sm text-muted">
+            Shown on your profile, in the sidebar and on the leaderboard.
+          </p>
+          <AvatarPicker
+            value={selectedPreset ? profileIcon : ''}
+            onChange={handlePickIcon}
+            displayName={displayName}
+            disabled={savingIcon}
+          />
         </div>
       </motion.div>
 
@@ -258,20 +313,20 @@ const ProfilePage: React.FC = () => {
         className="rounded-xl border border-edge bg-panel overflow-hidden"
       >
         <div className="flex items-center gap-2 px-5 py-4 border-b border-edge">
-          <Shield size={15} className="text-brand" />
-          <h2 className="text-sm font-bold text-fg uppercase tracking-wider">Operator Briefing</h2>
+          <Shield size={15} className="text-muted" />
+          <h2 className="text-sm font-bold text-fg">Operator briefing</h2>
         </div>
         <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-edge">
           <div className="p-5">
-            <p className="text-[10px] text-dim uppercase tracking-wider mb-2">Standing</p>
-            <p className="text-xl font-black text-amber">
+            <p className="text-xs text-dim mb-2">Standing</p>
+            <p className="text-xl font-black text-fg">
               #{stats.rank || '–'} <span className="text-sm font-normal text-faint">of {stats.totalUsers || '–'}</span>
             </p>
             <p className="text-xs text-muted mt-1">Global rank</p>
           </div>
           <div className="p-5">
-            <p className="text-[10px] text-dim uppercase tracking-wider mb-2">Streak</p>
-            <p className="text-xl font-black text-violet">
+            <p className="text-xs text-dim mb-2">Streak</p>
+            <p className="text-xl font-black text-fg">
               {stats.streak || 0} <span className="text-sm font-normal text-faint">days</span>
             </p>
             <p className="text-xs text-muted mt-1">
@@ -279,9 +334,15 @@ const ProfilePage: React.FC = () => {
             </p>
           </div>
           <div className="p-5">
-            <p className="text-[10px] text-dim uppercase tracking-wider mb-2">Focus Area</p>
-            <p className="text-xl font-black text-info truncate">
-              {stats.favoriteCategory || '–'}
+            <p className="text-xs text-dim mb-2">Focus area</p>
+            <p className="flex items-center gap-2 text-xl font-black text-fg truncate">
+              {stats.favoriteCategory && (
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: categoryAccent(stats.favoriteCategory) }}
+                />
+              )}
+              <span className="truncate">{stats.favoriteCategory || '–'}</span>
             </p>
             <p className="text-xs text-muted mt-1">Most solved category</p>
           </div>
@@ -297,14 +358,14 @@ const ProfilePage: React.FC = () => {
           className="rounded-xl border border-edge bg-panel overflow-hidden"
         >
           <div className="flex items-center gap-2 px-5 py-4 border-b border-edge">
-            <Flag size={15} className="text-info" />
-            <h2 className="text-sm font-bold text-fg uppercase tracking-wider">Category Breakdown</h2>
+            <Flag size={15} className="text-muted" />
+            <h2 className="text-sm font-bold text-fg">Category breakdown</h2>
           </div>
           <div className="p-5 space-y-4">
             {categoryStats
               .sort((a, b) => b.count - a.count)
               .map((stat, i) => {
-                const accent = categoryAccents[stat.category] || '#9aa5bf';
+                const accent = categoryAccent(stat.category);
                 const pct = Math.round((stat.count / maxCategoryCount) * 100);
                 return (
                   <motion.div

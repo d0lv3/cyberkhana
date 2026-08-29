@@ -46,7 +46,7 @@ const ManagementLayout: React.FC = () => {
 
   return (
     <div className="space-y-6 min-w-0">
-      <div className="inline-flex items-center gap-2 rounded-full border border-edge bg-panel px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-brand-neon">
+      <div className="inline-flex items-center gap-2 rounded-full border border-edge bg-panel px-3 py-1 text-xs font-semibold text-brand-neon">
         <ShieldCheck size={12} />
         Management
       </div>

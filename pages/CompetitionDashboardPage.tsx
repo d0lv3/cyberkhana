@@ -480,7 +480,7 @@ const CompetitionDashboardPage: React.FC = () => {
                     <button
                       key={category}
                       onClick={() => setSelectedCategory(category)}
-                      className="px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all border"
+                      className="px-4 py-2 text-sm font-semibold rounded-lg transition-all border"
                       style={{
                         backgroundColor: isSelected ? catStyle.bg : '#0e1522',
                         borderColor: isSelected ? catStyle.border : '#263248',
@@ -554,10 +554,10 @@ const CompetitionDashboardPage: React.FC = () => {
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-bold text-fg truncate group-hover:text-brand transition-colors">{challenge.title}</h3>
                             {isSolved && !ended && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand/15 text-brand border border-brand/30 flex-shrink-0">SOLVED</span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand/15 text-brand border border-brand/30 flex-shrink-0">Solved</span>
                             )}
                             {ended && (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-edge text-dim border border-edge flex-shrink-0">ENDED</span>
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-edge text-dim border border-edge flex-shrink-0">Ended</span>
                             )}
                           </div>
                           <div className="flex items-center flex-wrap gap-2 text-xs">

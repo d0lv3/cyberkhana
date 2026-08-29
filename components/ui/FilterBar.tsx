@@ -93,7 +93,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
       {showFilters && (
         <div className="rounded-xl border border-edge bg-panel p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-fg tracking-wider uppercase">
+            <h3 className="text-sm font-semibold text-fg">
               Filter & Sort
             </h3>
             <div className="flex gap-2">
@@ -116,7 +116,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
 
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-medium text-dim uppercase tracking-wider mb-2">
+              <label className="block text-sm font-medium text-dim mb-2">
                 Category
               </label>
               <select
@@ -133,7 +133,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-dim uppercase tracking-wider mb-2">
+              <label className="block text-sm font-medium text-dim mb-2">
                 Difficulty
               </label>
               <select
@@ -150,7 +150,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-dim uppercase tracking-wider mb-2">
+              <label className="block text-sm font-medium text-dim mb-2">
                 Sort By
               </label>
               <select

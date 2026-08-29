@@ -147,7 +147,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                 )}
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-dim uppercase tracking-wider">Username</label>
+                  <label className="text-sm font-medium text-dim">Username</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Shield className="h-5 w-5 text-faint" />
@@ -165,7 +165,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-dim uppercase tracking-wider">
+                  <label className="text-sm font-medium text-dim">
                     Full Name
                     <span className="text-faint text-xs ml-2">({fullName.length}/50)</span>
                   </label>
@@ -187,7 +187,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-dim uppercase tracking-wider">University Code</label>
+                  <label className="text-sm font-medium text-dim">University code</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <School className="h-5 w-5 text-faint" />
@@ -205,7 +205,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-dim uppercase tracking-wider">Password</label>
+                  <label className="text-sm font-medium text-dim">Password</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <KeyRound className="h-5 w-5 text-faint" />
@@ -230,7 +230,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-dim uppercase tracking-wider">Confirm Password</label>
+                  <label className="text-sm font-medium text-dim">Confirm password</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Lock className="h-5 w-5 text-faint" />

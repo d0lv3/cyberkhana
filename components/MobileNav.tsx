@@ -14,8 +14,7 @@ import {
   X,
   ExternalLink,
 } from 'lucide-react';
-
-const ACADEMY_URL = 'https://academy.cyberkhana.tech';
+import AcademyLinkModal from './AcademyLinkModal';
 
 type MobileNavItem = { icon: React.ElementType; label: string; to: string };
 
@@ -36,6 +35,7 @@ interface MobileNavProps {
 const MobileNav: React.FC<MobileNavProps> = ({ user, onLogout }) => {
   const isManager = user?.role === 'admin' || user?.role === 'super-admin';
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [academyOpen, setAcademyOpen] = useState(false);
   const location = useLocation();
 
   // Any navigation closes the sheet.
@@ -94,7 +94,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ user, onLogout }) => {
           />
           <div className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-edge-strong bg-canvas pb-safe animate-slide-in">
             <div className="flex items-center justify-between px-5 pt-4 pb-2">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-faint">More</p>
+              <p className="text-sm font-bold text-fg">More</p>
               <button
                 type="button"
                 onClick={() => setSheetOpen(false)}
@@ -122,16 +122,20 @@ const MobileNav: React.FC<MobileNavProps> = ({ user, onLogout }) => {
                 </NavLink>
               ))}
 
-              <a
-                href={ACADEMY_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-xl px-3 min-h-tap text-sm font-semibold text-fg-soft hover:bg-surface-hover transition-colors select-none"
+              {/* Same interstitial as the sidebar: this row leaves the app,
+                  and it should say so before the tab changes. */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSheetOpen(false);
+                  setAcademyOpen(true);
+                }}
+                className="w-full flex items-center gap-3 rounded-xl px-3 min-h-tap text-sm font-semibold text-fg-soft hover:bg-surface-hover transition-colors select-none"
               >
                 <BookOpen size={18} className="shrink-0" />
-                <span className="flex-1 truncate">Academy</span>
+                <span className="flex-1 truncate text-left">Academy</span>
                 <ExternalLink size={14} className="shrink-0 text-faint" />
-              </a>
+              </button>
 
               {onLogout && (
                 <button
@@ -189,6 +193,8 @@ const MobileNav: React.FC<MobileNavProps> = ({ user, onLogout }) => {
           </button>
         </div>
       </nav>
+
+      <AcademyLinkModal open={academyOpen} onClose={() => setAcademyOpen(false)} />
     </>
   );
 };

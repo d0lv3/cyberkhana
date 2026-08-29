@@ -74,14 +74,14 @@ const EnhancedChallengeCard: React.FC<EnhancedChallengeCardProps> = ({
             {/* Points badge */}
             <div className="absolute top-3 right-3 bg-inset border border-edge px-2.5 py-1 rounded flex flex-col items-center">
               <span className="text-lg font-black text-brand-neon leading-none">{displayPoints}</span>
-              <span className="text-[9px] text-faint uppercase tracking-widest mt-0.5">PTS</span>
+              <span className="text-[10px] text-faint mt-0.5">pts</span>
             </div>
 
             {/* Solved badge */}
             {isSolved && (
-              <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-0.5 bg-brand text-canvas text-[9px] font-black rounded uppercase tracking-tight">
+              <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-0.5 bg-brand text-canvas text-[10px] font-bold rounded">
                 <Award size={10} />
-                SOLVED
+                Solved
               </div>
             )}
           </div>
@@ -91,7 +91,7 @@ const EnhancedChallengeCard: React.FC<EnhancedChallengeCardProps> = ({
             {/* Category + Difficulty row */}
             <div className="flex items-center justify-between mb-3">
               <span
-                className="text-[10px] font-bold uppercase tracking-widest"
+                className="text-[11px] font-semibold"
                 style={{ color: catMeta.color }}
               >
                 {challenge.category}
@@ -101,7 +101,7 @@ const EnhancedChallengeCard: React.FC<EnhancedChallengeCardProps> = ({
                 style={{ backgroundColor: diffMeta.bg, border: `1px solid ${diffMeta.dot}30` }}
               >
                 <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: diffMeta.dot }} />
-                <span className="text-[10px] font-black uppercase" style={{ color: diffMeta.color }}>
+                <span className="text-[11px] font-semibold" style={{ color: diffMeta.color }}>
                   {difficulty}
                 </span>
               </div>

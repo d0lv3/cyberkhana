@@ -16,6 +16,7 @@ interface CompetitionLeaderboardUser {
   universityName?: string;
   country?: string;
   tier?: string;
+  profileIcon?: string;
 }
 
 const CompetitionLeaderboardPage: React.FC = () => {
@@ -115,6 +116,7 @@ const CompetitionLeaderboardPage: React.FC = () => {
         playerTag: isSharedCompetition ? row.universityName || row.universityCode : undefined,
         points: Number(row.points || 0),
         flagsPwned: Number(row.solvedChallenges || 0),
+        profileIcon: row.profileIcon,
         isCurrentUser: currentUsername ? row.username?.toLowerCase() === currentUsername.toLowerCase() : false,
       })),
     [rows, currentUsername, isSharedCompetition]
@@ -123,7 +125,7 @@ const CompetitionLeaderboardPage: React.FC = () => {
   return (
     <>
       <UnifiedLeaderboard
-        title={`${competitionName} Leaderboard`}
+        title={`${competitionName} leaderboard`}
         subtitle={`${entries.length} solo players in this competition`}
         entries={entries}
         totalFlags={totalChallenges}

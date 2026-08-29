@@ -5,9 +5,10 @@ import { competitionService } from '../services/competitionService';
 import Modal from '../components/ui/Modal';
 import Input from '../components/ui/input';
 import {
-  Trophy, Clock, Users, Lock, Play, ArrowRight,
-  Calendar, ChevronDown, ChevronUp, Target, Zap, Shield,
+  Trophy, Clock, Lock, Play, ArrowRight,
+  Calendar, ChevronDown, ChevronUp, Target, Shield,
 } from 'lucide-react';
+import CompetitionArt, { CompetitionState, STATE_ACCENT } from '../components/competition/CompetitionArt';
 
 interface Competition {
   _id: string;
@@ -20,14 +21,17 @@ interface Competition {
 }
 
 // ─── Status helpers ────────────────────────────────────────────────────────────
-const getStatusMeta = (status: string, ended: boolean) => {
-  if (ended || status === 'ended') {
-    return { label: 'ENDED',   color: '#f43f5e', bg: 'rgba(244,63,94,0.10)',  border: 'rgba(244,63,94,0.30)' };
-  }
-  if (status === 'active') {
-    return { label: 'LIVE',    color: '#9fef00', bg: 'rgba(159,239,0,0.10)', border: 'rgba(159,239,0,0.35)' };
-  }
-  return { label: 'UPCOMING', color: '#f3a43a', bg: 'rgba(243,164,58,0.10)', border: 'rgba(243,164,58,0.30)' };
+/* Three states, three colours, and nothing else on the card is coloured — the
+   hue is how you tell a live event from a finished one at a glance, so it is
+   spent there rather than on decoration. */
+const getStatusMeta = (status: string, ended: boolean): {
+  label: string;
+  state: CompetitionState;
+  color: string;
+} => {
+  if (ended || status === 'ended') return { label: 'Ended', state: 'ended', color: STATE_ACCENT.ended };
+  if (status === 'active') return { label: 'Live', state: 'live', color: STATE_ACCENT.live };
+  return { label: 'Upcoming', state: 'upcoming', color: STATE_ACCENT.upcoming };
 };
 
 const isTimeEnded = (endTime: string) => new Date() > new Date(endTime);
@@ -44,6 +48,11 @@ const getCountdown = (target: string, label: string) => {
 };
 
 // ─── Competition Card (Player view) ────────────────────────────────────────────
+/**
+ * A cover-art tile rather than a bordered list row: art fills the top, scrims
+ * keep the badges and title legible over it, and the whole card is the target.
+ * Same shape as an Academy module card, so the two products read as one.
+ */
 const CompetitionCard: React.FC<{
   competition: Competition;
   onEnter: (id: string) => void;
@@ -52,89 +61,96 @@ const CompetitionCard: React.FC<{
   const ended = isTimeEnded(competition.endTime);
   const meta = getStatusMeta(competition.status, ended);
   const navigate = useNavigate();
+  const live = !ended && competition.status === 'active';
+
+  const open = () => {
+    if (ended) navigate(`/competition/${competition._id}/leaderboard`);
+    else if (live) onEnter(competition._id);
+  };
+  const actionable = ended || live;
+
+  const timing = ended
+    ? `Ended ${new Date(competition.endTime).toLocaleDateString()}`
+    : live
+      ? `Ends in ${getCountdown(competition.endTime, 'ends')}`
+      : `Starts in ${getCountdown(competition.startTime, 'starts')}`;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 18 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4 }}
-      className="group rounded-xl border border-edge bg-panel overflow-hidden hover:border-edge-light hover:bg-surface-hover transition-all duration-200"
+      role={actionable ? 'button' : undefined}
+      tabIndex={actionable ? 0 : undefined}
+      onClick={actionable ? open : undefined}
+      onKeyDown={(e) => {
+        if (actionable && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          open();
+        }
+      }}
+      className={`group relative flex h-72 flex-col overflow-hidden rounded-2xl border border-edge bg-panel transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${
+        actionable ? 'cursor-pointer hover:-translate-y-1 hover:border-edge-light hover:shadow-lg hover:shadow-black/40' : ''
+      }`}
     >
-      {/* Top color strip */}
-      <div
-        className="h-1 w-full"
-        style={{ background: `linear-gradient(90deg, ${meta.color}80, transparent)` }}
-      />
+      {/* Cover: the art, over a bloom in the state's own colour */}
+      <div className="absolute inset-x-0 top-0 h-44 overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{ background: `radial-gradient(85% 90% at 50% 30%, ${meta.color}24 0%, transparent 70%)` }}
+        />
+        <CompetitionArt
+          state={meta.state}
+          className="absolute inset-0 h-full w-full transition-transform duration-500 group-hover:scale-[1.06]"
+        />
+      </div>
 
-      <div className="p-6">
-        {/* Header row */}
-        <div className="flex items-start justify-between gap-4 mb-5">
-          <div
-            className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: `${meta.color}15`, border: `1px solid ${meta.color}30` }}
-          >
-            {ended
-              ? <Trophy size={22} style={{ color: meta.color }} />
-              : competition.status === 'active'
-                ? <Zap size={22} style={{ color: meta.color }} />
-                : <Calendar size={22} style={{ color: meta.color }} />
-            }
-          </div>
-          <span
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-black uppercase tracking-widest flex-shrink-0"
-            style={{ color: meta.color, backgroundColor: meta.bg, border: `1px solid ${meta.border}` }}
-          >
-            {!ended && competition.status === 'active' && (
-              <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-            )}
-            {meta.label}
+      {/* Readability scrims — the bottom one is what lets a long title sit over
+          the art instead of pushing it out of the card. */}
+      <div className="absolute inset-0 bg-gradient-to-t from-panel via-panel/85 to-transparent" />
+      <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-panel/80 to-transparent" />
+
+      {/* Top: state + size */}
+      <div className="relative z-10 flex items-start justify-between gap-2 p-3.5">
+        <span
+          className="inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-semibold backdrop-blur-sm"
+          style={{ color: meta.color, borderColor: `${meta.color}4d`, backgroundColor: `${meta.color}1a` }}
+        >
+          {live && <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />}
+          {meta.label}
+        </span>
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-edge bg-inset/80 px-2 py-0.5 text-xs font-semibold text-muted backdrop-blur-sm">
+          <Target size={11} />
+          {competition.challenges?.length || 0}
+        </span>
+      </div>
+
+      {/* Bottom: title, timing, action */}
+      <div className="relative z-10 mt-auto p-4 pt-0">
+        <h3 className="mb-2 line-clamp-2 text-lg font-bold leading-snug text-fg transition-colors group-hover:text-brand-neon">
+          {competition.name}
+        </h3>
+        <div className="flex items-center justify-between gap-3">
+          <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-muted">
+            <Clock size={12} className="flex-shrink-0" />
+            <span className="truncate">{timing}</span>
           </span>
+          {ended ? (
+            <span className="inline-flex flex-shrink-0 items-center gap-1.5 text-xs font-semibold text-muted transition-colors group-hover:text-fg-soft">
+              <Trophy size={13} /> Leaderboard
+            </span>
+          ) : live ? (
+            <span
+              className="inline-flex flex-shrink-0 items-center gap-1.5 text-xs font-bold"
+              style={{ color: meta.color }}
+            >
+              <Play size={13} /> Enter
+              <ArrowRight size={12} className="transition-transform duration-200 group-hover:translate-x-0.5" />
+            </span>
+          ) : (
+            <span className="flex-shrink-0 text-xs font-semibold text-faint">Not open yet</span>
+          )}
         </div>
-
-        {/* Title */}
-        <h3 className="text-lg font-bold text-fg mb-3 line-clamp-2">{competition.name}</h3>
-
-        {/* Stats */}
-        <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-dim mb-5">
-          <span className="flex items-center gap-1.5">
-            <Target size={12} />
-            {competition.challenges?.length || 0} challenges
-          </span>
-          <span className="flex items-center gap-1.5">
-            <Clock size={12} />
-            {ended
-              ? `Ended ${new Date(competition.endTime).toLocaleDateString()}`
-              : competition.status === 'active'
-                ? `Ends in ${getCountdown(competition.endTime, 'ends')}`
-                : `Starts in ${getCountdown(competition.startTime, 'starts')}`
-            }
-          </span>
-        </div>
-
-        {/* CTA */}
-        {ended ? (
-          <button
-            onClick={() => navigate(`/competition/${competition._id}/leaderboard`)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded border border-edge text-muted hover:border-edge-light hover:text-fg-soft transition-all"
-          >
-            <Trophy size={15} /> View Leaderboard
-          </button>
-        ) : competition.status === 'active' ? (
-          <button
-            onClick={() => onEnter(competition._id)}
-            className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-black rounded transition-all"
-            style={{ backgroundColor: `${meta.color}18`, border: `1px solid ${meta.border}`, color: meta.color }}
-          >
-            <Play size={15} /> Enter Competition <ArrowRight size={13} />
-          </button>
-        ) : (
-          <div
-            className="w-full text-center py-2.5 text-sm rounded border"
-            style={{ color: meta.color, borderColor: meta.border, backgroundColor: meta.bg, opacity: 0.7 }}
-          >
-            Coming Soon
-          </div>
-        )}
       </div>
     </motion.div>
   );
@@ -173,10 +189,10 @@ const AdminCompetitionRow: React.FC<{
           </p>
         </div>
         <span
-          className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[10px] font-black uppercase tracking-widest"
-          style={{ color: meta.color, backgroundColor: meta.bg, border: `1px solid ${meta.border}` }}
+          className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold"
+          style={{ color: meta.color, backgroundColor: `${meta.color}1a`, border: `1px solid ${meta.color}4d` }}
         >
-          {!ended && competition.status === 'active' && <span className="w-1 h-1 rounded-full bg-current animate-pulse" />}
+          {!ended && competition.status === 'active' && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />}
           {meta.label}
         </span>
         <div className="text-faint flex-shrink-0">
@@ -195,7 +211,7 @@ const AdminCompetitionRow: React.FC<{
             className="border-t border-edge bg-inset overflow-hidden"
           >
             <div className="p-5">
-              <h4 className="text-sm font-bold text-fg uppercase tracking-wider mb-4">Challenges</h4>
+              <h4 className="text-sm font-bold text-fg mb-4">Challenges</h4>
               {competition.challenges?.length > 0 ? (
                 <div className="space-y-2 mb-5">
                   {competition.challenges.map((challenge: any, i: number) => (
@@ -245,14 +261,14 @@ const AdminCompetitionRow: React.FC<{
                     onClick={() => navigate(`/competition/${competition._id}/leaderboard`)}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded border border-edge text-muted hover:border-edge-light hover:text-fg-soft transition-all"
                   >
-                    <Trophy size={14} /> View Leaderboard
+                    <Trophy size={14} /> View leaderboard
                   </button>
                 ) : (
                   <button
                     onClick={() => navigate(`/competition/${competition._id}`)}
                     className="flex-1 py-2.5 text-sm font-bold rounded bg-brand text-white hover:bg-brand-deep transition-colors flex items-center justify-center gap-2"
                   >
-                    <Play size={14} /> Enter Competition
+                    <Play size={14} /> Enter competition
                   </button>
                 )}
               </div>
@@ -357,7 +373,7 @@ const CompetitionPage: React.FC = () => {
             <Lock size={18} className="text-brand" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-fg">Enter Competition</h2>
+            <h2 className="text-lg font-bold text-fg">Enter competition</h2>
             <p className="text-xs text-muted">Enter the code from your instructor</p>
           </div>
         </div>
@@ -409,7 +425,7 @@ const CompetitionPage: React.FC = () => {
             onClick={openJoinModal}
             className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded bg-brand text-white hover:bg-brand-deep transition-colors"
           >
-            <Lock size={15} /> Join with Code
+            <Lock size={15} /> Join with code
           </button>
         </div>
 
@@ -447,16 +463,16 @@ const CompetitionPage: React.FC = () => {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded border border-edge bg-inset text-xs text-dim mb-3">
             <Shield size={12} className="text-brand" />
-            <span>CTF Platform</span>
+            <span>CTF platform</span>
           </div>
           <h1 className="text-3xl md:text-4xl font-black text-fg">Competitions</h1>
           <p className="text-sm text-muted mt-1">Join live events and compete for the top spot</p>
         </div>
         <button
           onClick={openJoinModal}
-          className="self-start sm:self-auto flex items-center gap-2 px-5 py-3 text-sm font-bold rounded border border-brand-neon/40 text-brand-neon bg-brand-neon/08 hover:bg-brand-neon/12 transition-all"
+          className="self-start sm:self-auto flex items-center gap-2 px-5 py-3 touch:min-h-tap text-sm font-bold rounded-lg border border-brand/40 text-brand bg-brand/10 hover:bg-brand/15 transition-colors"
         >
-          <Lock size={15} /> Join with Code
+          <Lock size={15} /> Join with code
         </button>
       </motion.div>
 
@@ -465,9 +481,9 @@ const CompetitionPage: React.FC = () => {
         <section>
           <div className="flex items-center gap-2 mb-4">
             <span className="w-2 h-2 rounded-full bg-brand-neon animate-pulse" />
-            <h2 className="text-sm font-bold text-fg uppercase tracking-wider">Live Now</h2>
+            <h2 className="text-sm font-bold text-fg">Live now</h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {activeComps.map((c, i) => (
               <CompetitionCard key={c._id} competition={c} onEnter={(id) => navigate(`/competition/${id}`)} delay={i * 0.05} />
             ))}
@@ -480,9 +496,9 @@ const CompetitionPage: React.FC = () => {
         <section>
           <div className="flex items-center gap-2 mb-4">
             <Calendar size={14} className="text-amber" />
-            <h2 className="text-sm font-bold text-fg uppercase tracking-wider">Upcoming</h2>
+            <h2 className="text-sm font-bold text-fg">Upcoming</h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {upcomingComps.map((c, i) => (
               <CompetitionCard key={c._id} competition={c} onEnter={() => {}} delay={i * 0.05} />
             ))}
@@ -494,10 +510,10 @@ const CompetitionPage: React.FC = () => {
       {pastComps.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
-            <Trophy size={14} className="text-dim" />
-            <h2 className="text-sm font-bold text-fg uppercase tracking-wider">Past Competitions</h2>
+            <Trophy size={14} className="text-muted" />
+            <h2 className="text-sm font-bold text-fg">Past competitions</h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {pastComps.map((c, i) => (
               <CompetitionCard key={c._id} competition={c} onEnter={() => {}} delay={i * 0.05} />
             ))}

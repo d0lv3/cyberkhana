@@ -1,9 +1,12 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import MobileNav from './MobileNav';
+
+/** Collapsed state is a workspace preference, so it survives a reload. */
+const SIDEBAR_KEY = 'platform-sidebar-collapsed';
 
 interface AppLayoutProps {
     onLogout: () => void;
@@ -15,10 +18,15 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout, user: userProp }) => {
   const user = userProp ?? JSON.parse(localStorage.getItem('user') || '{}');
   const location = useLocation();
   const isEdgeToEdge = location.pathname.match(/^\/(challenges|dashboard)/);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(SIDEBAR_KEY) === 'true');
+
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_KEY, String(collapsed));
+  }, [collapsed]);
 
   return (
     <div className="flex app-shell text-fg-soft bg-canvas">
-      <Sidebar user={user} />
+      <Sidebar user={user} collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Header user={user} onLogout={onLogout} />
         {/* overflow-x-hidden, not auto: a child that outgrows the phone should

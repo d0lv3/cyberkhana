@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Trophy, Target, Clock, Award, Flag, Zap, Shield } from 'lucide-react';
 import { userService } from '../../services/userService';
+import Avatar from './Avatar';
+import { categoryAccent } from '../challenges/ChallengeArt';
 
 interface SolvedChallenge {
   _id: string;
@@ -26,6 +28,7 @@ interface UserProfile {
   competitionSolvedCount: number;
   regularSolvedChallenges: SolvedChallenge[];
   competitionSolvedChallenges: SolvedChallenge[];
+  profileIcon?: string;
 }
 
 interface ProfileSlidePanelProps {
@@ -79,23 +82,12 @@ const ProfileSlidePanel: React.FC<ProfileSlidePanelProps> = ({ isOpen, onClose, 
     });
   };
 
-  const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      Web: 'bg-blue-500/20 text-blue-400',
-      'Web Exploitation': 'bg-blue-500/20 text-blue-400',
-      Crypto: 'bg-purple-500/20 text-purple-400',
-      Cryptography: 'bg-purple-500/20 text-purple-400',
-      Pwn: 'bg-red-500/20 text-red-400',
-      'Binary Exploitation': 'bg-red-500/20 text-red-400',
-      Reverse: 'bg-orange-500/20 text-orange-400',
-      'Reverse Engineering': 'bg-orange-500/20 text-orange-400',
-      Forensics: 'bg-green-500/20 text-green-400',
-      Misc: 'bg-zinc-500/20 text-zinc-400',
-      Miscellaneous: 'bg-zinc-500/20 text-zinc-400',
-      OSINT: 'bg-cyan-500/20 text-cyan-400',
-    };
-    return colors[category] || 'bg-zinc-500/20 text-zinc-400';
-  };
+  /* Category colour comes from the one shared map, so a chip here matches the
+     dot on the Challenges list and the bar on the Profile. */
+  const categoryChipStyle = (category: string) => ({
+    color: categoryAccent(category),
+    backgroundColor: `${categoryAccent(category)}1f`,
+  });
 
   if (!user) return null;
 
@@ -126,7 +118,7 @@ const ProfileSlidePanel: React.FC<ProfileSlidePanelProps> = ({ isOpen, onClose, 
             <div className="space-y-6">
               <div className="relative pt-2">
                 <div className="absolute left-1/2 -translate-x-1/2 -top-2 z-20 px-3 py-1 rounded bg-amber text-surface text-xs font-black shadow-sm">
-                  RANK #{rank || '-'}
+                  Rank #{rank || '–'}
                 </div>
 
                 <div className="relative h-64 drop-shadow-[0_10px_26px_rgba(0,0,0,0.38)]">
@@ -136,9 +128,12 @@ const ProfileSlidePanel: React.FC<ProfileSlidePanelProps> = ({ isOpen, onClose, 
                     <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_82%,rgba(111,86,217,0.22),transparent_44%)]" />
 
                     <div className="relative z-10 h-full flex flex-col items-center justify-center px-4 text-center">
-                      <div className="w-24 h-24 rounded-full border border-[#6f56d9]/60 bg-panel flex items-center justify-center text-3xl font-black text-brand-neon overflow-hidden">
-                        {displayName.charAt(0).toUpperCase()}
-                      </div>
+                      <Avatar
+                        profileIcon={userProfile?.profileIcon}
+                        name={displayName}
+                        className="w-24 h-24 rounded-full border border-brand/50"
+                        initialClassName="text-3xl"
+                      />
 
                       <p className="mt-4 text-xl font-black text-fg truncate max-w-[240px]" title={displayName}>
                         {displayName}
@@ -196,7 +191,7 @@ const ProfileSlidePanel: React.FC<ProfileSlidePanelProps> = ({ isOpen, onClose, 
               <div className="mt-2 rounded-xl border border-edge bg-surface p-4">
                 <div className="flex items-center gap-2 mb-4">
                   <Flag className="w-5 h-5 text-brand-neon" />
-                  <h3 className="text-lg font-black tracking-tight text-fg">Challenges Solved</h3>
+                  <h3 className="text-lg font-black tracking-tight text-fg">Challenges solved</h3>
                 </div>
 
                 {loadingProfile ? (
@@ -218,7 +213,7 @@ const ProfileSlidePanel: React.FC<ProfileSlidePanelProps> = ({ isOpen, onClose, 
                                 <div className="flex-1">
                                   <div className="font-medium text-fg text-sm">{challenge.title}</div>
                                   <div className="flex items-center gap-2 mt-1">
-                                    <span className={`text-xs px-2 py-0.5 rounded ${getCategoryColor(challenge.category)}`}>
+                                    <span className="text-xs px-2 py-0.5 rounded font-semibold" style={categoryChipStyle(challenge.category)}>
                                       {challenge.category}
                                     </span>
                                     <span className="text-xs text-muted-alt">{formatDate(challenge.solvedAt)}</span>
@@ -245,7 +240,7 @@ const ProfileSlidePanel: React.FC<ProfileSlidePanelProps> = ({ isOpen, onClose, 
                                 <div className="flex-1">
                                   <div className="font-medium text-fg text-sm">{challenge.title}</div>
                                   <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                    <span className={`text-xs px-2 py-0.5 rounded ${getCategoryColor(challenge.category)}`}>
+                                    <span className="text-xs px-2 py-0.5 rounded font-semibold" style={categoryChipStyle(challenge.category)}>
                                       {challenge.category}
                                     </span>
                                     {challenge.competitionName && (
@@ -287,7 +282,7 @@ const ProfileSlidePanel: React.FC<ProfileSlidePanelProps> = ({ isOpen, onClose, 
                 }}
                 className="w-full py-3 rounded-lg border border-brand-neon/45 bg-surface text-fg font-semibold hover:border-brand-neon hover:text-brand-neon transition-colors"
               >
-                View Full Profile
+                View full profile
               </button>
             </div>
           </div>

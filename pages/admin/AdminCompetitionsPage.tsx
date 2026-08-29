@@ -391,7 +391,7 @@ const AdminCompetitionsPage: React.FC = () => {
                     <span className="text-yellow-400">Open (No Code Required)</span>
                   )}
                   <span>Universities: <span className="text-zinc-300">{formatCompetitionUniversities(competition)}</span></span>
-                  <span>Status: <span className={getStatusColor(competition.status)}>{competition.status.toUpperCase()}</span></span>
+                  <span>Status: <span className={getStatusColor(competition.status)}>{competition.status.charAt(0).toUpperCase() + competition.status.slice(1)}</span></span>
                   <span>Challenges: {competition.challenges.length}</span>
                   {competition.duration && (
                     <span>Duration: <span className="text-zinc-300">{competition.duration} min</span></span>

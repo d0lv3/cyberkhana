@@ -7,6 +7,7 @@ import { Search, Ban, UserCheck, Shield, Users, MoreVertical, School, KeyRound, 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useConfirmation } from '../../src/contexts/ConfirmationContext';
 import { useToast } from '../../src/hooks/useToast';
+import Avatar from '../../components/ui/Avatar';
 
 interface User {
   _id: string;
@@ -28,21 +29,6 @@ interface Competition {
   name: string;
   status: string;
 }
-
-const AVATAR_MAP: Record<string, { image: string; color: string }> = {
-  'admin': { image: '/avatars/admin.svg', color: 'from-purple-500 to-indigo-600' },
-  'user': { image: '/avatars/user.svg', color: 'from-blue-500 to-cyan-600' },
-  'hacker': { image: '/avatars/hacker.svg', color: 'from-green-500 to-emerald-600' },
-  'ninja': { image: '/avatars/ninja.svg', color: 'from-red-500 to-pink-600' },
-  'warrior': { image: '/avatars/warrior.svg', color: 'from-orange-500 to-red-600' },
-  'wizard': { image: '/avatars/wizard.svg', color: 'from-violet-500 to-purple-600' },
-  'robot': { image: '/avatars/robot.svg', color: 'from-gray-500 to-zinc-600' },
-  'alien': { image: '/avatars/alien.svg', color: 'from-cyan-500 to-blue-600' },
-  'dragon': { image: '/avatars/dragon.svg', color: 'from-yellow-500 to-orange-600' },
-  'phantom': { image: '/avatars/phantom.svg', color: 'from-indigo-500 to-purple-600' },
-  'guardian': { image: '/avatars/guardian.svg', color: 'from-emerald-500 to-teal-600' },
-  'shadow': { image: '/avatars/shadow.svg', color: 'from-slate-500 to-gray-600' },
-};
 
 const AdminUsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -446,10 +432,6 @@ const AdminUsersPage: React.FC = () => {
   // Get unique universities for filter dropdown
   const universities = Array.from(new Set(users.map(u => u.universityCode))).sort();
 
-  const getAvatarInfo = (profileIcon?: string) => {
-    return AVATAR_MAP[profileIcon || 'hacker'] || AVATAR_MAP['hacker'];
-  };
-
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -519,7 +501,6 @@ const AdminUsersPage: React.FC = () => {
           </Card>
         ) : (
           filteredUsers.map((user) => {
-            const avatar = getAvatarInfo(user.profileIcon);
             return (
               <Card
                 key={user._id}
@@ -527,18 +508,15 @@ const AdminUsersPage: React.FC = () => {
                   }`}
               >
                 <div className="flex items-center gap-4">
-                  {/* Avatar */}
-                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${avatar.color} p-2 flex-shrink-0 overflow-hidden`}>
-                    <img
-                      src={avatar.image}
-                      alt="Avatar"
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = 'none';
-                      }}
-                    />
-                  </div>
+                  {/* Avatar — the picture the member actually chose. The map
+                      this replaced pointed at /avatars/*.svg files that were
+                      never shipped, so every row rendered a broken image. */}
+                  <Avatar
+                    profileIcon={user.profileIcon}
+                    name={user.fullName || user.displayName || user.username}
+                    className="w-12 h-12 rounded-full"
+                    initialClassName="text-lg"
+                  />
 
                   {/* User Info */}
                   <div className="flex-1 min-w-0">

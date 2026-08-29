@@ -12,7 +12,7 @@ interface University {
 
 const inputCls =
   'w-full bg-[#0f1624] border border-edge rounded-lg px-3.5 py-2.5 text-sm text-fg placeholder-faint focus:outline-none focus:border-brand/60 transition-colors';
-const labelCls = 'block text-xs font-bold uppercase tracking-wider text-dim mb-2';
+const labelCls = 'block text-sm font-medium text-dim mb-2';
 
 const AdminUniversityPage: React.FC = () => {
   const [loading, setLoading] = useState(true);

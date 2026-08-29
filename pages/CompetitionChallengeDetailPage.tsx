@@ -297,12 +297,12 @@ const CompetitionChallengeDetailPage: React.FC = () => {
                     {challenge.title}
                   </h1>
                   {solved && (
-                    <span className="px-2.5 py-1 bg-brand-neon/15 text-brand-neon text-[10px] font-black rounded-full uppercase tracking-wider border border-brand-neon/30">
+                    <span className="px-2.5 py-1 bg-brand-neon/15 text-brand-neon text-xs font-semibold rounded-full border border-brand-neon/30">
                       Solved
                     </span>
                   )}
                   {isCompetitionEnded() && !solved && (
-                    <span className="px-2.5 py-1 bg-edge text-fg-soft text-[10px] font-black rounded-full uppercase tracking-wider border border-edge-light">
+                    <span className="px-2.5 py-1 bg-edge text-fg-soft text-xs font-semibold rounded-full border border-edge-light">
                       Ended
                     </span>
                   )}
@@ -357,9 +357,9 @@ const CompetitionChallengeDetailPage: React.FC = () => {
                 </div>
               </div>
               <div className="shrink-0 self-start lg:self-center bg-canvas/70 border border-edge rounded-2xl px-5 py-4 min-w-[132px] text-center">
-                <p className="text-xs uppercase tracking-widest text-muted font-bold mb-1">Current</p>
+                <p className="text-xs font-semibold text-muted mb-1">Current</p>
                 <p className="text-3xl font-black leading-none text-brand-neon">{challenge.currentPoints || challenge.points}</p>
-                <p className="text-[10px] uppercase tracking-wider text-muted mt-1">Points</p>
+                <p className="text-xs text-muted mt-1">Points</p>
               </div>
             </div>
           </div>

@@ -254,7 +254,7 @@ const CompetitionMonitoringPage: React.FC = () => {
               {refreshing && <RefreshCw className="w-4 h-4 text-brand-neon animate-spin" />}
             </div>
             
-            <h1 className="text-4xl md:text-5xl font-black text-fg tracking-tight uppercase">
+            <h1 className="text-4xl md:text-5xl font-black text-fg tracking-tight">
               {competition?.name}
             </h1>
             <p className="text-dim mt-2 font-mono flex items-center gap-2 text-sm">
@@ -779,15 +779,15 @@ const CompetitionMonitoringPage: React.FC = () => {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                   <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
                      <p className="text-xl font-black text-amber mb-1">{selectedChallenge.currentPoints || selectedChallenge.points}</p>
-                     <p className="text-[10px] font-mono text-dim">REWARD</p>
+                     <p className="text-[10px] font-mono text-dim">Reward</p>
                   </div>
                   <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
                      <p className="text-xl font-black text-brand-neon mb-1">{selectedChallenge.solves || 0}</p>
                      <p className="text-[10px] font-mono text-dim">Solves</p>
                   </div>
                   <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
-                     <p className="text-xl font-black text-info mb-1 uppercase">{selectedChallenge.difficulty || 'N/A'}</p>
-                     <p className="text-[10px] font-mono text-dim">RATING</p>
+                     <p className="text-xl font-black text-info mb-1">{selectedChallenge.difficulty || 'N/A'}</p>
+                     <p className="text-[10px] font-mono text-dim">Rating</p>
                   </div>
                   <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
                      <p className={`text-xl font-black mb-1 ${(selectedChallenge.solves || 0) > 0 ? 'text-amber' : 'text-dim'}`}>

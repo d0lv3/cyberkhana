@@ -101,7 +101,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               )}
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-dim uppercase tracking-wider">Username</label>
+                <label className="text-sm font-medium text-dim">Username</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Shield className="h-5 w-5 text-faint" />
@@ -119,7 +119,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-dim uppercase tracking-wider">Password</label>
+                <label className="text-sm font-medium text-dim">Password</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <KeyRound className="h-5 w-5 text-faint" />

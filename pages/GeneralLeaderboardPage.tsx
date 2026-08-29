@@ -16,6 +16,7 @@ interface LeaderboardRow {
   universityName?: string;
   country?: string;
   tier?: string;
+  profileIcon?: string;
 }
 
 const GeneralLeaderboardPage: React.FC = () => {
@@ -124,6 +125,7 @@ const GeneralLeaderboardPage: React.FC = () => {
         player: row.displayName || row.fullName || row.username,
         points: Number(row.points || 0),
         flagsPwned: Number(row.solvedChallenges || 0),
+        profileIcon: row.profileIcon,
         isCurrentUser: currentUsername ? row.username?.toLowerCase() === currentUsername.toLowerCase() : false,
       })),
     [rows, currentUsername]
@@ -135,11 +137,11 @@ const GeneralLeaderboardPage: React.FC = () => {
     <>
       {isSuperAdmin && (
         <div className="mb-5 flex flex-col sm:flex-row sm:items-center gap-3">
-          <label className="text-xs font-bold uppercase tracking-wider text-dim">University</label>
+          <label className="text-sm font-semibold text-dim">University</label>
           <select
             value={selectedUniversity}
             onChange={(e) => setSelectedUniversity(e.target.value)}
-            className="bg-[#141c2b] border border-edge-soft rounded-lg px-3 py-2 text-sm text-fg-soft focus:outline-none focus:border-brand/50 transition-colors"
+            className="bg-inset border border-edge rounded-lg px-3 py-2 text-sm text-fg-soft focus:outline-none focus:border-brand/50 transition-colors"
           >
             {universities.length === 0 && <option value="">No universities</option>}
             {universities.map((u) => (
@@ -152,7 +154,7 @@ const GeneralLeaderboardPage: React.FC = () => {
       )}
 
       <UnifiedLeaderboard
-        title="General Leaderboard"
+        title="General leaderboard"
         subtitle={
           isSuperAdmin
             ? selectedUniName

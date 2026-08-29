@@ -273,6 +273,17 @@
     100% { transform: translateY(100vh); }
   }
 
+  /* A tapped sidebar icon kicks back toward the rail it lives on — enough
+     motion to acknowledge the tap, short enough not to delay the page that is
+     already rendering behind it. */
+  @keyframes nav-shake {
+    0%, 100% { transform: translateX(0) rotate(0deg); }
+    20%      { transform: translateX(-1.5px) rotate(-6deg); }
+    40%      { transform: translateX(1.5px) rotate(5deg); }
+    60%      { transform: translateX(-1px) rotate(-3deg); }
+    80%      { transform: translateX(1px) rotate(2deg); }
+  }
+
   .loader-bounce  { animation: loader-bounce 4s infinite ease-in-out; }
   .loader-opacity { animation: loader-opacity 4s infinite ease-in-out; }
   .strobe-led     { animation: loader-strobe 0.5s infinite; }
@@ -282,6 +293,10 @@
   .animate-slideIn     { animation: slideIn 0.3s ease-out; }
   .animate-float       { animation: float 3s ease-in-out infinite; }
   .animate-pulse-green { animation: pulse-green 2s infinite; }
+  .nav-shake           { animation: nav-shake 0.4s ease-in-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-shake { animation: none; }
+  }
 
   .animation-delay-100 { animation-delay: 0.1s; }
   .animation-delay-200 { animation-delay: 0.2s; }

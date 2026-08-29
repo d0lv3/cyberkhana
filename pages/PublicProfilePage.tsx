@@ -4,6 +4,7 @@ import { userService } from '../services/userService';
 import Card from '../components/ui/EnhancedCard';
 import Button from '../components/ui/button';
 import { Trophy, Target, Award, Calendar, ArrowLeft, CheckCircle, Crown } from 'lucide-react';
+import Avatar from '../components/ui/Avatar';
 
 interface PublicProfile {
   _id: string;
@@ -87,9 +88,12 @@ const PublicProfilePage: React.FC = () => {
       {/* Profile Header */}
       <Card className="p-8 mb-6 border-edge bg-surface">
         <div className="flex items-start gap-6">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#1f2a40] to-surface border border-[#3a4864] flex items-center justify-center text-3xl font-bold text-white ring-4 ring-edge">
-            {displayName.charAt(0).toUpperCase()}
-          </div>
+          <Avatar
+            profileIcon={profile.profileIcon}
+            name={displayName}
+            className="w-24 h-24 rounded-full ring-4 ring-edge"
+            initialClassName="text-3xl"
+          />
           <div className="flex-1">
             <h1 className="text-3xl font-black text-fg mb-1">{displayName}</h1>
             <p className="text-muted mb-2">@{profile.username}</p>

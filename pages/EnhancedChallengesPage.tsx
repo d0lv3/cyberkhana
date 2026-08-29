@@ -8,8 +8,9 @@ import Breadcrumbs from '../components/ui/Breadcrumbs';
 import Button from '../components/ui/EnhancedButton';
 import EmptyState from '../components/ui/EmptyState';
 import Toast, { ToastType } from '../components/ui/Toast';
-import { Search, Target, Award, Rocket, CheckCircle2, ChevronDown, Flag, Skull, Shield, Monitor, Layers } from 'lucide-react';
+import { Search, Target, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ChallengeArt, { ArtKind, artKindFor, ART_ACCENT } from '../components/challenges/ChallengeArt';
 
 interface ActiveToast { id: string; type: ToastType; message: string }
 
@@ -25,18 +26,47 @@ const useToast = () => {
   return { toast, toasts, removeToast };
 };
 
-const CATEGORIES = [
-  { label: 'All Challenges', value: 'all', customIcon: '/assets/icons/icon_all.png', mascotBg: 'from-gray-900 to-panel', bgImage: '/assets/academy/Gemini_Generated_Image_fwektofwektofwek.jpg' },
-  { label: 'Web', value: 'Web Exploitation', color: '#60a5fa', customIcon: '/assets/icons/icon_web.png', mascotBg: 'from-info/20 to-panel', bgImage: '/assets/academy/Gemini_Generated_Image_cx4kdzcx4kdzcx4k.jpg' },
-  { label: 'Pwn', value: 'Binary Exploitation', color: '#f43f5e', customIcon: '/assets/icons/icon_pwn.png', mascotBg: 'from-danger/20 to-panel', bgImage: '/assets/academy/Gemini_Generated_Image_93kgsv93kgsv93kg.jpg' },
-  { label: 'Crypto', value: 'Cryptography', color: '#f3a43a', customIcon: '/assets/icons/icon_crypto.png', mascotBg: 'from-amber/20 to-panel', bgImage: '/assets/academy/Gemini_Generated_Image_xonlj2xonlj2xonl.jpg' },
-  { label: 'Reversing', value: 'Reverse Engineering', color: '#a855f7', customIcon: '/assets/icons/icon_reversing.png', mascotBg: 'from-violet/20 to-panel', bgImage: '/assets/academy/Gemini_Generated_Image_ijgy1cijgy1cijgy.jpg' },
-  { label: 'Forensics', value: 'Forensics', color: '#34d399', customIcon: '/assets/icons/icon_forensics.png', mascotBg: 'from-mint/20 to-panel', bgImage: '/assets/academy/Gemini_Generated_Image_454bls454bls454b.jpg' },
+/* Each tab carries the art that stands in for it. The blurb is the hero's
+   subtitle, so the page says something different depending on where you are
+   rather than repeating one line under six headings. */
+const CATEGORIES: Array<{ label: string; value: string; art: ArtKind; blurb: string }> = [
+  {
+    label: 'All challenges',
+    value: 'all',
+    art: 'all',
+    blurb: 'Every target on the range, across all six disciplines. Pick an operation and deploy your container.',
+  },
+  {
+    label: 'Web',
+    value: 'Web Exploitation',
+    art: 'web',
+    blurb: 'Break the application layer — injection, broken auth, logic flaws and everything a browser will happily send.',
+  },
+  {
+    label: 'Pwn',
+    value: 'Binary Exploitation',
+    art: 'pwn',
+    blurb: 'Take control of a running process. Overflow the buffer, corrupt the heap, redirect execution.',
+  },
+  {
+    label: 'Crypto',
+    value: 'Cryptography',
+    art: 'crypto',
+    blurb: 'Attack the maths, not the lock. Weak keys, reused nonces and homemade ciphers all give way eventually.',
+  },
+  {
+    label: 'Reversing',
+    value: 'Reverse Engineering',
+    art: 'reversing',
+    blurb: 'Work backwards from the binary. Disassemble, trace and recover the logic somebody tried to hide.',
+  },
+  {
+    label: 'Forensics',
+    value: 'Forensics',
+    art: 'forensics',
+    blurb: 'Reconstruct what happened from what was left behind — disk images, memory dumps and packet captures.',
+  },
 ];
-
-const HERO_CATEGORY_ICONS = CATEGORIES
-  .filter((category) => category.value !== 'all')
-  .map((category) => ({ label: category.label, icon: category.customIcon }));
 
 const DIFFICULTY_COLORS: Record<string, string> = {
   'Very Easy': '#34d399',
@@ -46,11 +76,10 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   'Expert': '#a855f7',
 };
 
-const DIFFICULTY_OPTIONS = ['all', 'Very Easy', 'Easy', 'Medium', 'Hard', 'Expert'];
 const SORT_OPTIONS = [
-  { label: 'Points ↓', value: 'points-desc' },
-  { label: 'Points ↑', value: 'points-asc' },
-  { label: 'Most Solves', value: 'solves-desc' },
+  { label: 'Highest points', value: 'points-desc' },
+  { label: 'Lowest points', value: 'points-asc' },
+  { label: 'Most solves', value: 'solves-desc' },
 ];
 
 const EnhancedChallengesPage: React.FC = () => {
@@ -159,14 +188,15 @@ const EnhancedChallengesPage: React.FC = () => {
     return filtered;
   }, [challenges, searchTerm, selectedCategory, difficultyFilter, statusFilter, sortBy]);
 
-  const activeCategoryData = CATEGORIES.find(c => c.value === selectedCategory) || CATEGORIES[0];
+  const activeCategoryData = CATEGORIES.find((c) => c.value === selectedCategory) || CATEGORIES[0];
+  const accent = ART_ACCENT[activeCategoryData.art];
 
   if (loading) {
     return (
       <div className="min-h-screen bg-canvas flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-muted">
           <div className="w-10 h-10 border-4 border-brand/20 border-t-brand rounded-full animate-spin" />
-          <p className="tracking-widest uppercase text-xs font-bold text-brand">Loading Matrix...</p>
+          <p className="text-sm font-semibold text-muted">Loading challenges…</p>
         </div>
       </div>
     );
@@ -184,49 +214,58 @@ const EnhancedChallengesPage: React.FC = () => {
         </div>
       )}
 
-      {/* ── TOP HERO BANNERS & MASCOTS ── */}
-      <div 
-        className={`pt-20 pb-10 border-b border-edge relative overflow-hidden transition-colors duration-500 min-h-[340px] flex items-end`}
-        style={activeCategoryData.bgImage ? {
-          backgroundImage: `linear-gradient(to right, rgba(13, 17, 23, 0.95) 0%, rgba(13, 17, 23, 0.7) 45%, rgba(13, 17, 23, 0.15) 100%), url(${activeCategoryData.bgImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center 25%',
-          backgroundRepeat: 'no-repeat'
-        } : {}}
-      >
-        {/* Fallback gradient if no image */}
-        {!activeCategoryData.bgImage && (
-          <div className={`absolute inset-0 bg-gradient-to-b ${activeCategoryData.mascotBg} opacity-50`} />
-        )}
-        
-        <div className="max-w-7xl mx-auto px-4 md:px-8 w-full relative z-10">
+      {/* ── HERO ──
+          The category's own art carries the banner. It replaces a stock photo
+          behind a 95%-opaque scrim, which was doing nothing for the page but
+          costing a 400KB download on every tab switch. */}
+      <div className="relative overflow-hidden border-b border-edge bg-canvas-alt">
+        {/* accent bloom, tinted per category */}
+        <div
+          className="pointer-events-none absolute inset-0 transition-opacity duration-500"
+          style={{
+            background: `radial-gradient(120% 100% at 78% 22%, ${accent}26 0%, transparent 62%)`,
+          }}
+        />
+        {/* hairline grid, so the panel has texture without an image */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.35]"
+          style={{
+            backgroundImage:
+              'linear-gradient(to right, #1a2438 1px, transparent 1px), linear-gradient(to bottom, #1a2438 1px, transparent 1px)',
+            backgroundSize: '48px 48px',
+            maskImage: 'radial-gradient(120% 90% at 30% 40%, #000 0%, transparent 75%)',
+            WebkitMaskImage: 'radial-gradient(120% 90% at 30% 40%, #000 0%, transparent 75%)',
+          }}
+        />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-6 pb-10">
           <Breadcrumbs />
-          
-          <div className="mt-8">
-            <h1 className="text-4xl md:text-5xl lg:text-7xl font-black text-fg tracking-tight uppercase flex items-center gap-3 drop-shadow-lg">
-              {selectedCategory === 'all' ? (
-                <div className="flex items-center -space-x-2 lg:-space-x-3">
-                  {HERO_CATEGORY_ICONS.map((categoryIcon) => (
-                    <img
-                      key={categoryIcon.label}
-                      src={categoryIcon.icon}
-                      alt={`${categoryIcon.label} icon`}
-                      className="w-10 h-10 lg:w-14 lg:h-14 rounded-lg border border-white/20 bg-panel object-cover drop-shadow-[0_0_12px_rgba(255,255,255,0.2)]"
-                    />
-                  ))}
-                </div>
-              ) : (activeCategoryData as any).customIcon ? (
-                <img src={(activeCategoryData as any).customIcon} alt="Icon" className="w-12 h-12 lg:w-16 lg:h-16 rounded-lg drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]" />
-              ) : (activeCategoryData as any).icon ? (
-                <div className="w-12 h-12 lg:w-16 lg:h-16 flex items-center justify-center">
-                  {React.createElement((activeCategoryData as any).icon, { className: "w-full h-full drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]", style: { color: activeCategoryData.color || '#9fef00' } })}
-                </div>
-              ) : null}
-              {activeCategoryData.label}
-            </h1>
-            <p className="text-muted mt-4 max-w-2xl text-lg lg:text-xl font-medium drop-shadow-md">
-              Pwn systems, uncover flags, and rise through the ranks. Select an operation to deploy your container.
-            </p>
+
+          <div className="mt-6 flex flex-col-reverse items-center gap-6 md:flex-row md:items-center md:justify-between md:gap-10">
+            <div className="min-w-0 flex-1 text-center md:text-start">
+              <span
+                className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold"
+                style={{ color: accent, borderColor: `${accent}59`, backgroundColor: `${accent}14` }}
+              >
+                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: accent }} />
+                {filteredAndSortedChallenges.length}{' '}
+                {filteredAndSortedChallenges.length === 1 ? 'challenge' : 'challenges'}
+              </span>
+
+              <h1 className="mt-3 text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-fg">
+                {activeCategoryData.label}
+              </h1>
+              <p className="mt-3 max-w-xl text-base md:text-lg text-muted mx-auto md:mx-0">
+                {activeCategoryData.blurb}
+              </p>
+            </div>
+
+            <ChallengeArt
+              key={activeCategoryData.art}
+              kind={activeCategoryData.art}
+              glow
+              className="h-36 w-44 flex-shrink-0 md:h-52 md:w-64 lg:h-60 lg:w-72"
+            />
           </div>
         </div>
       </div>
@@ -240,13 +279,21 @@ const EnhancedChallengesPage: React.FC = () => {
               <button
                 key={cat.value}
                 onClick={() => setSelectedCategory(cat.value)}
-                className={`flex-shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-black uppercase tracking-wider transition-all border ${
-                  isActive 
-                    ? 'bg-edge-strong border-brand-neon text-fg shadow-[0_0_15px_rgba(159,239,0,0.1)]' 
-                    : 'bg-[#0d1422] border-edge text-dim hover:text-fg-soft hover:border-faint'
+                className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 touch:min-h-tap rounded-lg text-sm font-semibold transition-all border ${
+                  isActive
+                    ? 'bg-surface border-edge-light text-fg'
+                    : 'bg-inset border-edge text-muted hover:text-fg-soft hover:border-edge-light'
                 }`}
               >
-                {isActive && <span className="w-2 h-2 rounded bg-brand-neon animate-pulse" />}
+                {/* The dot is the category's identity colour — the one place
+                    on this page where colour carries meaning. */}
+                <span
+                  className="h-2 w-2 rounded-full transition-opacity"
+                  style={{
+                    backgroundColor: ART_ACCENT[cat.art],
+                    opacity: isActive ? 1 : 0.45,
+                  }}
+                />
                 {cat.label}
               </button>
             )
@@ -277,7 +324,7 @@ const EnhancedChallengesPage: React.FC = () => {
                 value={selectedUniversity}
                 onChange={(e) => setSelectedUniversity(e.target.value)}
                 title="University"
-                className="bg-inset border border-edge text-sm font-bold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
+                className="bg-inset border border-edge text-sm font-semibold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
               >
                 {universities.length === 0 && <option value="">No universities</option>}
                 {universities.map((u) => (
@@ -294,9 +341,9 @@ const EnhancedChallengesPage: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="bg-inset border border-edge text-sm font-bold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon uppercase tracking-wider"
+              className="bg-inset border border-edge text-sm font-semibold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
             >
-              <option value="all">All Challenges</option>
+              <option value="all">All challenges</option>
               <option value="uncompleted">Unsolved</option>
               <option value="completed">Solved</option>
             </select>
@@ -305,9 +352,9 @@ const EnhancedChallengesPage: React.FC = () => {
             <select
               value={difficultyFilter}
               onChange={(e) => setDifficultyFilter(e.target.value)}
-              className="bg-inset border border-edge text-sm font-bold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon uppercase tracking-wider"
+              className="bg-inset border border-edge text-sm font-semibold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
             >
-              <option value="all">Any Difficulty</option>
+              <option value="all">Any difficulty</option>
               <option value="Very Easy">Very Easy</option>
               <option value="Easy">Easy</option>
               <option value="Medium">Medium</option>
@@ -319,7 +366,7 @@ const EnhancedChallengesPage: React.FC = () => {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="bg-inset border border-edge text-fg-soft text-sm font-bold rounded-lg px-3 py-2 outline-none focus:border-brand-neon uppercase tracking-wider"
+              className="bg-inset border border-edge text-fg-soft text-sm font-semibold rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
             >
               {SORT_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
@@ -337,7 +384,7 @@ const EnhancedChallengesPage: React.FC = () => {
                 icon={Target}
                 title="No challenges found"
                 description="Adjust your search and filter parameters."
-                actionLabel="Reset Filters"
+                actionLabel="Reset filters"
                 onAction={() => { setSearchTerm(''); setSelectedCategory('all'); setDifficultyFilter('all'); setStatusFilter('all'); }}
               />
             </motion.div>
@@ -363,31 +410,23 @@ const EnhancedChallengesPage: React.FC = () => {
                         floor wider than the phone and shove the row
                         off-screen rather than truncating. */}
                     <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0 w-full">
-                      <div className={`w-12 h-12 mt-1 rounded-lg flex items-center justify-center border overflow-hidden shrink-0 transition-colors ${
-                        solved ? 'bg-brand-neon/10 border-brand-neon/30' : 'bg-inset border-edge group-hover:border-info'
-                      }`}>
-                        {solved ? (
-                          <div className="relative w-full h-full flex items-center justify-center">
-                            <img 
-                              src={CATEGORIES.find(c => c.value === challenge.category)?.customIcon || '/assets/icons/icon_all.png'} 
-                              className="w-full h-full object-cover opacity-40"
-                              alt="Solved Icon"
-                            />
-                            <CheckCircle2 className="absolute w-6 h-6 text-brand-neon" />
-                          </div>
-                        ) : (
-                          <img 
-                            src={CATEGORIES.find(c => c.value === challenge.category)?.customIcon || '/assets/icons/icon_all.png'} 
-                            className="w-full h-full object-cover" 
-                            alt="Challenge Icon"
-                          />
-                        )}
+                      <div
+                        className={`relative w-12 h-12 rounded-lg flex items-center justify-center border overflow-hidden shrink-0 transition-colors ${
+                          solved ? 'bg-brand/10 border-brand/30' : 'bg-inset border-edge group-hover:border-edge-light'
+                        }`}
+                      >
+                        <ChallengeArt
+                          kind={artKindFor(challenge.category)}
+                          detailed={false}
+                          className={`h-11 w-11 transition-opacity ${solved ? 'opacity-25' : 'opacity-100'}`}
+                        />
+                        {solved && <CheckCircle2 className="absolute w-6 h-6 text-brand" />}
                       </div>
                       
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-3 mb-1 min-w-0">
-                          <h3 className="text-base sm:text-lg font-black text-fg truncate group-hover:text-brand-neon transition-colors">{challenge.title}</h3>
-                          <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] uppercase font-black tracking-widest bg-inset border border-edge text-dim">
+                          <h3 className="text-base sm:text-lg font-bold text-fg truncate group-hover:text-brand-neon transition-colors">{challenge.title}</h3>
+                          <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-inset border border-edge text-muted">
                             {challenge.category}
                           </span>
                         </div>
@@ -400,12 +439,12 @@ const EnhancedChallengesPage: React.FC = () => {
                       
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: diffColor }} />
-                        <span className="text-xs font-bold uppercase tracking-widest text-fg-soft">{challenge.difficulty}</span>
+                        <span className="text-xs font-semibold text-fg-soft">{challenge.difficulty}</span>
                       </div>
 
                       <div className="text-right">
                         <span className="block text-base font-bold text-brand-neon leading-none mb-1">+{challenge.currentPoints || challenge.points} <span className="text-xs text-dim">pts</span></span>
-                        <span className="text-[10px] text-faint uppercase tracking-wider font-bold">{challenge.solves || 0} Solves</span>
+                        <span className="text-[11px] text-faint">{challenge.solves || 0} {challenge.solves === 1 ? 'solve' : 'solves'}</span>
                       </div>
                     </div>
 

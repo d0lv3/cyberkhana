@@ -1,8 +1,9 @@
 import React from 'react';
 import { User } from '../types';
-import { LogOut, Bell, User as UserIcon } from 'lucide-react';
+import { LogOut, Bell } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BrandLogo from './ui/BrandLogo';
+import Avatar from './ui/Avatar';
 
 interface HeaderProps {
   user: User;
@@ -40,13 +41,19 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
             <Bell size={16} />
           </Link>
 
-          {/* Profile */}
+          {/* Profile — wears the picture the member actually chose, so the
+              header is where they see it took effect. */}
           <Link
             to="/profile"
-            aria-label="My Profile"
-            className="w-9 h-9 touch:w-11 touch:h-11 rounded-lg bg-panel border border-edge flex items-center justify-center text-dim hover:text-brand hover:border-brand/40 transition-all"
+            aria-label="My profile"
+            className="rounded-lg border border-edge transition-colors hover:border-brand/40"
           >
-            <UserIcon size={16} />
+            <Avatar
+              profileIcon={(user as any)?.profileIcon}
+              name={user.fullName || user.displayName || user.username || user.name}
+              className="w-9 h-9 touch:w-11 touch:h-11 rounded-lg border-0"
+              initialClassName="text-sm"
+            />
           </Link>
 
           {/* Logout */}
