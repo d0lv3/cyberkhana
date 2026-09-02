@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNow, isCompetitionOver, formatTimeRemaining } from '../src/hooks/useCompetitionClock';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { competitionService } from '../services/competitionService';
@@ -34,17 +35,18 @@ const getStatusMeta = (status: string, ended: boolean): {
   return { label: 'Upcoming', state: 'upcoming', color: STATE_ACCENT.upcoming };
 };
 
-const isTimeEnded = (endTime: string) => new Date() > new Date(endTime);
-
-const getCountdown = (target: string, label: string) => {
-  const diff = new Date(target).getTime() - Date.now();
+const getCountdown = (target: string, label: string, now: number) => {
+  const diff = new Date(target).getTime() - now;
+  if (Number.isNaN(diff)) return '—';
   if (diff <= 0) return label === 'starts' ? 'Started' : 'Ended';
   const d = Math.floor(diff / 86400000);
   const h = Math.floor((diff % 86400000) / 3600000);
   const m = Math.floor((diff % 3600000) / 60000);
+  const sec = Math.floor((diff % 60000) / 1000);
   if (d > 0) return `${d}d ${h}h`;
   if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
+  if (m > 0) return `${m}m ${sec}s`;
+  return `${sec}s`;
 };
 
 // ─── Competition Card (Player view) ────────────────────────────────────────────
@@ -58,7 +60,8 @@ const CompetitionCard: React.FC<{
   onEnter: (id: string) => void;
   delay?: number;
 }> = ({ competition, onEnter, delay = 0 }) => {
-  const ended = isTimeEnded(competition.endTime);
+  const now = useNow();
+  const ended = isCompetitionOver(competition, now);
   const meta = getStatusMeta(competition.status, ended);
   const navigate = useNavigate();
   const live = !ended && competition.status === 'active';
@@ -72,8 +75,8 @@ const CompetitionCard: React.FC<{
   const timing = ended
     ? `Ended ${new Date(competition.endTime).toLocaleDateString()}`
     : live
-      ? `Ends in ${getCountdown(competition.endTime, 'ends')}`
-      : `Starts in ${getCountdown(competition.startTime, 'starts')}`;
+      ? `Ends in ${formatTimeRemaining(competition.endTime, now, competition.hasTimeLimit)}`
+      : `Starts in ${getCountdown(competition.startTime, 'starts', now)}`;
 
   return (
     <motion.div
@@ -165,7 +168,8 @@ const AdminCompetitionRow: React.FC<{
   fetchCompetitions: () => void;
 }> = ({ competition, isExpanded, onToggle, fetchCompetitions }) => {
   const navigate = useNavigate();
-  const ended = isTimeEnded(competition.endTime);
+  const now = useNow();
+  const ended = isCompetitionOver(competition, now);
   const meta = getStatusMeta(competition.status, ended);
 
   return (
@@ -185,7 +189,7 @@ const AdminCompetitionRow: React.FC<{
           <p className="font-bold text-fg truncate">{competition.name}</p>
           <p className="text-xs text-dim">
             {competition.challenges?.length || 0} challenges ·{' '}
-            {ended ? `Ended ${new Date(competition.endTime).toLocaleDateString()}` : getCountdown(competition.endTime, 'ends')}
+            {ended ? `Ended ${new Date(competition.endTime).toLocaleDateString()}` : formatTimeRemaining(competition.endTime, now, competition.hasTimeLimit)}
           </p>
         </div>
         <span
@@ -291,6 +295,10 @@ const CompetitionPage: React.FC = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // A minute is enough to keep the Live / Past buckets honest; the per-card
+  // countdowns tick at their own, finer rate.
+  const listNow = useNow(60_000);
+
   const userData = localStorage.getItem('user');
   const currentUser = userData ? JSON.parse(userData) : null;
   const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super-admin');
@@ -349,9 +357,9 @@ const CompetitionPage: React.FC = () => {
   };
 
   // Derived lists
-  const activeComps    = competitions.filter(c => c.status === 'active' && !isTimeEnded(c.endTime));
+  const activeComps    = competitions.filter(c => c.status === 'active' && !isCompetitionOver(c, listNow));
   const upcomingComps  = competitions.filter(c => c.status === 'pending' || (c.status === 'active' && Date.now() < new Date(c.startTime).getTime()));
-  const pastComps      = competitions.filter(c => c.status === 'ended' || isTimeEnded(c.endTime));
+  const pastComps      = competitions.filter(c => c.status === 'ended' || isCompetitionOver(c, listNow));
 
   // ── Loading ──
   if (loading) {

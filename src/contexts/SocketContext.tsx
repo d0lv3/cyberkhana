@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 interface SocketContextType {
@@ -69,16 +69,23 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children, user }
     };
   }, [user]);
 
-  const joinCompetition = (competitionId: string) => {
+  const joinCompetition = useCallback((competitionId: string) => {
     socket?.emit('joinCompetition', { competitionId });
-  };
+  }, [socket]);
 
-  const leaveCompetition = (competitionId: string) => {
+  const leaveCompetition = useCallback((competitionId: string) => {
     socket?.emit('leaveCompetition', { competitionId });
-  };
+  }, [socket]);
+
+  // Stable identity for the context value too, so consumers that depend on it
+  // don't re-run for the same reason.
+  const value = useMemo(
+    () => ({ socket, isConnected, joinCompetition, leaveCompetition }),
+    [socket, isConnected, joinCompetition, leaveCompetition]
+  );
 
   return (
-    <SocketContext.Provider value={{ socket, isConnected, joinCompetition, leaveCompetition }}>
+    <SocketContext.Provider value={value}>
       {children}
     </SocketContext.Provider>
   );

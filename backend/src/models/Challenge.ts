@@ -9,7 +9,10 @@ export const calculateDynamicScore = (
 ): number => {
   // Safeguard against invalid decay values
   if (!decay || decay <= 0 || !isFinite(decay)) {
-    decay = 200; // Default decay value
+    // 38, matching the schema default and the `|| 38` every call site passes.
+    // This said 200 — unreachable today, and a silent change to the shape of
+    // the scoring curve the moment one of those fallbacks was removed.
+    decay = 38;
   }
   
   // Safeguard against invalid points

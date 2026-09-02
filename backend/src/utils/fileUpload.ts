@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
 
 // Use __dirname for reliable path resolution regardless of where the process starts
 const uploadDir = path.join(__dirname, '..', '..', 'uploads');
@@ -9,13 +10,21 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Sanitize filename: replace URL-unsafe characters with underscores
+/**
+ * Sanitises a filename and makes it unique.
+ *
+ * The name was previously kept verbatim, so uploading a `files.zip` to one
+ * challenge overwrote the `files.zip` of another — no error, and the first
+ * challenge quietly became unsolvable. The short random suffix keeps the name
+ * readable while guaranteeing a distinct path on disk.
+ */
 function sanitizeFilename(original: string): string {
   const ext = path.extname(original);
   const name = path.basename(original, ext);
   // Replace characters that break URLs: ? # % & + = and other unsafe chars
-  const safeName = name.replace(/[?#%&+=@!$,;:'"^`{}|\\<>[\]]/g, '_');
-  return safeName + ext;
+  const safeName = name.replace(/[?#%&+=@!$,;:'"^`{}|\\<>[\]]/g, '_').slice(0, 100) || 'file';
+  const suffix = crypto.randomBytes(6).toString('hex');
+  return `${safeName}-${suffix}${ext}`;
 }
 
 const storage = multer.diskStorage({

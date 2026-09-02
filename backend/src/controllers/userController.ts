@@ -622,6 +622,15 @@ export const banUser = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    if ((targetUser as any)._id.toString() === req.user?.userId) {
+      return res.status(400).json({ error: 'You cannot ban your own account' });
+    }
+
+    // Only a super admin may ban an admin — otherwise peers can lock each other out.
+    if (targetUser.role === 'admin' && req.user?.role !== 'super-admin') {
+      return res.status(403).json({ error: 'Only a super admin can ban an administrator' });
+    }
+
     targetUser.isBanned = true;
     await targetUser.save();
 
@@ -820,10 +829,14 @@ export const deductPoints = async (req: AuthRequest, res: Response) => {
     }
 
     const { userId } = req.params;
-    const { points, reason, type, competitionId } = req.body;
+    const { points: rawPoints, reason, type, competitionId } = req.body;
 
-    if (!points || points <= 0) {
+    const points = Number(rawPoints);
+    if (!Number.isFinite(points) || points <= 0) {
       return res.status(400).json({ error: 'Points must be a positive number' });
+    }
+    if (points > 1_000_000) {
+      return res.status(400).json({ error: 'Points must be 1,000,000 or fewer' });
     }
 
     if (!type || !['general', 'competition'].includes(type)) {
@@ -1003,10 +1016,14 @@ export const addPoints = async (req: AuthRequest, res: Response) => {
     }
 
     const { userId } = req.params;
-    const { points, reason, type = 'general', competitionId } = req.body;
+    const { points: rawPoints, reason, type = 'general', competitionId } = req.body;
 
-    if (!points || points <= 0) {
+    const points = Number(rawPoints);
+    if (!Number.isFinite(points) || points <= 0) {
       return res.status(400).json({ error: 'Points must be a positive number' });
+    }
+    if (points > 1_000_000) {
+      return res.status(400).json({ error: 'Points must be 1,000,000 or fewer' });
     }
 
     if (!['general', 'competition'].includes(type)) {
@@ -1100,14 +1117,30 @@ export const purchaseHint = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'Only users can purchase hints' });
     }
 
-    const { challengeId, hintIndex, cost } = req.body;
+    // `cost` used to be read from the body and trusted. A hint could be bought
+    // for 0, or for a negative amount — which passed the affordability check and
+    // then subtracted a negative, adding points. The price comes from the
+    // challenge now, exactly as buyCompetitionHint has always done.
+    const { challengeId, hintIndex } = req.body;
+
+    if (typeof challengeId !== 'string' || !challengeId.trim()) {
+      return res.status(400).json({ error: 'Challenge ID is required' });
+    }
+
+    const index = Number(hintIndex);
+    if (!Number.isInteger(index) || index < 0) {
+      return res.status(400).json({ error: 'Invalid hint index' });
+    }
 
     const user = await User.findById(req.user.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Import Challenge model to check if it's from a competition
+    if (user.isBanned) {
+      return res.status(403).json({ error: 'Your account is banned' });
+    }
+
     const Challenge = require('../models/Challenge').default;
     const challenge = await Challenge.findById(challengeId);
 
@@ -1115,12 +1148,60 @@ export const purchaseHint = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'Challenge not found' });
     }
 
-    // Check if challenge came from a competition
-    const isFromCompetition = challenge.fromCompetition;
+    if (
+      challenge.universityCode &&
+      challenge.universityCode.toUpperCase() !== (req.user.universityCode || '').toUpperCase()
+    ) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
 
-    // Check if user has enough points (either regular or competition points)
-    const availablePoints = isFromCompetition ? user.competitionPoints : user.points;
-    if (availablePoints < cost) {
+    if (!challenge.hints || index >= challenge.hints.length) {
+      return res.status(400).json({ error: 'Invalid hint index' });
+    }
+
+    const hint = challenge.hints[index];
+
+    // An unpublished hint is not for sale yet — the list endpoint hides its text,
+    // and this endpoint used to hand it over regardless.
+    if (hint.isPublished === false) {
+      return res.status(400).json({ error: 'This hint has not been published by the admin yet' });
+    }
+
+    const cost = Number(hint.cost) || 0;
+    if (cost < 0) {
+      return res.status(400).json({ error: 'This hint has an invalid price' });
+    }
+
+    const isFromCompetition = Boolean(challenge.fromCompetition);
+    const balanceField = isFromCompetition ? 'competitionPoints' : 'points';
+
+    // Keep the "<challengeId>-<index>" shape: the general leaderboard parses it
+    // to charge the hint against a player's score.
+    const hintId = `${challengeId}-${index}`;
+
+    if (user.unlockedHints.includes(hintId)) {
+      return res.status(400).json({ error: 'Hint already unlocked' });
+    }
+
+    // Atomic, so a burst of clicks cannot buy the same hint twice or spend past
+    // the balance.
+    const updatedUser = await User.findOneAndUpdate(
+      {
+        _id: (user as any)._id,
+        [balanceField]: { $gte: cost },
+        unlockedHints: { $ne: hintId }
+      },
+      {
+        $inc: { [balanceField]: -cost },
+        $push: { unlockedHints: hintId }
+      },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      if (user.unlockedHints.includes(hintId)) {
+        return res.status(400).json({ error: 'Hint already unlocked' });
+      }
       return res.status(400).json({
         error: isFromCompetition
           ? 'Not enough competition points to purchase this hint'
@@ -1128,35 +1209,13 @@ export const purchaseHint = async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Check if hint is already unlocked
-    const hintId = `${challengeId}-${hintIndex}`;
-    if (user.unlockedHints.includes(hintId)) {
-      return res.status(400).json({ error: 'Hint already unlocked' });
-    }
-
-    // Deduct points from the appropriate balance
-    if (isFromCompetition) {
-      user.competitionPoints -= cost;
-    } else {
-      user.points -= cost;
-    }
-
-    // Add hint to unlocked hints
-    user.unlockedHints.push(hintId);
-
-    await user.save();
-
-    // Get the actual hint text to return to the user
-    const hintText = challenge.hints && challenge.hints[hintIndex]
-      ? challenge.hints[hintIndex].text
-      : '';
-
     res.json({
       message: 'Hint purchased successfully',
-      remainingPoints: isFromCompetition ? user.competitionPoints : user.points,
+      remainingPoints: isFromCompetition ? updatedUser.competitionPoints : updatedUser.points,
       pointsType: isFromCompetition ? 'competition' : 'regular',
+      cost,
       unlockedHint: hintId,
-      hintText: hintText
+      hintText: hint.text || ''
     });
   } catch (error) {
     res.status(500).json({ error: 'Error purchasing hint' });

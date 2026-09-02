@@ -98,8 +98,22 @@ const NewDashboardPage: React.FC = () => {
         // the authoritative recomputed value so they don't disagree with this page.
         try {
           const stored = JSON.parse(localStorage.getItem('user') || '{}');
-          if (stored && stored.points !== (profile.points || 0)) {
-            const merged = { ...stored, points: profile.points || 0 };
+          const next = {
+            points: profile.points || 0,
+            competitionPoints: profile.competitionPoints || 0,
+            unlockedHints: profile.unlockedHints || []
+          };
+          // competitionPoints and unlockedHints were never synced here. Login
+          // does not return them either, so they stayed undefined and the
+          // competition hint button read "Not enough competition points"
+          // regardless of the real balance.
+          const changed =
+            stored.points !== next.points ||
+            stored.competitionPoints !== next.competitionPoints ||
+            (stored.unlockedHints || []).length !== next.unlockedHints.length;
+
+          if (changed) {
+            const merged = { ...stored, ...next };
             localStorage.setItem('user', JSON.stringify(merged));
             window.dispatchEvent(new CustomEvent('userUpdate', { detail: merged }));
           }

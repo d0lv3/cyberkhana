@@ -33,6 +33,17 @@ interface University {
   code: string;
 }
 
+/**
+ * Math.random() is not unguessable, and this is the only gate on a private
+ * competition. crypto.getRandomValues is, and costs nothing here.
+ */
+const generateSecurityCode = (length = 8) => {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no look-alikes: I, O, 0, 1
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+};
+
 const AdminCompetitionsPage: React.FC = () => {
   const navigate = useNavigate();
   const storedUser = localStorage.getItem('user');
@@ -103,6 +114,16 @@ const AdminCompetitionsPage: React.FC = () => {
     }
   };
 
+  // `datetime-local` speaks local time. toISOString() is UTC, so feeding one to
+  // the other silently shifted times by the zone offset (three hours here).
+  const toLocalInputValue = (value: string | Date) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+      + `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  };
+
   const getCompetitionUniversityCodes = (competition: Competition) => {
     const codes = competition.universityCodes?.length
       ? competition.universityCodes
@@ -151,10 +172,12 @@ const AdminCompetitionsPage: React.FC = () => {
           startTimeISO = new Date().toISOString(); // Will be updated when started
           endTimeISO = undefined;
         } else if (timeMode === 'timer') {
-          // Timer mode - set a future start time placeholder, actual start happens when button is clicked
-          const now = new Date();
-          endTimeISO = new Date(now.getTime() + formData.duration * 60000).toISOString();
-          startTimeISO = now.toISOString(); // Will be updated when started
+          // Timer mode - the clock starts when the admin presses Start, not now.
+          // Stamping an absolute endTime here is what made these competitions end
+          // early: the window was measured from creation, so any delay before
+          // starting came straight off the players' time.
+          startTimeISO = new Date().toISOString(); // replaced on start
+          endTimeISO = undefined;                  // set on start, from duration
           timerDuration = formData.duration;
         } else {
           // DateTime mode
@@ -171,7 +194,7 @@ const AdminCompetitionsPage: React.FC = () => {
           hasTimeLimit: formData.hasTimeLimit,
           startTime: startTimeISO,
           endTime: endTimeISO,
-          timerDuration: timerDuration,
+          duration: timerDuration,
         });
         toast('success', 'Competition created successfully');
       }
@@ -317,8 +340,8 @@ const AdminCompetitionsPage: React.FC = () => {
         primaryUniversityCode: universityCodes[0] || currentUser?.universityCode || '',
         secondaryUniversityCode: universityCodes.find((code) => code !== universityCodes[0]) || '',
         hasTimeLimit: competition.hasTimeLimit !== false,
-        startTime: new Date(competition.startTime).toISOString().slice(0, 16),
-        endTime: competition.endTime ? new Date(competition.endTime).toISOString().slice(0, 16) : '',
+        startTime: toLocalInputValue(competition.startTime),
+        endTime: competition.endTime ? toLocalInputValue(competition.endTime) : '',
         duration: 120,
       });
     } else {
@@ -326,7 +349,7 @@ const AdminCompetitionsPage: React.FC = () => {
       setTimeMode('datetime');
       setFormData({
         name: '',
-        securityCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+        securityCode: generateSecurityCode(),
         requiresSecurityCode: true,
         primaryUniversityCode: currentUser?.universityCode || '',
         secondaryUniversityCode: '',

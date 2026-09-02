@@ -4,8 +4,8 @@ export const competitionService = {
   getCompetitions: (universityCode?: string) =>
     apiService.get('/competitions', universityCode ? { universityCode } : undefined),
 
-  getCompetition: (id: string, securityCode: string) =>
-    apiService.get(`/competitions/${id}`),
+  getCompetition: (id: string, securityCode?: string) =>
+    apiService.get(`/competitions/${id}`, securityCode ? { securityCode } : undefined),
 
   validateSecurityCode: (securityCode: string) =>
     apiService.post('/competitions/validate-code', { securityCode }),

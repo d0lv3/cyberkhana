@@ -24,6 +24,33 @@ const getCompetitionUniversityCodes = (competition: any): string[] => {
   );
 };
 
+/**
+ * Removes everything a player is not entitled to from a competition challenge:
+ * the flags, and the text of any hint they have not bought.
+ *
+ * The /details endpoint had this logic inline; the list and by-id endpoints only
+ * stripped `flag` and `flags`, so full hint text for every competition — pending
+ * ones included, with no security code needed — came back to any logged-in user.
+ */
+const scrubChallengeForPlayer = (challenge: any, hintKeyPrefix: string, unlockedHints: string[]) => {
+  const { flag, flags, ...safe } = challenge;
+
+  if (Array.isArray(safe.hints)) {
+    safe.hints = safe.hints.map((hint: any, index: number) => {
+      const hintKey = `${hintKeyPrefix}_${index}`;
+      return unlockedHints.includes(hintKey) ? hint : { ...hint, text: 'LOCKED' };
+    });
+  }
+
+  return safe;
+};
+
+const getUnlockedHintsFor = async (user?: AuthRequest['user']): Promise<string[]> => {
+  if (user?.role !== 'user') return [];
+  const found = await User.findById(user.userId).select('unlockedHints');
+  return found?.unlockedHints || [];
+};
+
 const buildCompetitionAccessQuery = (universityCode?: string) => {
   const normalizedCode = normalizeUniversityCode(universityCode);
 
@@ -134,10 +161,29 @@ export const createCompetition = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: 'A competition can only be shared between up to two universities' });
     }
 
-    const { universityCode: ignoredUniversityCode, universityCodes: ignoredUniversityCodes, ...competitionPayload } = req.body;
+    const {
+      universityCode: ignoredUniversityCode,
+      universityCodes: ignoredUniversityCodes,
+      // Never let a create call seed these — they are earned, not supplied.
+      status: ignoredStatus,
+      challenges: ignoredChallenges,
+      _id: ignoredId,
+      timerDuration,
+      duration,
+      ...competitionPayload
+    } = req.body;
+
+    // The admin form posts `timerDuration`; the schema field is `duration`. The
+    // names never matched, so strict mode dropped it and every competition was
+    // stored with no duration — which is why the timer-aware Start button never
+    // rendered and timer competitions kept their creation-time end time.
+    const resolvedDuration = Number(duration ?? timerDuration);
 
     const competition = new Competition({
       ...competitionPayload,
+      ...(Number.isFinite(resolvedDuration) && resolvedDuration > 0
+        ? { duration: resolvedDuration }
+        : {}),
       universityCode: universityCodes[0],
       universityCodes
     });
@@ -209,15 +255,20 @@ export const getCompetitions = async (req: AuthRequest, res: Response) => {
       })
     );
 
-    // SECURITY: Never expose flags to regular users
+    // SECURITY: Never expose flags, unbought hints or security codes to players
     if (req.user?.role !== 'admin' && req.user?.role !== 'super-admin') {
-      const competitionsWithoutFlags = competitionsWithDynamicPoints.map((competition: any) => {
-        const challengesWithoutFlags = competition.challenges.map((challenge: any) => {
-          const { flag, flags, ...challengeWithoutFlags } = challenge;
-          return challengeWithoutFlags;
-        });
+      const unlockedHints = await getUnlockedHintsFor(req.user);
 
-        // SECURITY: Never expose security code to non-admin users
+      const competitionsWithoutFlags = competitionsWithDynamicPoints.map((competition: any) => {
+        const competitionId = competition._id?.toString() || '';
+        const challengesWithoutFlags = competition.challenges.map((challenge: any) =>
+          scrubChallengeForPlayer(
+            challenge,
+            `${competitionId}_${challenge._id}`,
+            unlockedHints
+          )
+        );
+
         const { securityCode, ...competitionWithoutCode } = competition;
         return {
           ...competitionWithoutCode,
@@ -266,20 +317,26 @@ export const getCompetition = async (req: AuthRequest, res: Response) => {
     // view leaderboard and results for ended competitions.  Flag submission
     // (submitCompetitionFlag) independently validates competition is active.
 
-    // SECURITY: Never expose flags to regular users
+    // SECURITY: Never expose flags, unbought hints or the security code to players
     if (req.user?.role !== 'admin' && req.user?.role !== 'super-admin') {
+      const unlockedHints = await getUnlockedHintsFor(req.user);
       const competitionObj = competition.toObject ? competition.toObject() : competition;
-      const challengesWithoutFlags = competitionObj.challenges.map((challenge: any) => {
-        const { flag, flags, ...challengeWithoutFlags } = challenge;
-        return challengeWithoutFlags;
-      });
+      const competitionId = (competition._id as any).toString();
 
-      const competitionToReturn = {
-        ...competitionObj,
+      const challengesWithoutFlags = competitionObj.challenges.map((challenge: any) =>
+        scrubChallengeForPlayer(
+          challenge,
+          `${competitionId}_${challenge._id}`,
+          unlockedHints
+        )
+      );
+
+      const { securityCode: _omitted, ...competitionWithoutCode } = competitionObj;
+
+      return res.json({
+        ...competitionWithoutCode,
         challenges: challengesWithoutFlags
-      };
-
-      return res.json(competitionToReturn);
+      });
     }
 
     res.json(competition);
@@ -430,6 +487,15 @@ export const getSolvedChallenges = async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { userId } = req.query;
 
+    // Players may only ask about themselves. Admins keep the ability to inspect
+    // a participant, which the monitoring view relies on.
+    const isStaff = req.user?.role === 'admin' || req.user?.role === 'super-admin';
+    const requestedUserId = typeof userId === 'string' && userId ? userId : req.user?.userId;
+
+    if (!isStaff && requestedUserId !== req.user?.userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
     const competition = await Competition.findById(id);
 
     if (!competition) {
@@ -442,7 +508,7 @@ export const getSolvedChallenges = async (req: AuthRequest, res: Response) => {
     }
 
     // Get the user whose solved challenges we want to fetch
-    const user = await User.findById(userId as string);
+    const user = await User.findById(requestedUserId as string);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -519,9 +585,33 @@ export const updateCompetitionStartTime = async (req: AuthRequest, res: Response
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    competition.startTime = new Date(startTime);
-    competition.endTime = new Date(endTime);
-    competition.status = status;
+    const parsedStart = new Date(startTime);
+    if (Number.isNaN(parsedStart.getTime())) {
+      return res.status(400).json({ error: 'Start time is not a valid date' });
+    }
+
+    let parsedEnd: Date | undefined;
+    if (endTime !== undefined && endTime !== null && endTime !== '') {
+      parsedEnd = new Date(endTime);
+      if (Number.isNaN(parsedEnd.getTime())) {
+        return res.status(400).json({ error: 'End time is not a valid date' });
+      }
+      if (parsedEnd <= parsedStart) {
+        return res.status(400).json({ error: 'End time must be after the start time' });
+      }
+    } else if (competition.hasTimeLimit !== false) {
+      return res.status(400).json({ error: 'A timed competition needs an end time' });
+    }
+
+    if (status !== undefined && !['pending', 'active', 'ended'].includes(status)) {
+      return res.status(400).json({ error: 'Status must be pending, active or ended' });
+    }
+
+    competition.startTime = parsedStart;
+    competition.endTime = parsedEnd;
+    if (status !== undefined) {
+      competition.status = status;
+    }
     await competition.save();
 
     res.json(competition);
@@ -582,6 +672,10 @@ export const submitCompetitionFlag = async (req: AuthRequest, res: Response) => 
         return res.status(404).json({ error: 'User not found' });
       }
 
+      if (user.isBanned) {
+        return res.status(403).json({ error: 'Your account is banned' });
+      }
+
       // Check if user already solved this challenge
       if (user.solvedChallenges.includes(challengeId)) {
         return res.status(400).json({ error: 'Challenge already solved' });
@@ -621,12 +715,13 @@ export const submitCompetitionFlag = async (req: AuthRequest, res: Response) => 
             challenge.initialPoints || 1000,
             challenge.minimumPoints || 100,
             challenge.decay || 38,
-            challenge.solves
+            challenge.solves + 1
           );
         }
 
         let totalAwardedPoints = awardedPoints;
-        const isFirstBlood = challenge.solves === 0;
+        // Provisional: settled against the atomic claim below.
+        let isFirstBlood = challenge.solves === 0;
 
         // Add configurable first blood bonus
         if (isFirstBlood) {
@@ -638,6 +733,7 @@ export const submitCompetitionFlag = async (req: AuthRequest, res: Response) => 
         const userUpdate = await User.findOneAndUpdate(
           {
             _id: (user as any)._id,
+            isBanned: { $ne: true },
             solvedChallenges: { $ne: challengeId }
           },
           {
@@ -658,21 +754,57 @@ export const submitCompetitionFlag = async (req: AuthRequest, res: Response) => 
           return res.status(400).json({ error: 'Challenge already solved' });
         }
 
-        // Update challenge solve count and track solver
-        competition.challenges[challengeIndex].solves += 1;
-        if (!competition.challenges[challengeIndex].solvers) {
-          competition.challenges[challengeIndex].solvers = [];
-        }
-        competition.challenges[challengeIndex].solvers.push({
+        const solverEntry = {
           odId: (user as any)._id.toString(),
           username: (user as any).username,
           fullName: (user as any).fullName || '',
-          solvedAt: new Date(),
-          isFirstBlood
-        });
-        // Mark the challenges array as modified so Mongoose saves the nested document
-        competition.markModified('challenges');
-        await competition.save();
+          solvedAt: new Date()
+        };
+
+        // Claim the solve count and first blood atomically. This was
+        // `challenges[i].solves += 1` on a document loaded at the top of the
+        // handler, so two players solving at once each wrote back a count that
+        // did not include the other — one solve vanished and both could be
+        // recorded as first blood. Only one writer can match `solves: 0`.
+        const firstBloodClaim = await Competition.updateOne(
+          { _id: id, challenges: { $elemMatch: { _id: challengeId, solves: 0 } } },
+          {
+            $inc: { 'challenges.$.solves': 1 },
+            $push: { 'challenges.$.solvers': { ...solverEntry, isFirstBlood: true } }
+          }
+        );
+
+        const wonFirstBlood = firstBloodClaim.modifiedCount > 0;
+
+        if (!wonFirstBlood) {
+          await Competition.updateOne(
+            { _id: id, 'challenges._id': challengeId },
+            {
+              $inc: { 'challenges.$.solves': 1 },
+              $push: { 'challenges.$.solvers': { ...solverEntry, isFirstBlood: false } }
+            }
+          );
+        }
+
+        // The award used a read taken before the claim. Settle up rather than
+        // leaving a bonus that was never earned.
+        if (wonFirstBlood !== isFirstBlood) {
+          const bonusDelta = (challenge.firstBloodBonus || 20) * (wonFirstBlood ? 1 : -1);
+          totalAwardedPoints += bonusDelta;
+          isFirstBlood = wonFirstBlood;
+          await User.updateOne(
+            {
+              _id: (userUpdate as any)._id,
+              'solvedChallengesDetails.challengeId': challengeId
+            },
+            {
+              $inc: {
+                competitionPoints: bonusDelta,
+                'solvedChallengesDetails.$.points': bonusDelta
+              }
+            }
+          );
+        }
 
         // Apply retroactive decay to all solvers of this challenge
         try {
@@ -694,9 +826,9 @@ export const submitCompetitionFlag = async (req: AuthRequest, res: Response) => 
         });
 
         if (integratedChallenge) {
-          // Update the integrated challenge solve count
-          integratedChallenge.solves += 1;
-          await integratedChallenge.save();
+          // $inc for the same reason as above — `+= 1` on a loaded document
+          // loses concurrent increments.
+          await Challenge.updateOne({ _id: integratedChallenge._id }, { $inc: { solves: 1 } });
         }
 
         res.json({
@@ -1123,6 +1255,10 @@ export const buyCompetitionHint = async (req: AuthRequest, res: Response) => {
     const user = await User.findById(req.user?.userId);
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (user.isBanned) {
+      return res.status(403).json({ error: 'Your account is banned' });
     }
 
     // ATOMIC hint purchase to prevent race conditions (double purchase / insufficient points bypass)

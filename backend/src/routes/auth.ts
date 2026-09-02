@@ -4,6 +4,7 @@ import {
   login,
   loginAdmin,
   loginSuperAdmin,
+  logout,
   registerValidation,
   loginValidation,
   changeSuperAdminPassword,
@@ -17,6 +18,7 @@ router.post('/register', registerValidation, register);
 router.post('/login', loginValidation, login);
 router.post('/login-admin', loginValidation, loginAdmin);
 router.post('/login-super-admin', loginValidation, loginSuperAdmin);
+router.post('/logout', logout);
 router.patch(
   '/super-admin/password',
   authenticate,

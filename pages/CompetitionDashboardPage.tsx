@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNow, isCompetitionOver, formatTimeRemaining } from '../src/hooks/useCompetitionClock';
 import { useParams, useNavigate } from 'react-router-dom';
 import { competitionService } from '../services/competitionService';
 import { refreshCompetitionDashboard } from '../services/competitionRefreshService';
@@ -93,12 +94,11 @@ const CompetitionDashboardPage: React.FC = () => {
   const currentUser = userData ? JSON.parse(userData) : null;
   const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super-admin');
 
-  const isCompetitionEnded = () => {
-    if (!competition) return false;
-    const now = new Date();
-    const endTime = new Date(competition.endTime);
-    return now > endTime || competition.status === 'ended';
-  };
+  // Ticks once a second so the countdown moves and the page locks itself when
+  // the time runs out, instead of freezing at whatever it read on load.
+  const now = useNow();
+
+  const isCompetitionEnded = () => isCompetitionOver(competition, now);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -246,7 +246,7 @@ const CompetitionDashboardPage: React.FC = () => {
 
   const totalChallenges = competition?.challenges?.length || 0;
   const ended = isCompetitionEnded();
-  const progressPct = totalChallenges > 0 ? Math.round((solvedChallenges.size / totalChallenges) * 100) : 0;
+  const progressPct = totalChallenges > 0 ? Math.min(100, Math.round((solvedChallenges.size / totalChallenges) * 100)) : 0;
 
   // Pick hero image based on competition state
   const heroImage = ended
@@ -367,7 +367,7 @@ const CompetitionDashboardPage: React.FC = () => {
               <h1 className="text-4xl md:text-5xl font-black text-fg tracking-tight">{competition.name}</h1>
               {!ended && (
                 <p className="text-muted mt-2 flex items-center gap-2 text-sm">
-                  <Clock className="w-4 h-4" /> {getTimeRemaining(competition.endTime)} remaining
+                  <Clock className="w-4 h-4" /> {formatTimeRemaining(competition.endTime, now, competition.hasTimeLimit)} remaining
                 </p>
               )}
             </div>
@@ -462,7 +462,7 @@ const CompetitionDashboardPage: React.FC = () => {
               <span className="text-xs text-dim">Time Left</span>
               <Clock className="w-4 h-4 text-info" />
             </div>
-            <p className="text-2xl font-black text-fg">{ended ? 'Ended' : getTimeRemaining(competition.endTime)}</p>
+            <p className="text-2xl font-black text-fg">{ended ? 'Ended' : formatTimeRemaining(competition.endTime, now, competition.hasTimeLimit)}</p>
             {!ended && competition.endTime && <p className="text-[10px] text-faint mt-1">{new Date(competition.endTime).toLocaleDateString()}</p>}
           </div>
         </div>
@@ -744,21 +744,6 @@ const CompetitionDashboardPage: React.FC = () => {
       </AnimatePresence>
     </div>
   );
-};
-
-const getTimeRemaining = (endTime: string) => {
-  if (!endTime) return 'No time limit';
-  const now = new Date();
-  const end = new Date(endTime);
-  if (isNaN(end.getTime())) return 'No time limit';
-  const diff = end.getTime() - now.getTime();
-  if (diff <= 0) return 'Ended';
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
 };
 
 export default CompetitionDashboardPage;

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useNow, isCompetitionOver } from '../src/hooks/useCompetitionClock';
 import { useParams, useNavigate } from 'react-router-dom';
 import { competitionService } from '../services/competitionService';
+import { userService } from '../services/userService';
 import { refreshCompetitionDashboard } from '../services/competitionRefreshService';
 import Card from '../components/ui/card';
 import Button from '../components/ui/button';
@@ -64,6 +66,10 @@ const CompetitionChallengeDetailPage: React.FC = () => {
   const [selectedHint, setSelectedHint] = useState<{ index: number; cost: number; title: string } | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
+  // Re-renders once a second so the end of the competition actually closes this
+  // page, rather than waiting for a rejected submission to reveal it.
+  const now = useNow();
+
   // Check if current user is admin
   const userData = localStorage.getItem('user');
   const currentUserData = userData ? JSON.parse(userData) : null;
@@ -103,9 +109,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
 
       // Redirect non-admin users away from ended competition challenges
       const isUserAdmin = profileData.role === 'admin' || profileData.role === 'super-admin';
-      const now = new Date();
-      const competitionEnded = competitionData.status === 'ended' ||
-        (competitionData.hasTimeLimit !== false && competitionData.endTime && now > new Date(competitionData.endTime));
+      const competitionEnded = isCompetitionOver(competitionData, Date.now());
       if (competitionEnded && !isUserAdmin) {
         navigate(`/competition/${id}`);
         return;
@@ -169,12 +173,26 @@ const CompetitionChallengeDetailPage: React.FC = () => {
         refreshCompetitionDashboard(id!);
 
         // Update user data
-        const userData = localStorage.getItem('user');
-        if (userData) {
-          const user = JSON.parse(userData);
-          user.competitionPoints = (user.competitionPoints || 0) + result.points;
-          localStorage.setItem('user', JSON.stringify(user));
-          window.dispatchEvent(new CustomEvent('userUpdate', { detail: user }));
+        // Refresh from the server rather than adding `result.points` locally:
+        // retroactive decay rewrites the award immediately after the solve, so
+        // adding the returned figure made the cached balance drift upward and
+        // permanently disagree with the leaderboard.
+        try {
+          const profile = await userService.getUserProfile();
+          const userData = localStorage.getItem('user');
+          if (userData) {
+            const merged = {
+              ...JSON.parse(userData),
+              points: profile.points ?? 0,
+              competitionPoints: profile.competitionPoints ?? 0,
+              unlockedHints: profile.unlockedHints ?? []
+            };
+            localStorage.setItem('user', JSON.stringify(merged));
+            setCurrentUser(merged);
+            window.dispatchEvent(new CustomEvent('userUpdate', { detail: merged }));
+          }
+        } catch {
+          /* non-fatal — the solve itself succeeded */
         }
       } else {
         setMessage({ type: 'error', text: result.message || 'Incorrect flag. Try again!' });
@@ -266,12 +284,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
   }
 
   const categoryColor = CATEGORY_COLORS[challenge.category] || CATEGORY_COLORS['Miscellaneous'];
-  const isCompetitionEnded = () => {
-    if (!competition) return false;
-    const now = new Date();
-    const endTime = new Date(competition.endTime);
-    return now > endTime || competition.status === 'ended';
-  };
+  const isCompetitionEnded = () => isCompetitionOver(competition, now);
 
   return (
     <div className="min-h-screen bg-canvas text-fg-soft pb-16">

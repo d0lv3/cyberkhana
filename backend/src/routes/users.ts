@@ -30,7 +30,7 @@ router.get('/me', authenticate, getUserProfile);
 router.get('/course-progress/linux', authenticate, getLinuxCourseProgress);
 router.get('/leaderboard', authenticate, getLeaderboard);
 router.get('/profile/:userId', authenticate, getPublicProfile);
-router.get('/', authenticate, getUsers);
+router.get('/', authenticate, requireAdmin, getUsers);
 router.get('/:userId/penalties', authenticate, requireAdmin, getUserPenalties);
 router.get('/:userId/course-progress/linux', authenticate, requireAdmin, getUserLinuxCourseProgressAdmin);
 router.patch('/profile', authenticate, updateProfile);

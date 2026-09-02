@@ -35,7 +35,7 @@ export interface ICompetitionChallenge extends Document {
   decay?: number;
   scoringMode?: 'dynamic' | 'static';
   currentPoints?: number;
-  difficulty?: 'Easy' | 'Medium' | 'Hard' | 'Expert';
+  difficulty?: 'Very Easy' | 'Easy' | 'Medium' | 'Hard' | 'Expert';
   estimatedTime?: number;
   firstBloodBonus?: number;
   createdAt: Date;

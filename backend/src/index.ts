@@ -12,6 +12,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import { verifyToken } from './middleware/auth';
 import { initializeSocket } from './services/socketService';
 import { requestLogger } from './middleware/requestLogger';
+import { startCompetitionScheduler } from './services/competitionScheduler';
 import { logger } from './utils/logger';
 
 import authRoutes from './routes/auth';
@@ -23,6 +24,17 @@ import announcementRoutes from './routes/announcements';
 import activityRoutes from './routes/activity';
 
 dotenv.config();
+
+// Every auth path does `process.env.JWT_SECRET!` — the non-null assertion
+// satisfies the compiler and checks nothing at runtime. Without this the server
+// boots, reports healthy, and fails every authenticated request with a 500,
+// which reads as a total outage with no startup error pointing at the cause.
+if (!process.env.JWT_SECRET) {
+  logger.error('server.startup.missing_jwt_secret', {
+    message: 'JWT_SECRET is not set — refusing to start'
+  });
+  process.exit(1);
+}
 
 const app = express();
 
@@ -74,6 +86,22 @@ const allowedOrigins = Array.from(new Set([
 const isAllowedOrigin = (origin?: string) =>
   !origin || allowedOrigins.includes(normalizeOrigin(origin));
 
+/**
+ * Pulls `token` out of a raw Cookie header. The handshake gives us the header
+ * verbatim, and the previous code handed that whole string to jwt.verify — so
+ * the cookie path could never authenticate anyone.
+ */
+const readTokenCookie = (cookieHeader?: string): string | undefined => {
+  if (!cookieHeader) return undefined;
+  for (const part of cookieHeader.split(';')) {
+    const [name, ...rest] = part.trim().split('=');
+    if (name === 'token' && rest.length) {
+      return decodeURIComponent(rest.join('='));
+    }
+  }
+  return undefined;
+};
+
 // Create HTTP server for Socket.IO
 const httpServer = createServer(app);
 
@@ -100,7 +128,7 @@ initializeSocket(io);
 // Authentication middleware for Socket.IO
 io.use(async (socket: any, next) => {
   try {
-    const token = socket.handshake.auth.token || socket.handshake.headers.cookie;
+    const token = socket.handshake.auth.token || readTokenCookie(socket.handshake.headers.cookie);
     if (!token) {
       return next(new Error('Authentication error'));
     }
@@ -245,6 +273,10 @@ app.get('/api/health', (req, res) => {
 const PORT = process.env.PORT || 5001;
 
 connectDatabase().then(() => {
+  // Nothing closed a competition when its end time passed; `status` stayed
+  // `active` forever and the client's own clock was the only thing deciding.
+  startCompetitionScheduler();
+
   httpServer.listen(PORT, () => {
     logger.info('server.started', {
       port: PORT,

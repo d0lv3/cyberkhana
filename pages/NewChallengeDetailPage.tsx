@@ -166,13 +166,19 @@ const NewChallengeDetailPage: React.FC = () => {
         setChallenge({ ...challenge, hints: updatedHints });
       }
 
-      const newPoints = currentUser.points - selectedHint.cost;
+      // The server derives the price from the challenge and returns the
+      // resulting balance — use it instead of subtracting a locally-held cost.
+      const newPoints = result.remainingPoints ?? currentUser.points;
       setCurrentUser({ ...currentUser, points: newPoints });
 
       const userData = localStorage.getItem('user');
       if (userData) {
         const user = JSON.parse(userData);
-        const updatedUser = { ...user, points: newPoints };
+        const updatedUser = {
+          ...user,
+          points: newPoints,
+          unlockedHints: [...(user.unlockedHints || []), hintId]
+        };
         localStorage.setItem('user', JSON.stringify(updatedUser));
         window.dispatchEvent(new CustomEvent('userUpdate', { detail: updatedUser }));
       }

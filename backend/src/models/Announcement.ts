@@ -6,6 +6,10 @@ export interface IAnnouncement extends Document {
   author: string;
   universityCode: string;
   competitionId?: string;
+  // Present in the schema, previously missing here — so TypeScript could not
+  // see two fields the code writes and reads.
+  targetUserId?: mongoose.Types.ObjectId;
+  type?: 'info' | 'success' | 'warning' | 'danger';
   createdAt: Date;
   updatedAt: Date;
 }

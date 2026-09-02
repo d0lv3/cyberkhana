@@ -62,11 +62,14 @@ export const getChallenges = async (req: AuthRequest, res: Response) => {
       universityCode = universityCode.toUpperCase();
     }
 
-    const { includeUnpublished } = req.query;
+    const isStaff = req.user?.role === 'admin' || req.user?.role === 'super-admin';
 
-    // If includeUnpublished is true, fetch all challenges (for admin)
-    // Otherwise, only fetch published challenges (for users)
-    const query = includeUnpublished === 'true'
+    // Drafts are for admins only. This flag used to be taken at face value from
+    // anyone, so `?includeUnpublished=true` handed every unreleased challenge to
+    // any logged-in player.
+    const includeUnpublished = isStaff && req.query.includeUnpublished === 'true';
+
+    const query = includeUnpublished
       ? { universityCode }
       : { universityCode, isPublished: true };
 
@@ -117,9 +120,11 @@ export const getChallenges = async (req: AuthRequest, res: Response) => {
         }
       }
 
-      // SECURITY: Never expose the flag to regular users
+      // SECURITY: Never expose the flag to regular users.
+      // `flags` (alternative accepted flags) has to go too — stripping only
+      // `flag` left every alternate answer sitting in the response body.
       if (req.user?.role !== 'admin' && req.user?.role !== 'super-admin') {
-        const { flag, ...challengeWithoutFlag } = challengeObj;
+        const { flag, flags, ...challengeWithoutFlag } = challengeObj;
         return challengeWithoutFlag;
       }
 
@@ -194,6 +199,13 @@ export const getChallenge = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    // Hiding a draft from the list endpoint achieves nothing if it is still
+    // readable by id.
+    const isStaff = req.user?.role === 'admin' || req.user?.role === 'super-admin';
+    if (!isStaff && challenge.isPublished === false) {
+      return res.status(404).json({ error: 'Challenge not found' });
+    }
+
     const challengeObj = challenge.toObject();
     if (challenge.scoringMode === 'static') {
       challengeObj.currentPoints = challenge.points;
@@ -238,9 +250,10 @@ export const getChallenge = async (req: AuthRequest, res: Response) => {
       }
     }
 
-    // SECURITY: Never expose the flag to regular users
+    // SECURITY: Never expose the flag to regular users (see the list endpoint —
+    // `flags` is just as sensitive as `flag`).
     if (req.user?.role !== 'admin' && req.user?.role !== 'super-admin') {
-      const { flag, ...challengeWithoutFlag } = challengeObj;
+      const { flag, flags, ...challengeWithoutFlag } = challengeObj;
       return res.json(challengeWithoutFlag);
     }
 
@@ -256,8 +269,16 @@ export const createChallenge = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'Only admins can create challenges' });
     }
 
+    // Same reasoning as updateChallenge: solve state is earned, not supplied.
+    const {
+      _id: _ignoredId,
+      solves: _ignoredSolves,
+      solvers: _ignoredSolvers,
+      ...challengePayload
+    } = req.body;
+
     const challenge = new Challenge({
-      ...req.body,
+      ...challengePayload,
       universityCode: req.user?.universityCode
     });
 
@@ -284,12 +305,26 @@ export const updateChallenge = async (req: AuthRequest, res: Response) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // If flag is empty, don't update it
-    if (!req.body.flag) {
-      const { flag, ...updateData } = req.body;
+    // Fields an edit may never touch. `universityCode` is the tenant boundary
+    // that was just checked three lines up — letting the body set it meant an
+    // admin could move a challenge into another university and lose it. The
+    // rest are earned state, not input.
+    const {
+      _id: _ignoredId,
+      universityCode: _ignoredUniversityCode,
+      solves: _ignoredSolves,
+      solvers: _ignoredSolvers,
+      createdAt: _ignoredCreatedAt,
+      updatedAt: _ignoredUpdatedAt,
+      ...editable
+    } = req.body;
+
+    // An empty flag means "leave the flag alone", not "clear it".
+    if (!editable.flag) {
+      const { flag, ...updateData } = editable;
       Object.assign(challenge, updateData);
     } else {
-      Object.assign(challenge, req.body);
+      Object.assign(challenge, editable);
     }
 
     await challenge.save();
@@ -366,6 +401,12 @@ export const submitFlag = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    // A draft is hidden from the list and the detail endpoint; accepting flags
+    // for one would let a player bank solves before release anyway.
+    if (req.user?.role === 'user' && challenge.isPublished === false) {
+      return res.status(404).json({ error: 'Challenge not found' });
+    }
+
     if (req.user?.role === 'user') {
       const challengeIdStr = id.toString();
 
@@ -403,13 +444,13 @@ export const submitFlag = async (req: AuthRequest, res: Response) => {
           challenge.initialPoints,
           challenge.minimumPoints,
           challenge.decay,
-          challenge.solves
+          challenge.solves + 1
         );
       }
 
       let totalAwardedPoints = awardedPoints;
-      // First blood bonus check (approximate due to race, but safe)
-      const isFirstBlood = challenge.solves === 0;
+      // Provisional: settled against the atomic claim below.
+      let isFirstBlood = challenge.solves === 0;
       if (isFirstBlood) {
         const firstBloodBonus = challenge.firstBloodBonus || 20;
         totalAwardedPoints += firstBloodBonus;
@@ -420,6 +461,7 @@ export const submitFlag = async (req: AuthRequest, res: Response) => {
       const userUpdate = await User.findOneAndUpdate(
         {
           _id: req.user.userId,
+          isBanned: { $ne: true },
           solvedChallenges: { $ne: challengeIdStr }
         },
         {
@@ -437,31 +479,67 @@ export const submitFlag = async (req: AuthRequest, res: Response) => {
       );
 
       if (!userUpdate) {
-        // Validation: Check if user exists or if just already solved
-        const userExists = await User.exists({ _id: req.user.userId });
-        if (!userExists) {
+        const existing = await User.findById(req.user.userId).select('isBanned');
+        if (!existing) {
           return res.status(404).json({ error: 'User not found' });
+        }
+        if (existing.isBanned) {
+          return res.status(403).json({ error: 'Your account is banned' });
         }
         return res.status(400).json({ error: 'Challenge already solved' });
       }
 
-      // Update challenge stats atomically as well
-      const challengeUpdate = await Challenge.findByIdAndUpdate(
-        id,
+      const solverEntry = {
+        odId: (userUpdate as any)._id.toString(),
+        username: (userUpdate as any).username,
+        fullName: (userUpdate as any).fullName || '',
+        solvedAt: new Date()
+      };
+
+      // Claim the solve count and first blood in one conditional write. Only one
+      // writer can match `solves: 0`, so two players solving in the same instant
+      // can no longer both be recorded as first blood.
+      let challengeUpdate = await Challenge.findOneAndUpdate(
+        { _id: id, solves: 0 },
         {
           $inc: { solves: 1 },
-          $push: {
-            solvers: {
-              odId: (userUpdate as any)._id.toString(),
-              username: (userUpdate as any).username,
-              fullName: (userUpdate as any).fullName || '',
-              solvedAt: new Date(),
-              isFirstBlood
-            }
-          }
+          $push: { solvers: { ...solverEntry, isFirstBlood: true } }
         },
         { new: true }
       );
+
+      const wonFirstBlood = Boolean(challengeUpdate);
+
+      if (!challengeUpdate) {
+        challengeUpdate = await Challenge.findByIdAndUpdate(
+          id,
+          {
+            $inc: { solves: 1 },
+            $push: { solvers: { ...solverEntry, isFirstBlood: false } }
+          },
+          { new: true }
+        );
+      }
+
+      // The award above used a read taken before the claim. If the race went the
+      // other way, settle up instead of leaving a bonus that was never earned.
+      if (wonFirstBlood !== isFirstBlood) {
+        const bonusDelta = (challenge.firstBloodBonus || 20) * (wonFirstBlood ? 1 : -1);
+        totalAwardedPoints += bonusDelta;
+        isFirstBlood = wonFirstBlood;
+        await User.updateOne(
+          {
+            _id: (userUpdate as any)._id,
+            'solvedChallengesDetails.challengeId': challengeIdStr
+          },
+          {
+            $inc: {
+              points: bonusDelta,
+              'solvedChallengesDetails.$.points': bonusDelta
+            }
+          }
+        );
+      }
 
       // Apply retroactive decay to update ALL solvers
       // This ensures score integrity over time

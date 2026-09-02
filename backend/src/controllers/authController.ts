@@ -7,6 +7,24 @@ import { generateToken, hashPassword, comparePassword } from '../utils/auth';
 import { IJWTPayload } from '../types';
 import { AuthRequest } from '../middleware/auth';
 
+// The auth cookie used to expire in 24 hours while the JWT inside it was signed
+// for 7 days, so the two disagreed for six days out of every seven.
+const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Clears the auth cookie. Logging out only ever cleared localStorage, leaving a
+ * valid cookie behind on the machine — which matters on the shared lab machines
+ * this platform runs on.
+ */
+export const logout = async (_req: Request, res: Response) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict'
+  });
+  res.json({ message: 'Logged out' });
+};
+
 // Helper to calculate general stats consistently
 // Note: This logic duplicates userController.ts to ensure consistency on login
 // ideally this should be a shared utility, but for now we duplicate to avoid major refactors
@@ -118,7 +136,7 @@ export const register = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: TOKEN_TTL_MS // matches the 7-day JWT it carries
     });
 
     res.status(201).json({
@@ -131,7 +149,9 @@ export const register = async (req: Request, res: Response) => {
         role: user.role,
         universityCode: user.universityCode,
         universityName: university.name,
-        points: user.bonusPoints || 0 // New users start with 0 (or bonus if set somehow)
+        points: user.bonusPoints || 0, // New users start with 0 (or bonus if set somehow)
+        competitionPoints: 0,
+        unlockedHints: []
       }
     });
   } catch (error) {
@@ -169,7 +189,7 @@ export const login = async (req: Request, res: Response) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        maxAge: TOKEN_TTL_MS // matches the 7-day JWT it carries
       });
 
       return res.json({
@@ -192,6 +212,12 @@ export const login = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
+    // Checked after the password so a wrong password and a banned account are
+    // indistinguishable to someone guessing.
+    if (user.isBanned) {
+      return res.status(403).json({ error: 'Your account has been banned. Contact an administrator.' });
+    }
+
     const payload: IJWTPayload = {
       userId: (user._id as any).toString(),
       username: user.username,
@@ -206,7 +232,7 @@ export const login = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: TOKEN_TTL_MS // matches the 7-day JWT it carries
     });
 
     // Get university name
@@ -236,7 +262,9 @@ export const login = async (req: Request, res: Response) => {
         role: user.role,
         universityCode: user.universityCode,
         universityName: university?.name || user.universityCode,
-        points: stats.points
+        points: stats.points,
+        competitionPoints: user.competitionPoints || 0,
+        unlockedHints: user.unlockedHints || []
       }
     });
   } catch (error) {
@@ -254,13 +282,17 @@ export const loginAdmin = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Invalid admin credentials' });
     }
 
-    if (user.universityCode !== universityCode.toUpperCase()) {
+    if (user.universityCode !== String(universityCode || '').toUpperCase()) {
       return res.status(401).json({ error: 'Invalid admin credentials' });
     }
 
     const isMatch = await comparePassword(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid admin credentials' });
+    }
+
+    if (user.isBanned) {
+      return res.status(403).json({ error: 'Your account has been banned. Contact an administrator.' });
     }
 
     const payload: IJWTPayload = {
@@ -277,7 +309,7 @@ export const loginAdmin = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: TOKEN_TTL_MS // matches the 7-day JWT it carries
     });
 
     // Get university name
@@ -328,7 +360,7 @@ export const loginSuperAdmin = async (req: Request, res: Response) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+      maxAge: TOKEN_TTL_MS // matches the 7-day JWT it carries
     });
 
     res.json({

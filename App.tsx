@@ -41,7 +41,7 @@ const App: React.FC = () => {
       setUser(JSON.parse(userData));
     }
 
-    setTimeout(() => setIsLoading(false), 1000);
+    setIsLoading(false);
 
     // Listen for user updates to sync across components
     const handleUserUpdate = (e: CustomEvent) => {
@@ -60,10 +60,15 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    window.location.href = '/';
+    // Clearing localStorage alone left the auth cookie valid on the machine.
+    fetch('/api/auth/logout', { method: 'POST' }).catch(() => {
+      /* best effort — the local session is cleared either way */
+    }).finally(() => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      window.location.href = '/';
+    });
   };
 
   if (isLoading) {

@@ -6,9 +6,20 @@ export interface AuthRequest extends Request {
   user?: IJWTPayload;
 }
 
+/**
+ * The bearer token the request is actually presenting.
+ *
+ * The Authorization header comes first. The cookie used to, which meant a stale
+ * cookie from an earlier session silently overrode the token the app had in
+ * hand — the client sends the header on every call, so the header is the
+ * explicit statement of who is calling.
+ */
+const readToken = (req: AuthRequest): string | undefined =>
+  req.header('Authorization')?.replace('Bearer ', '') || req.cookies?.token;
+
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const token = req.cookies?.token || req.header('Authorization')?.replace('Bearer ', '');
+    const token = readToken(req);
 
     if (!token) {
       return res.status(401).json({ error: 'No authentication token provided' });
@@ -24,7 +35,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 
 export const authenticateSuperAdmin = (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const token = req.cookies?.token || req.header('Authorization')?.replace('Bearer ', '');
+    const token = readToken(req);
 
     if (!token) {
       return res.status(401).json({ error: 'No authentication token provided' });

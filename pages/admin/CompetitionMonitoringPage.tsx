@@ -85,12 +85,15 @@ const CompetitionMonitoringPage: React.FC = () => {
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    socket.on('competitionActivity', (activity) => {
+    // Named handlers so cleanup can remove exactly these. `socket.off('event')`
+    // with no handler tears down every listener for that event, including the
+    // live activity feed's own.
+    const onActivity = (activity: any) => {
       setActivities(prev => [activity, ...prev].slice(0, 50));
       setLastUpdate(new Date());
-    });
+    };
 
-    socket.on('flagSubmitted', () => {
+    const onFlagSubmitted = () => {
       if (id) {
         competitionService.getCompetitionLeaderboard(id).then((response) => {
           const leaderboardData = Array.isArray(response) ? response : response.leaderboard || [];
@@ -98,16 +101,20 @@ const CompetitionMonitoringPage: React.FC = () => {
           setLastUpdate(new Date());
         });
       }
-    });
+    };
 
-    socket.on('competitionUpdate', (data) => {
+    const onCompetitionUpdate = (data: any) => {
       if (data.competitionId === id) fetchCompetitionData(true);
-    });
+    };
+
+    socket.on('competitionActivity', onActivity);
+    socket.on('flagSubmitted', onFlagSubmitted);
+    socket.on('competitionUpdate', onCompetitionUpdate);
 
     return () => {
-      socket.off('competitionActivity');
-      socket.off('flagSubmitted');
-      socket.off('competitionUpdate');
+      socket.off('competitionActivity', onActivity);
+      socket.off('flagSubmitted', onFlagSubmitted);
+      socket.off('competitionUpdate', onCompetitionUpdate);
     };
   }, [socket, isConnected, id]);
 
@@ -144,9 +151,11 @@ const CompetitionMonitoringPage: React.FC = () => {
     const uniqueParticipants = leaderboard.length;
 
     const challengeCompletionRate = totalChallenges > 0 && uniqueParticipants > 0
-      ? ((totalSolves / (uniqueParticipants * totalChallenges)) * 100).toFixed(1)
+      ? Math.min(100, (totalSolves / (uniqueParticipants * totalChallenges)) * 100).toFixed(1)
       : 0;
 
+    // `solves` here means "challenges in this category that have been solved",
+    // not the raw solve count — see the bar that renders it.
     const categoryMap = new Map();
     competition?.challenges?.forEach((challenge: any) => {
       const category = challenge.category;
@@ -154,7 +163,7 @@ const CompetitionMonitoringPage: React.FC = () => {
         categoryMap.set(category, { name: category, solves: 0, total: 0 });
       }
       const stat = categoryMap.get(category);
-      stat.solves += challenge.solves || 0;
+      if ((challenge.solves || 0) > 0) stat.solves += 1;
       stat.total += 1;
     });
     const categoryStats = Array.from(categoryMap.values());
