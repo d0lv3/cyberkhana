@@ -2,9 +2,30 @@ import { Instagram, Send, Linkedin, Globe, ExternalLink } from 'lucide-react';
 
 import { useLang } from './LangContext';
 
-const SOCIALS = [
-  { label: 'Instagram', Icon: Instagram, href: 'https://www.instagram.com/cyberkhana' },
+interface Social {
+  label: string;
+  Icon: typeof Send;
+  href: string;
+  /** Only where the visible label cannot stand on its own. */
+  aria?: string;
+}
+
+/**
+ * Two Telegram destinations now, and they sit next to each other so the pair
+ * reads as one platform. The channel keeps the plain "Telegram" it has always
+ * had and the group takes "Group", which is only unambiguous beside it — a chip
+ * is too narrow for "Telegram Group" at a phone's width, so what the label
+ * cannot say the accessible name does.
+ */
+const SOCIALS: Social[] = [
   { label: 'Telegram', Icon: Send, href: 'https://t.me/cyberkhana' },
+  {
+    label: 'Group',
+    Icon: Send,
+    href: 'https://t.me/cyberkhana_chat',
+    aria: 'CyberKhana Telegram group',
+  },
+  { label: 'Instagram', Icon: Instagram, href: 'https://www.instagram.com/cyberkhana' },
   { label: 'LinkedIn', Icon: Linkedin, href: 'https://www.linkedin.com/company/cyberkhana/' },
 ];
 
@@ -58,13 +79,16 @@ const ConnectBar = () => {
           <ExternalLink size={11} aria-hidden />
         </a>
 
-        {/* An even three-up at every width, and one grid so they wrap together
-            rather than one at a time. */}
-        <div className="grid w-full grid-cols-3 gap-2">
-          {SOCIALS.map(({ label, Icon, href }) => (
+        {/* Two-up on a phone, four-up from sm, and one grid so they wrap
+            together rather than one at a time. Never three across: that leaves
+            a fourth alone on a row of its own, which reads as a mistake rather
+            than as a layout. */}
+        <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
+          {SOCIALS.map(({ label, Icon, href, aria }) => (
             <a
               key={label}
               href={href}
+              aria-label={aria}
               target="_blank"
               rel="noopener noreferrer"
               className={socialBtn}
