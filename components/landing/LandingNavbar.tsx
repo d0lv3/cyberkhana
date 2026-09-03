@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Globe } from 'lucide-react';
 import { useLang } from './LangContext';
 
 const LandingNavbar = () => {
@@ -44,22 +45,29 @@ const LandingNavbar = () => {
           />
         </Link>
 
-        <div className="flex items-center gap-1 sm:gap-4">
-          {/* Was a bare text link measuring 40x24 — under any usable target. */}
-          <Link
-            to="/login"
-            className="inline-flex items-center px-2 sm:px-0 min-h-tap text-sm sm:text-base text-fg-soft hover:text-brand transition-colors font-medium select-none"
-          >
-            {t('nav.login')}
-          </Link>
-
+        {/* Order matches the Academy's landing bar: language first, then the
+            two account actions together on the end. Login sitting between the
+            toggle and Get Started split a pair that belongs side by side. */}
+        <div className="flex items-center gap-1 sm:gap-3">
+          {/* Same treatment as the Academy's toggle — the globe plus the
+              language's own name, which says what you are switching TO more
+              plainly than a two-letter code. */}
           <button
             onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
             aria-label={lang === 'en' ? 'التبديل إلى العربية' : 'Switch to English'}
-            className="inline-flex items-center justify-center min-h-tap min-w-tap px-2 text-xs font-bold rounded border border-edge text-muted hover:text-brand-neon hover:border-brand-neon transition-all select-none"
+            className="inline-flex items-center gap-1.5 min-h-tap px-2 sm:px-3 rounded-lg text-xs font-semibold text-muted hover:text-brand-neon hover:bg-surface-hover transition-all select-none"
           >
-            {lang === 'en' ? 'AR' : 'EN'}
+            <Globe size={14} className="shrink-0" />
+            <span>{lang === 'en' ? 'العربية' : 'English'}</span>
           </button>
+
+          {/* Was a bare text link measuring 40x24 — under any usable target. */}
+          <Link
+            to="/login"
+            className="inline-flex items-center px-2 min-h-tap text-sm text-fg-soft hover:text-brand transition-colors font-medium select-none whitespace-nowrap"
+          >
+            {t('nav.login')}
+          </Link>
 
           <Link
             to="/register"

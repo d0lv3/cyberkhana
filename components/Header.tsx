@@ -27,10 +27,14 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
         {/* Right side controls */}
         <div className="flex items-center gap-2">
           {/* Announcements */}
+          {/* All three controls share one height so the row has a flat top and
+              bottom edge. The profile pill's height used to be whatever its
+              padding plus a 32px avatar came to (42px), leaving the two icon
+              buttons 6px shorter beside it. */}
           <Link
             to="/announcements"
             aria-label="Announcements"
-            className="w-9 h-9 touch:w-11 touch:h-11 rounded-lg bg-panel border border-edge flex items-center justify-center text-dim hover:text-brand hover:border-brand/40 transition-all"
+            className="w-10 h-10 touch:w-11 touch:h-11 rounded-lg bg-panel border border-edge flex items-center justify-center text-dim hover:text-brand hover:border-brand/40 transition-all"
           >
             <Bell size={16} />
           </Link>
@@ -45,12 +49,12 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
           <Link
             to="/profile"
             aria-label="My profile"
-            className="group flex items-center gap-2.5 rounded-lg border border-edge bg-panel p-1 pe-1 sm:pe-3 transition-colors hover:border-brand/40 hover:bg-surface-hover"
+            className="group flex h-10 touch:h-11 items-center gap-2.5 rounded-lg border border-edge bg-panel p-1 pe-1 sm:pe-3 transition-colors hover:border-brand/40 hover:bg-surface-hover"
           >
             <Avatar
               profileIcon={(user as any)?.profileIcon}
               name={displayName}
-              className="w-8 h-8 touch:w-10 touch:h-10 rounded-md border-0"
+              className="w-7 h-7 touch:w-8 touch:h-8 rounded-md border-0"
               initialClassName="text-sm"
             />
             <span className="hidden sm:flex min-w-0 flex-col leading-tight">
@@ -68,7 +72,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
           <button
             onClick={onLogout}
             aria-label="Log out"
-            className="w-9 h-9 touch:w-11 touch:h-11 rounded-lg bg-panel border border-edge flex items-center justify-center text-dim hover:text-red-400 hover:border-red-500/30 transition-all"
+            className="w-10 h-10 touch:w-11 touch:h-11 rounded-lg bg-panel border border-edge flex items-center justify-center text-dim hover:text-red-400 hover:border-red-500/30 transition-all"
           >
             <LogOut size={16} />
           </button>
