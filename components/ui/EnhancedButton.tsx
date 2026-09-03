@@ -24,7 +24,7 @@ const Button: React.FC<ButtonProps> = ({
 }) => {
   const baseClasses = [
     'relative inline-flex items-center justify-center font-semibold transition-all duration-200',
-    'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-base',
+    'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-canvas',
     'disabled:opacity-50 disabled:cursor-not-allowed',
     'active:scale-95',
     'select-none',
@@ -44,8 +44,8 @@ const Button: React.FC<ButtonProps> = ({
 
   const variantClasses = {
     primary: [
-      'bg-brand text-white',
-      'hover:bg-brand-deep',
+      'bg-brand-deep text-white',
+      'hover:bg-brand-press',
       'focus:ring-brand',
       'shadow-md hover:shadow-[0_0_16px_rgba(0,168,89,0.35)]',
     ].join(' '),

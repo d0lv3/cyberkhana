@@ -129,7 +129,7 @@ const AcademyLinkModal: React.FC<Props> = ({ open, onClose }) => {
               target="_blank"
               rel="noopener noreferrer"
               onClick={onClose}
-              className="flex h-11 items-center justify-center gap-2 rounded-lg bg-brand text-sm font-bold text-white transition-colors hover:bg-brand-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+              className="flex h-11 items-center justify-center gap-2 rounded-lg bg-brand-deep text-sm font-bold text-white transition-colors hover:bg-brand-press focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
             >
               Open Academy
               <ExternalLink size={14} />

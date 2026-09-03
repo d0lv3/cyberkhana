@@ -318,7 +318,7 @@ const CompetitionDashboardPage: React.FC = () => {
               />
               {securityCodeError && <p className="text-danger text-sm mt-2">{securityCodeError}</p>}
             </div>
-            <Button type="submit" className="w-full bg-brand text-white hover:bg-[#00c064] font-bold" disabled={enteringCode}>
+            <Button type="submit" className="w-full bg-brand-deep text-white hover:bg-brand-press font-bold" disabled={enteringCode}>
               {enteringCode ? 'Verifying...' : 'Enter Competition'}
             </Button>
           </form>
@@ -734,7 +734,7 @@ const CompetitionDashboardPage: React.FC = () => {
                   autoFocus
                 />
                 {securityCodeError && <p className="text-danger text-sm">{securityCodeError}</p>}
-                <Button type="submit" className="w-full bg-brand text-white hover:bg-[#00c064] font-bold" disabled={enteringCode}>
+                <Button type="submit" className="w-full bg-brand-deep text-white hover:bg-brand-press font-bold" disabled={enteringCode}>
                   {enteringCode ? 'Verifying...' : 'Enter Competition'}
                 </Button>
               </form>

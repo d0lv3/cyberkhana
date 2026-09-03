@@ -354,7 +354,7 @@ const NewChallengeDetailPage: React.FC = () => {
                         href={file.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center justify-between p-4 bg-canvas/80 rounded-xl border border-edge hover:border-brand-neon/30 hover:bg-edge/50 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+                        className="flex items-center justify-between p-4 bg-canvas/80 rounded-xl border border-edge hover:border-brand-neon/30 hover:bg-edge/50 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
                       >
                         <div className="flex items-center gap-3">
                           <div className="p-2 rounded-lg bg-edge group-hover:bg-brand-neon/20 group-hover:text-brand-neon">
@@ -380,7 +380,7 @@ const NewChallengeDetailPage: React.FC = () => {
                     href={(challenge as any).challengeLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-auto block p-5 bg-brand/10 hover:bg-brand/20 border border-brand/20 rounded-2xl transition-all group text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon focus-visible:ring-offset-2 focus-visible:ring-offset-base"
+                    className="mt-auto block p-5 bg-brand/10 hover:bg-brand/20 border border-brand/20 rounded-2xl transition-all group text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
                   >
                     <ExternalLink size={24} className="text-brand-neon mx-auto mb-2 group-hover:scale-110 transition-transform" />
                     <span className="text-brand-neon font-bold block">Access Challenge Instance</span>
@@ -454,17 +454,32 @@ const NewChallengeDetailPage: React.FC = () => {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-muted group-focus-within:text-brand-neon transition-colors">
-                      <FlagIcon size={18} />
+                  <div>
+                    <label htmlFor="flag-input" className="mb-2 block text-sm font-semibold text-fg-soft">
+                      Flag
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-muted group-focus-within:text-brand-neon transition-colors">
+                        <FlagIcon size={18} />
+                      </div>
+                      <Input
+                        id="flag-input"
+                        type="text"
+                        placeholder="khana{...}"
+                        value={flag}
+                        onChange={(e) => setFlag(e.target.value)}
+                        /* A flag is an exact string, and a phone keyboard will
+                           capitalise its first letter and autocorrect anything it
+                           does not recognise — which is every flag. Without these
+                           four, a correct answer typed on mobile is submitted
+                           wrong and the player blames themselves. */
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        autoComplete="off"
+                        spellCheck={false}
+                        className="w-full pl-12 py-4 bg-canvas border-edge focus:border-brand-neon/50 rounded-2xl transition-all"
+                      />
                     </div>
-                    <Input
-                      type="text"
-                      placeholder="khana{...}"
-                      value={flag}
-                      onChange={(e) => setFlag(e.target.value)}
-                      className="w-full pl-12 py-4 bg-canvas border-edge focus:border-brand-neon/50 rounded-2xl transition-all"
-                    />
                   </div>
 
                   <Button
@@ -480,6 +495,11 @@ const NewChallengeDetailPage: React.FC = () => {
               <AnimatePresence>
                 {message.text && (
                   <motion.div
+                    /* The result of a flag submission was carried by colour and
+                       an icon alone, so a screen reader announced nothing at the
+                       one moment that matters most in the product. role="alert"
+                       announces the text as soon as this node is inserted. */
+                    role="alert"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}

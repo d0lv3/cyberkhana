@@ -82,7 +82,7 @@ const FilterBar: React.FC<FilterBarProps> = ({
           <SlidersHorizontal className="w-4 h-4" />
           <span>Filters</span>
           {activeFiltersCount > 0 && (
-            <span className="px-1.5 py-0.5 bg-brand text-white rounded text-xs font-bold">
+            <span className="px-1.5 py-0.5 bg-brand-deep text-white rounded text-xs font-bold">
               {activeFiltersCount}
             </span>
           )}

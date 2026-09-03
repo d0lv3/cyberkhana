@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -73,7 +74,7 @@ const App: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#050505]">
+      <div className="flex items-center justify-center min-h-screen bg-canvas">
         <Loader />
       </div>
     );
@@ -81,20 +82,27 @@ const App: React.FC = () => {
 
   if (!user) {
     return (
-      <HashRouter>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
-          <Route path="/register" element={<RegisterPage onRegister={handleLogin} />} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </HashRouter>
+      <MotionConfig reducedMotion="user">
+        <HashRouter>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+            <Route path="/register" element={<RegisterPage onRegister={handleLogin} />} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </HashRouter>
+      </MotionConfig>
     );
   }
 
   const isSuperAdmin = user.role === 'super-admin';
 
   return (
+    /* 19 files animate with framer-motion and only one of them checked the
+       user's motion preference. reducedMotion="user" makes every motion
+       component in the tree honour prefers-reduced-motion: transform and
+       layout animations are dropped, opacity fades are kept. */
+    <MotionConfig reducedMotion="user">
     <ConfirmationProvider>
       <SocketProvider user={user}>
         <SocketToast />
@@ -151,6 +159,7 @@ const App: React.FC = () => {
         </HashRouter>
       </SocketProvider>
     </ConfirmationProvider>
+    </MotionConfig>
   );
 };
 

@@ -5,7 +5,6 @@ import Button from '../components/ui/EnhancedButton';
 import Input from '../components/ui/input';
 import CyberMatrixHero from '../components/ui/cyber-matrix-hero';
 import { Shield, KeyRound, LogIn, School, Eye, EyeOff, UserPlus, Lock } from 'lucide-react';
-import Loader from '../components/ui/Loader';
 import BrandLogo from '../components/ui/BrandLogo';
 
 interface RegisterPageProps {
@@ -133,139 +132,158 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
               </p>
             </div>
 
-            {isRegistering ? (
-              <div className="flex flex-col items-center justify-center py-12">
-                <Loader />
-                <p className="text-muted mt-4">Creating your account...</p>
+            {/* Kept mounted while submitting — see the note in LoginPage. */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {error && (
+                <div role="alert" className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <label htmlFor="register-username" className="block text-sm font-medium text-dim">
+                  Username
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Shield className="h-5 w-5 text-faint" />
+                  </div>
+                  <Input
+                    id="register-username"
+                    type="text"
+                    placeholder="Choose a username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="pl-10 h-12"
+                    autoComplete="username"
+                    disabled={isRegistering}
+                    required
+                  />
+                </div>
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                {error && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                    <p className="text-red-400 text-sm">{error}</p>
-                  </div>
-                )}
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-dim">Username</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Shield className="h-5 w-5 text-faint" />
-                    </div>
-                    <Input
-                      type="text"
-                      placeholder="Choose a username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="pl-10 h-12"
-                      autoComplete="username"
-                      required
-                    />
+              <div className="space-y-2">
+                <label htmlFor="register-fullname" className="block text-sm font-medium text-dim">
+                  Full Name
+                  <span className="text-faint text-xs ml-2">({fullName.length}/50)</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <UserPlus className="h-5 w-5 text-faint" />
                   </div>
+                  <Input
+                    id="register-fullname"
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="pl-10 h-12"
+                    autoComplete="name"
+                    maxLength={50}
+                    disabled={isRegistering}
+                    required
+                  />
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-dim">
-                    Full Name
-                    <span className="text-faint text-xs ml-2">({fullName.length}/50)</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <UserPlus className="h-5 w-5 text-faint" />
-                    </div>
-                    <Input
-                      type="text"
-                      placeholder="Enter your full name"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="pl-10 h-12"
-                      autoComplete="name"
-                      maxLength={50}
-                      required
-                    />
+              <div className="space-y-2">
+                <label htmlFor="register-university" className="block text-sm font-medium text-dim">
+                  University code
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <School className="h-5 w-5 text-faint" />
                   </div>
+                  <Input
+                    id="register-university"
+                    type="text"
+                    placeholder="e.g., MIT123"
+                    value={universityCode}
+                    onChange={(e) => setUniversityCode(e.target.value.toUpperCase())}
+                    className="pl-10 h-12"
+                    autoComplete="off"
+                    autoCapitalize="characters"
+                    disabled={isRegistering}
+                    required
+                  />
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-dim">University code</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <School className="h-5 w-5 text-faint" />
-                    </div>
-                    <Input
-                      type="text"
-                      placeholder="e.g., MIT123"
-                      value={universityCode}
-                      onChange={(e) => setUniversityCode(e.target.value.toUpperCase())}
-                      className="pl-10 h-12"
-                      autoComplete="off"
-                      required
-                    />
+              <div className="space-y-2">
+                <label htmlFor="register-password" className="block text-sm font-medium text-dim">
+                  Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <KeyRound className="h-5 w-5 text-faint" />
                   </div>
+                  <Input
+                    id="register-password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Create a password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-12 h-12"
+                    autoComplete="new-password"
+                    disabled={isRegistering}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                    aria-controls="register-password"
+                    className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-faint hover:text-fg-soft transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon rounded-e-md"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-dim">Password</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <KeyRound className="h-5 w-5 text-faint" />
-                    </div>
-                    <Input
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="Create a password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10 pr-10 h-12"
-                      autoComplete="new-password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-faint hover:text-fg-soft transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
+              <div className="space-y-2">
+                <label htmlFor="register-confirm" className="block text-sm font-medium text-dim">
+                  Confirm password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-faint" />
                   </div>
+                  <Input
+                    id="register-confirm"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    placeholder="Confirm your password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="pl-10 pr-12 h-12"
+                    autoComplete="new-password"
+                    disabled={isRegistering}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showConfirmPassword}
+                    aria-controls="register-confirm"
+                    className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-faint hover:text-fg-soft transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon rounded-e-md"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-dim">Confirm password</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Lock className="h-5 w-5 text-faint" />
-                    </div>
-                    <Input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      placeholder="Confirm your password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="pl-10 pr-10 h-12"
-                      autoComplete="new-password"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-faint hover:text-fg-soft transition-colors"
-                    >
-                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
-                </div>
-
-                <Button
-                  type="submit"
-                  fullWidth
-                  size="lg"
-                  className="mt-6 h-12"
-                  isLoading={isRegistering}
-                  leftIcon={<LogIn className="w-5 h-5" />}
-                >
-                  Create Account
-                </Button>
-              </form>
-            )}
+              <Button
+                type="submit"
+                fullWidth
+                size="lg"
+                className="mt-6 h-12"
+                isLoading={isRegistering}
+                leftIcon={<LogIn className="w-5 h-5" />}
+              >
+                {isRegistering ? 'Creating your account…' : 'Create Account'}
+              </Button>
+            </form>
           </div>
 
           <div className="mt-6 text-center">

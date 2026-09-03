@@ -232,7 +232,7 @@ const ProfilePage: React.FC = () => {
                   <button
                     onClick={handleSaveName}
                     disabled={savingName}
-                    className="p-2 bg-brand hover:bg-brand-deep rounded text-white transition-colors disabled:opacity-50"
+                    className="p-2 bg-brand-deep hover:bg-brand-press rounded text-white transition-colors disabled:opacity-50"
                   >
                     <Check size={16} />
                   </button>

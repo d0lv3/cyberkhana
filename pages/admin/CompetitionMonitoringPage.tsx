@@ -376,10 +376,10 @@ const CompetitionMonitoringPage: React.FC = () => {
                   <table className="w-full min-w-[600px] text-sm">
                     <thead className="border-b border-edge bg-[#151c29]">
                       <tr>
-                        <th className="text-left px-5 py-3 text-xs text-dim">Rank</th>
-                        <th className="text-left px-5 py-3 text-xs text-dim">Participant</th>
-                        <th className="text-left px-5 py-3 text-xs text-dim">Score</th>
-                        <th className="text-left px-5 py-3 text-xs text-dim">Challenges Solved</th>
+                        <th scope="col" className="text-left px-5 py-3 text-xs text-dim">Rank</th>
+                        <th scope="col" className="text-left px-5 py-3 text-xs text-dim">Participant</th>
+                        <th scope="col" className="text-left px-5 py-3 text-xs text-dim">Score</th>
+                        <th scope="col" className="text-left px-5 py-3 text-xs text-dim">Challenges Solved</th>
                       </tr>
                     </thead>
                     <tbody>

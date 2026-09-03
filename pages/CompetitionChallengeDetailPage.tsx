@@ -596,7 +596,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
 
           <button
             onClick={() => setShowSuccessModal(false)}
-            className="w-full py-3 bg-brand hover:bg-brand-deep text-white font-semibold rounded-lg transition-colors"
+            className="w-full py-3 bg-brand-deep hover:bg-brand-press text-white font-semibold rounded-lg transition-colors"
           >
             OK
           </button>

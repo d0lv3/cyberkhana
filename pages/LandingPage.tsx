@@ -27,7 +27,12 @@ import LandingFooter from '../components/landing/LandingFooter';
 const LandingPage: React.FC = () => {
   return (
     <LangProvider>
-      <div className="bg-canvas app-min-shell overflow-x-hidden" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
+      {/* No inline fontFamily here. It pinned the whole page to IBM Plex Sans
+          Arabic in both languages, and only that face's 700 weight is loaded —
+          so every lighter weight on an English page was browser-synthesised.
+          LangProvider sets dir="rtl" in Arabic, which index.css already keys the
+          Arabic face off, so Arabic is unaffected and English gets Poppins. */}
+      <div className="bg-canvas app-min-shell overflow-x-hidden">
         <LandingNavbar />
         <HeroSection />
         <div id="how"><HowItWorks /></div>

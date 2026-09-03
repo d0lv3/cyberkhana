@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import Button from '../components/ui/EnhancedButton';
 import Input from '../components/ui/input';
 import { Shield, KeyRound, LogIn, Eye, EyeOff, ArrowLeft } from 'lucide-react';
-import Loader from '../components/ui/Loader';
 import BrandLogo from '../components/ui/BrandLogo';
 
 interface LoginPageProps {
@@ -79,82 +78,90 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLogin }) => {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-brand/20 rounded-full mb-4">
               <BrandLogo variant="mark" alt="" className="h-8 w-8 object-contain" />
             </div>
-            <h2 className="text-3xl font-bold text-fg mb-2">
+            <h1 className="text-3xl font-bold text-fg mb-2">
               Welcome Back
-            </h2>
+            </h1>
             <p className="text-muted text-sm">
               Sign in to your account
             </p>
           </div>
 
-          {isLoggingIn ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <Loader />
-              <p className="text-zinc-400 mt-4">Authenticating...</p>
+          {/* The form stays mounted while the request is in flight. Swapping it
+              for a spinner destroyed the fields, dropped keyboard focus to
+              <body>, and re-rendered the whole card under the reader on failure.
+              The submit button carries the pending state instead. */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div role="alert" className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label htmlFor="login-username" className="block text-sm font-medium text-dim">
+                Username
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Shield className="h-5 w-5 text-faint" />
+                </div>
+                <Input
+                  id="login-username"
+                  type="text"
+                  placeholder="Enter your username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="pl-10 h-12"
+                  autoComplete="username"
+                  disabled={isLoggingIn}
+                  required
+                />
+              </div>
             </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <p className="text-red-400 text-sm">{error}</p>
-                </div>
-              )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-dim">Username</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Shield className="h-5 w-5 text-faint" />
-                  </div>
-                  <Input
-                    type="text"
-                    placeholder="Enter your username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="pl-10 h-12"
-                    autoComplete="username"
-                    required
-                  />
+            <div className="space-y-2">
+              <label htmlFor="login-password" className="block text-sm font-medium text-dim">
+                Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <KeyRound className="h-5 w-5 text-faint" />
                 </div>
+                <Input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10 pr-12 h-12"
+                  autoComplete="current-password"
+                  disabled={isLoggingIn}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  aria-pressed={showPassword}
+                  aria-controls="login-password"
+                  className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-muted hover:text-fg-soft transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon rounded-e-md"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-dim">Password</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <KeyRound className="h-5 w-5 text-faint" />
-                  </div>
-                  <Input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10 pr-10 h-12"
-                    autoComplete="current-password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-zinc-500 hover:text-zinc-300 transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                fullWidth
-                size="lg"
-                className="mt-6 h-12"
-                isLoading={isLoggingIn}
-                leftIcon={<LogIn className="w-5 h-5" />}
-              >
-                Sign In
-              </Button>
-            </form>
-          )}
+            <Button
+              type="submit"
+              fullWidth
+              size="lg"
+              className="mt-6 h-12"
+              isLoading={isLoggingIn}
+              leftIcon={<LogIn className="w-5 h-5" />}
+            >
+              {isLoggingIn ? 'Authenticating…' : 'Sign In'}
+            </Button>
+          </form>
         </div>
 
         <div className="mt-6 text-center">

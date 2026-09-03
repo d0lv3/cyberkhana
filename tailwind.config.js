@@ -44,10 +44,17 @@ export default {
         'edge-soft': '#2a3346',
         'edge-strong': '#1e293b',
         'edge-light': '#354562',
-        // Brand greens
+        // Brand greens.
+        // `brand` is the identity green and stays exactly as it was — it is
+        // correct for icons, dots, borders, tinted washes and text-on-dark
+        // (6.08:1 on canvas). It is NOT correct behind white label text:
+        // #fff on #00a859 is 3.11:1, under the 4.5:1 AA needs at our 14px
+        // button size. Solid buttons therefore fill with `brand-deep`
+        // (5.44:1) and press to `brand-press` (7.11:1).
         brand: '#00a859',
         'brand-neon': '#9fef00',
         'brand-deep': '#007a42',
+        'brand-press': '#006635',
         mint: '#34d399',
         // Semantic accents
         info: '#60a5fa',
@@ -60,8 +67,13 @@ export default {
         muted: '#9aa5bf',
         'muted-alt': '#7d8aa5',
         dim: '#8390ac',
-        faint: '#6e7a94',
-        faintest: '#4d5a73',
+        // Lifted from #6e7a94 / #4d5a73. Both carried real body copy —
+        // challenge descriptions, timestamps, solve counts — at 4.39:1 and
+        // 2.73:1 on canvas, and worse on raised surfaces (3.66 / 2.27), so
+        // neither met AA. These clear 4.5:1 on canvas, panel and surface
+        // alike while staying the two quietest steps in the ramp.
+        faint: '#8592ad',
+        faintest: '#7c8aa6',
       },
       spacing: {
         // Notch / home-indicator insets. Zero everywhere that has no cutout,

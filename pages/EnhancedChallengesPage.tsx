@@ -9,8 +9,14 @@ import Button from '../components/ui/EnhancedButton';
 import EmptyState from '../components/ui/EmptyState';
 import Toast, { ToastType } from '../components/ui/Toast';
 import { Search, Target, CheckCircle2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import ChallengeArt, { ArtKind, artKindFor, ART_ACCENT } from '../components/challenges/ChallengeArt';
+
+/* Each challenge row is a real link, not a div with a click handler. That is
+   what gives it keyboard access, a focus ring, a context menu, middle-click and
+   cmd-click — all of which a list of shareable things needs, and none of which
+   an onClick div has. motion.create keeps the entrance animation. */
+const MotionLink = motion.create(Link);
 
 interface ActiveToast { id: string; type: ToastType; message: string }
 
@@ -83,7 +89,6 @@ const SORT_OPTIONS = [
 ];
 
 const EnhancedChallengesPage: React.FC = () => {
-  const navigate = useNavigate();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [solvedChallenges, setSolvedChallenges] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -272,7 +277,7 @@ const EnhancedChallengesPage: React.FC = () => {
 
       {/* ── HORIZONTAL CATEGORY TABS ── */}
       <div className="bg-panel border-b border-edge sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 flex overflow-x-auto custom-scrollbar no-scrollbar py-4 gap-2">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 flex scroll-x py-4 gap-2">
           {CATEGORIES.map(cat => {
             const isActive = selectedCategory === cat.value;
             return (
@@ -312,6 +317,7 @@ const EnhancedChallengesPage: React.FC = () => {
               <input
                 type="text"
                 placeholder="Search..."
+                aria-label="Search challenges by title"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-inset border border-edge rounded-lg py-2 pl-9 pr-4 text-sm text-fg focus:outline-none focus:border-brand-neon"
@@ -323,6 +329,7 @@ const EnhancedChallengesPage: React.FC = () => {
               <select
                 value={selectedUniversity}
                 onChange={(e) => setSelectedUniversity(e.target.value)}
+                aria-label="View challenges for university"
                 title="University"
                 className="bg-inset border border-edge text-sm font-semibold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
               >
@@ -339,6 +346,7 @@ const EnhancedChallengesPage: React.FC = () => {
           <div className="flex w-full lg:w-auto items-center gap-3 overflow-x-auto pb-2 lg:pb-0">
             {/* Status Filter */}
             <select
+              aria-label="Filter by status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="bg-inset border border-edge text-sm font-semibold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
@@ -350,6 +358,7 @@ const EnhancedChallengesPage: React.FC = () => {
 
             {/* Difficulty Filter */}
             <select
+              aria-label="Filter by difficulty"
               value={difficultyFilter}
               onChange={(e) => setDifficultyFilter(e.target.value)}
               className="bg-inset border border-edge text-sm font-semibold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
@@ -364,6 +373,7 @@ const EnhancedChallengesPage: React.FC = () => {
 
             {/* Sort */}
             <select
+              aria-label="Sort challenges"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="bg-inset border border-edge text-fg-soft text-sm font-semibold rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
@@ -395,13 +405,16 @@ const EnhancedChallengesPage: React.FC = () => {
                 const diffColor = DIFFICULTY_COLORS[challenge.difficulty] || '#9aa5bf';
                 
                 return (
-                  <motion.div
+                  <MotionLink
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.02 }}
+                    /* Capped: this list re-mounts on every category tab, search
+                       keystroke and sort change, so an uncapped index delay made
+                       the 40th row arrive 800ms late over and over. */
+                    transition={{ delay: Math.min(index * 0.02, 0.3) }}
                     key={challenge._id}
-                    onClick={() => navigate(`/challenges/${challenge._id}`)}
-                    className="group border-b border-edge last:border-b-0 hover:bg-surface cursor-pointer select-none transition-colors p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                    to={`/challenges/${challenge._id}`}
+                    className="group border-b border-edge last:border-b-0 hover:bg-surface cursor-pointer select-none transition-colors p-4 md:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-neon focus-visible:-outline-offset-2"
                   >
                     
                     {/* Left: Status & Identity.
@@ -448,7 +461,7 @@ const EnhancedChallengesPage: React.FC = () => {
                       </div>
                     </div>
 
-                  </motion.div>
+                  </MotionLink>
                 )
               })}
             </div>

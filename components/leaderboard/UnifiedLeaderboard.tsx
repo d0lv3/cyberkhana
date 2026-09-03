@@ -389,7 +389,16 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
                 }}
                 className={`${ROW_GRID} px-4 sm:px-5 py-3 transition-colors ${
                   entry.isCurrentUser ? 'bg-brand/10' : 'hover:bg-surface-hover'
-                } ${onSelectEntry ? 'cursor-pointer' : ''}`}
+                } ${
+                  onSelectEntry
+                    /* Not ring-inset: this config defines a colour token named
+                       `inset`, so `ring-inset` also rewrites --tw-ring-color to
+                       #0e1522 and the ring comes out near-black. An outline with
+                       a negative offset draws inside the box, so it is also not
+                       clipped by the container's overflow-hidden. */
+                    ? 'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-neon focus-visible:-outline-offset-2'
+                    : ''
+                }`}
               >
                 <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-sm font-black text-muted">
                   {entry.rank}

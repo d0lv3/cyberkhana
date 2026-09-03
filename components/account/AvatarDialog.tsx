@@ -132,7 +132,7 @@ const AvatarDialog: React.FC<AvatarDialogProps> = ({
               type="button"
               onClick={() => onSave(draft)}
               disabled={saving || !dirty}
-              className="flex h-10 items-center justify-center rounded-lg bg-brand text-sm font-bold text-white transition-colors hover:bg-brand-deep disabled:opacity-40"
+              className="flex h-10 items-center justify-center rounded-lg bg-brand-deep text-sm font-bold text-white transition-colors hover:bg-brand-press disabled:opacity-40"
             >
               {saving ? 'Saving…' : 'Save'}
             </button>

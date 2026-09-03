@@ -270,7 +270,7 @@ const AdminCompetitionRow: React.FC<{
                 ) : (
                   <button
                     onClick={() => navigate(`/competition/${competition._id}`)}
-                    className="flex-1 py-2.5 text-sm font-bold rounded bg-brand text-white hover:bg-brand-deep transition-colors flex items-center justify-center gap-2"
+                    className="flex-1 py-2.5 text-sm font-bold rounded bg-brand-deep text-white hover:bg-brand-press transition-colors flex items-center justify-center gap-2"
                   >
                     <Play size={14} /> Enter competition
                   </button>
@@ -402,7 +402,7 @@ const CompetitionPage: React.FC = () => {
             <button
               type="submit"
               disabled={enteringCode}
-              className="flex-1 py-2.5 text-sm font-bold rounded bg-brand text-white hover:bg-brand-deep transition-colors disabled:opacity-50"
+              className="flex-1 py-2.5 text-sm font-bold rounded bg-brand-deep text-white hover:bg-brand-press transition-colors disabled:opacity-50"
             >
               {enteringCode ? 'Checking...' : 'Enter'}
             </button>
@@ -431,7 +431,7 @@ const CompetitionPage: React.FC = () => {
           </div>
           <button
             onClick={openJoinModal}
-            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded bg-brand text-white hover:bg-brand-deep transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded bg-brand-deep text-white hover:bg-brand-press transition-colors"
           >
             <Lock size={15} /> Join with code
           </button>
