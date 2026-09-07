@@ -65,7 +65,13 @@ export interface IChallenge extends Document {
   solvers?: IChallengeSolver[]; // Track who solved the challenge
   fromCompetition?: boolean;
   competitionId?: string;
+  /* Where the challenge lives. Exactly one form is ever populated: a web
+     target is a link, a raw TCP target is a host and a port. Siblings rather
+     than one polymorphic field because challengeLink predates this and is read
+     across two controllers — this needs no migration. */
   challengeLink?: string;
+  challengeHost?: string;
+  challengePort?: number;
   difficulty?: 'Very Easy' | 'Easy' | 'Medium' | 'Hard' | 'Expert';
   estimatedTime?: number;
   firstBloodBonus?: number; // Configurable first blood bonus
@@ -163,6 +169,15 @@ const ChallengeSchema: Schema = new Schema({
   },
   challengeLink: {
     type: String
+  },
+  challengeHost: {
+    type: String,
+    trim: true
+  },
+  challengePort: {
+    type: Number,
+    min: 1,
+    max: 65535
   },
   difficulty: {
     type: String,

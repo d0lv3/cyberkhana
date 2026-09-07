@@ -9,6 +9,7 @@ import { SocketEvents } from '../services/socketService';
 import path from 'path';
 import Announcement from '../models/Announcement';
 import University from '../models/University';
+import { normaliseChallengeTarget } from '../utils/challengeTarget';
 
 // Get solvers for a challenge
 export const getChallengeSolvers = async (req: AuthRequest, res: Response) => {
@@ -277,8 +278,17 @@ export const createChallenge = async (req: AuthRequest, res: Response) => {
       ...challengePayload
     } = req.body;
 
+    // The target is the one part of the payload that can reach an <a href> and
+    // a terminal command, so it is checked here rather than trusted from the
+    // form that happened to send it.
+    const target = normaliseChallengeTarget(challengePayload);
+    if ('error' in target) {
+      return res.status(400).json({ error: target.error });
+    }
+
     const challenge = new Challenge({
       ...challengePayload,
+      ...target.patch,
       universityCode: req.user?.universityCode
     });
 
@@ -319,12 +329,22 @@ export const updateChallenge = async (req: AuthRequest, res: Response) => {
       ...editable
     } = req.body;
 
+    const target = normaliseChallengeTarget(editable);
+    if ('error' in target) {
+      return res.status(400).json({ error: target.error });
+    }
+
     // An empty flag means "leave the flag alone", not "clear it".
     if (!editable.flag) {
       const { flag, ...updateData } = editable;
       Object.assign(challenge, updateData);
     } else {
       Object.assign(challenge, editable);
+    }
+    // set(), not Object.assign: clearing a path means writing undefined to it,
+    // and this is the API that reliably unsets rather than a bare assignment.
+    for (const [key, value] of Object.entries(target.patch)) {
+      challenge.set(key, value);
     }
 
     await challenge.save();
@@ -628,6 +648,8 @@ export const copyChallengeToUniversity = async (req: AuthRequest, res: Response)
       hints: challenge.hints || [],
       files: challenge.files || [],
       challengeLink: challenge.challengeLink || '',
+      challengeHost: challenge.challengeHost || '',
+      challengePort: challenge.challengePort,
       difficulty: challenge.difficulty || 'Medium',
       estimatedTime: challenge.estimatedTime || 30,
       universityCode: targetUniversityCode.toUpperCase(),
@@ -687,6 +709,11 @@ export const integrateCompetitionChallenge = async (req: AuthRequest, res: Respo
       flag: competitionChallenge.flag,
       hints: competitionChallenge.hints || [],
       files: competitionChallenge.files || [],
+      challengeLink: competitionChallenge.challengeLink || '',
+      challengeHost: competitionChallenge.challengeHost || '',
+      challengePort: competitionChallenge.challengePort,
+      difficulty: competitionChallenge.difficulty || 'Medium',
+      estimatedTime: competitionChallenge.estimatedTime || 30,
       universityCode: competition.universityCode,
       initialPoints: competitionChallenge.initialPoints || 1000,
       minimumPoints: competitionChallenge.minimumPoints || 100,

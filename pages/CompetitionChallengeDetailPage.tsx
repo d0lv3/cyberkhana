@@ -9,6 +9,8 @@ import Button from '../components/ui/button';
 import Input from '../components/ui/input';
 import Modal from '../components/ui/Modal';
 import { ArrowLeft, Trophy, Users, CheckCircle, XCircle, HelpCircle, Download, Lock, ExternalLink, Clock, Tag, Star, Zap, Target } from 'lucide-react';
+import ChallengeTargetCard from '../components/challenges/ChallengeTargetCard';
+import { targetKind } from '../utils/challengeTarget';
 
 interface CompetitionChallenge {
   _id: string;
@@ -519,22 +521,11 @@ const CompetitionChallengeDetailPage: React.FC = () => {
                 </div>
               </Card>
 
-              {/* Challenge Link */}
-              {(challenge as any).challengeLink && (challenge as any).challengeLink.trim() !== '' && (
+              {/* Where the challenge lives — a link to open, or an address to
+                  copy into a terminal. */}
+              {targetKind(challenge as any) !== 'none' && (
                 <Card className="p-6 bg-panel border-edge rounded-2xl">
-                  <h2 className="text-lg font-bold text-fg mb-4">Challenge Link</h2>
-                  <a
-                    href={(challenge as any).challengeLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-4 bg-canvas/70 hover:bg-edge/60 rounded-xl border border-edge hover:border-edge-light transition-all"
-                  >
-                    <ExternalLink className="w-5 h-5 text-brand-neon" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-brand-neon font-medium">View Challenge</p>
-                      <p className="text-muted text-sm truncate">{(challenge as any).challengeLink}</p>
-                    </div>
-                  </a>
+                  <ChallengeTargetCard challenge={challenge as any} />
                 </Card>
               )}
 

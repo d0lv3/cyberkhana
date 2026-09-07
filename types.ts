@@ -49,7 +49,11 @@ export interface Challenge {
   scoringMode?: 'dynamic' | 'static';
   difficulty?: 'Very Easy' | 'Easy' | 'Medium' | 'Hard' | 'Expert';
   estimatedTime?: number;
+  /* Where the challenge lives. Exactly one form is populated — see
+     utils/challengeTarget. */
   challengeLink?: string;
+  challengeHost?: string;
+  challengePort?: number;
   createdAt: string;
 }
 

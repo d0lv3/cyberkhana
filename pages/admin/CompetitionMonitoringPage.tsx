@@ -258,7 +258,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                 isLive ? 'border-brand-neon/50 bg-brand-neon/10 text-brand-neon' : 'border-amber/50 bg-amber/10 text-amber'
               }`}>
                 <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-brand-neon animate-pulse' : 'bg-amber'}`}></div>
-                {isLive ? 'LIVE' : 'PAUSED'}
+                {isLive ? 'Live' : 'Paused'}
               </div>
               {refreshing && <RefreshCw className="w-4 h-4 text-brand-neon animate-spin" />}
             </div>

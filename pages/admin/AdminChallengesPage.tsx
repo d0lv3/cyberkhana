@@ -8,6 +8,8 @@ import Modal from '../../components/ui/Modal';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { useConfirmation } from '../../src/contexts/ConfirmationContext';
 import { useToast } from '../../src/hooks/useToast';
+import ChallengeTargetFields from '../../components/admin/ChallengeTargetFields';
+import { TargetKind, targetError, targetKind, targetPayload } from '../../utils/challengeTarget';
 import { calculateDynamicScore } from '../../src/utils/decayCalculator';
 
 const DECAY_PRESETS = [
@@ -43,6 +45,8 @@ interface Challenge {
   difficulty?: string;
   estimatedTime?: number;
   challengeLink?: string;
+  challengeHost?: string;
+  challengePort?: number;
   writeup?: {
     content: string;
     images?: string[];
@@ -92,8 +96,14 @@ const AdminChallengesPage: React.FC = () => {
     difficulty: 'Very Easy',
     estimatedTime: 30,
     challengeLink: '',
+    challengeHost: '',
+    challengePort: undefined as number | undefined,
     hints: [] as Array<{ text: string; cost: number; isPublished?: boolean }>,
   });
+  /* Which target the author is editing. Held apart from formData because it is
+     a choice about the form, not a field on the challenge — the challenge only
+     ever stores the one that was picked. */
+  const [challengeTargetKind, setChallengeTargetKind] = useState<TargetKind>('none');
   const [decayPreset, setDecayPreset] = useState('Medium');
   const [challengeFiles, setChallengeFiles] = useState<FileList | null>(null);
   const [filter, setFilter] = useState<'all' | 'published' | 'unpublished'>('all');
@@ -120,6 +130,16 @@ const AdminChallengesPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    /* The target is the one field the browser cannot validate for us: `type=url`
+       says nothing about a host, and a port is just a number to it. */
+    const targetProblem = targetError(challengeTargetKind, formData);
+    if (targetProblem) {
+      setError(targetProblem);
+      toast('error', targetProblem);
+      return;
+    }
+
     try {
       let uploadedFiles: Array<{ name: string; url: string }> = [];
 
@@ -134,6 +154,10 @@ const AdminChallengesPage: React.FC = () => {
       const { flag, flags, ...formDataWithoutFlags } = formData;
       const challengeData: any = {
         ...formDataWithoutFlags,
+        // Whichever mode was not chosen comes back cleared, so a challenge that
+        // moves from a link to an address does not keep the stale link for the
+        // player side to find first.
+        ...targetPayload(challengeTargetKind, formData),
         files: uploadedFiles.length > 0 ? uploadedFiles : undefined,
         // Include alternative flags (filter out empty strings)
         flags: flags.filter(f => f.trim() !== ''),
@@ -312,8 +336,11 @@ const AdminChallengesPage: React.FC = () => {
         difficulty: (challenge as any).difficulty || 'Medium',
         estimatedTime: (challenge as any).estimatedTime || 30,
         challengeLink: (challenge as any).challengeLink || '',
+        challengeHost: (challenge as any).challengeHost || '',
+        challengePort: (challenge as any).challengePort ?? undefined,
         hints: (challenge as any).hints || [],
       });
+      setChallengeTargetKind(targetKind(challenge as any));
       setDecayPreset(getDecayPresetLabel(challengeDecay));
     } else {
       setEditingChallenge(null);
@@ -334,8 +361,11 @@ const AdminChallengesPage: React.FC = () => {
         difficulty: 'Very Easy',
         estimatedTime: 30,
         challengeLink: '',
+        challengeHost: '',
+        challengePort: undefined,
         hints: [],
       });
+      setChallengeTargetKind('none');
       setDecayPreset('Medium');
     }
     setChallengeFiles(null);
@@ -644,16 +674,14 @@ const AdminChallengesPage: React.FC = () => {
               </div>
             </div>
 
+            <ChallengeTargetFields
+              kind={challengeTargetKind}
+              value={formData}
+              onKindChange={setChallengeTargetKind}
+              onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-zinc-200 mb-2 font-medium">Challenge Link (Optional)</label>
-                <Input
-                  type="url"
-                  value={formData.challengeLink}
-                  onChange={(e) => setFormData({ ...formData, challengeLink: e.target.value })}
-                  placeholder="https://..."
-                />
-              </div>
               <div>
                 <label className="block text-zinc-200 mb-2 font-medium">Upload Files (Optional)</label>
                 <input

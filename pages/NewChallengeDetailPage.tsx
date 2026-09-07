@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChallengeArt, { artKindFor, categoryAccent } from '../components/challenges/ChallengeArt';
+import ChallengeTargetCard from '../components/challenges/ChallengeTargetCard';
+import { targetKind } from '../utils/challengeTarget';
 
 interface Challenge {
   _id: string;
@@ -369,23 +371,11 @@ const NewChallengeDetailPage: React.FC = () => {
                 </Card>
               )}
 
-              {/* Link */}
-              {(challenge as any).challengeLink && (
-                <Card className="p-6 bg-panel/80 border-edge flex flex-col h-full">
-                  <h3 className="text-lg font-bold text-fg mb-4 flex items-center gap-2">
-                    <ExternalLink size={18} className="text-muted" />
-                    Environment
-                  </h3>
-                  <a
-                    href={(challenge as any).challengeLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-auto block p-5 bg-brand/10 hover:bg-brand/20 border border-brand/20 rounded-2xl transition-all group text-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
-                  >
-                    <ExternalLink size={24} className="text-brand-neon mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                    <span className="text-brand-neon font-bold block">Access Challenge Instance</span>
-                    <span className="text-[10px] text-brand-neon/50 truncate block mt-1">{(challenge as any).challengeLink}</span>
-                  </a>
+              {/* Where the challenge lives — a link to open, or an address to
+                  copy into a terminal. */}
+              {targetKind(challenge as any) !== 'none' && (
+                <Card className="p-6 bg-panel/80 border-edge">
+                  <ChallengeTargetCard challenge={challenge as any} />
                 </Card>
               )}
             </div>
@@ -487,7 +477,7 @@ const NewChallengeDetailPage: React.FC = () => {
                     disabled={submitting}
                     className="w-full py-4 bg-brand-deep hover:bg-[#006737] shadow-lg shadow-brand/20 h-auto rounded-2xl text-lg font-black"
                   >
-                    {submitting ? 'SUBMITTING...' : 'SUBMIT FLAG'}
+                    {submitting ? 'Submitting…' : 'Submit flag'}
                   </Button>
                 </form>
               )}

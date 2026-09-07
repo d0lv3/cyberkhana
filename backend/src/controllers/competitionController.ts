@@ -195,6 +195,47 @@ export const createCompetition = async (req: AuthRequest, res: Response) => {
   }
 };
 
+/**
+ * A competition challenge is a snapshot taken when it was added, and snapshots
+ * older than a given field simply do not have it. When the snapshot carries no
+ * target, fall back to the source challenge's — which is how a link (or an
+ * address) added after the competition was built still reaches players.
+ *
+ * This replaced two hand-copied versions of the same lookup that only knew
+ * about the link half.
+ */
+const resolveTarget = async (challenge: any) => {
+  if (challenge.challengeLink || (challenge.challengeHost && challenge.challengePort)) {
+    return {
+      challengeLink: challenge.challengeLink,
+      challengeHost: challenge.challengeHost,
+      challengePort: challenge.challengePort
+    };
+  }
+  try {
+    const Challenge = require('../models/Challenge').default;
+    const original = await Challenge.findOne({
+      title: challenge.title,
+      author: challenge.author,
+      category: challenge.category
+    });
+    if (original) {
+      return {
+        challengeLink: original.challengeLink,
+        challengeHost: original.challengeHost,
+        challengePort: original.challengePort
+      };
+    }
+  } catch (err) {
+    console.error('Error fetching original challenge:', err);
+  }
+  return {
+    challengeLink: challenge.challengeLink,
+    challengeHost: challenge.challengeHost,
+    challengePort: challenge.challengePort
+  };
+};
+
 export const getCompetitions = async (req: AuthRequest, res: Response) => {
   try {
     const universityCode = req.user?.role === 'super-admin'
@@ -221,29 +262,11 @@ export const getCompetitions = async (req: AuthRequest, res: Response) => {
               );
             }
 
-            // Fetch original challenge to get challengeLink if missing
-            let challengeLink = challenge.challengeLink;
-            if (!challengeLink) {
-              try {
-                const Challenge = require('../models/Challenge').default;
-                const originalChallenge = await Challenge.findOne({
-                  title: challenge.title,
-                  author: challenge.author,
-                  category: challenge.category
-                });
-                if (originalChallenge && originalChallenge.challengeLink) {
-                  challengeLink = originalChallenge.challengeLink;
-                }
-              } catch (err) {
-                console.error('Error fetching original challenge:', err);
-              }
-            }
-
             return {
               ...challenge.toObject ? challenge.toObject() : challenge,
               points: effectivePoints,
               currentPoints: effectivePoints,
-              challengeLink
+              ...(await resolveTarget(challenge))
             };
           })
         );
@@ -390,29 +413,11 @@ export const getCompetitionDetails = async (req: AuthRequest, res: Response) => 
           );
         }
 
-        // Fetch original challenge to get challengeLink if missing
-        let challengeLink = challenge.challengeLink;
-        if (!challengeLink) {
-          try {
-            const Challenge = require('../models/Challenge').default;
-            const originalChallenge = await Challenge.findOne({
-              title: challenge.title,
-              author: challenge.author,
-              category: challenge.category
-            });
-            if (originalChallenge && originalChallenge.challengeLink) {
-              challengeLink = originalChallenge.challengeLink;
-            }
-          } catch (err) {
-            console.error('Error fetching original challenge:', err);
-          }
-        }
-
         return {
           ...challenge.toObject ? challenge.toObject() : challenge,
           points: effectivePoints,
           currentPoints: effectivePoints,
-          challengeLink
+          ...(await resolveTarget(challenge))
         };
       })
     );
@@ -902,6 +907,8 @@ export const addChallengeToCompetition = async (req: AuthRequest, res: Response)
       hints: challenge.hints || [],
       files: challenge.files || [],
       challengeLink: challenge.challengeLink || '',
+      challengeHost: challenge.challengeHost || '',
+      challengePort: challenge.challengePort,
       scoringMode: challenge.scoringMode || 'dynamic',
       difficulty: challenge.difficulty || 'Medium',
       estimatedTime: challenge.estimatedTime || 30,
