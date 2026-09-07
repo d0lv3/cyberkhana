@@ -12,11 +12,42 @@ const parse = async (res: Response) => {
 };
 
 export const authService = {
-  register: (userData: { username: string; password: string; universityCode: string }) =>
+  register: (userData: {
+    username: string;
+    password: string;
+    universityCode: string;
+    acceptedTerms: boolean;
+  }) =>
     fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData),
+    }).then(parse),
+
+  /**
+   * Records that the signed-in user accepts the current Terms.
+   *
+   * Sends no body: the server takes the user from the token, the version from
+   * its own config and the timestamp from its own clock, so there is nothing
+   * here worth the client's opinion.
+   */
+  acceptTerms: () =>
+    fetch(`${API_BASE_URL}/auth/accept-terms`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+      },
+    }).then(parse),
+
+  /** Records that the signed-in ambassador accepts the Ambassador Agreement. */
+  acceptAmbassadorAgreement: () =>
+    fetch(`${API_BASE_URL}/auth/accept-ambassador-agreement`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token') || ''}`,
+      },
     }).then(parse),
 
   login: (credentials: { username: string; password: string }) =>

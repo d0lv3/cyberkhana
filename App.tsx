@@ -15,6 +15,8 @@ import GeneralLeaderboardPage from './pages/GeneralLeaderboardPage.tsx';
 import ProfilePage from './pages/ProfilePage';
 import PublicProfilePage from './pages/PublicProfilePage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
+import TermsPage from './pages/legal/TermsPage';
+import AmbassadorAgreementPage from './pages/legal/AmbassadorAgreementPage';
 import AppLayout from './components/AppLayout';
 import ManagementLayout, { ManagementGate } from './components/ManagementLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -29,6 +31,7 @@ import Loader from './components/ui/Loader';
 import { ConfirmationProvider } from './src/contexts/ConfirmationContext';
 import { SocketProvider } from './src/contexts/SocketContext';
 import { SocketToast } from './src/components/SocketToast';
+import TermsGate from './components/TermsGate';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
@@ -88,6 +91,8 @@ const App: React.FC = () => {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
             <Route path="/register" element={<RegisterPage onRegister={handleLogin} />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/ambassador-agreement" element={<AmbassadorAgreementPage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </HashRouter>
@@ -107,8 +112,17 @@ const App: React.FC = () => {
       <SocketProvider user={user}>
         <SocketToast />
         <HashRouter>
+          {/* Blocks accounts that have not accepted the Terms. Inside the
+              router because it hides itself on /terms, so "Read the full
+              Terms" can open in a new tab and actually be readable. */}
+          <TermsGate user={user} onAccepted={setUser} onLogout={handleLogout} />
           <Routes>
             <Route path="/login" element={<Navigate to="/dashboard" />} />
+
+            {/* Outside AppLayout on purpose: a gated user has no dashboard to
+                render this into, and it must stay reachable while gated. */}
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/ambassador-agreement" element={<AmbassadorAgreementPage />} />
 
             {/* One shell for every role — learner experience for all, plus a
                 role-gated Management area nested in the same layout. */}

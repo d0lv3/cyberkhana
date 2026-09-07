@@ -1,6 +1,7 @@
 import React from 'react';
 import { Outlet, NavLink, Navigate } from 'react-router-dom';
 import { LayoutDashboard, ShieldCheck, Flag, Bell, Users, Building2 } from 'lucide-react';
+import AmbassadorAgreementGate from './AmbassadorAgreementGate';
 
 const getUser = () => {
   try {
@@ -10,13 +11,18 @@ const getUser = () => {
   }
 };
 
-/** Only admins and super-admins may enter the management area. */
+/**
+ * Only admins and super-admins may enter the management area — and an admin
+ * must additionally have accepted the Ambassador Agreement, which is what
+ * governs the powers on the other side of this gate.
+ */
 export const ManagementGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const role = getUser()?.role;
+  const user = getUser();
+  const role = user?.role;
   if (role !== 'admin' && role !== 'super-admin') {
     return <Navigate to="/dashboard" replace />;
   }
-  return <>{children}</>;
+  return <AmbassadorAgreementGate user={user}>{children}</AmbassadorAgreementGate>;
 };
 
 interface Tab {

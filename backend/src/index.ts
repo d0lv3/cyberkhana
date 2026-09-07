@@ -11,6 +11,7 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import { verifyToken } from './middleware/auth';
 import { initializeSocket } from './services/socketService';
+import { requireTermsAccepted } from './middleware/requireTermsAccepted';
 import { requestLogger } from './middleware/requestLogger';
 import { startCompetitionScheduler } from './services/competitionScheduler';
 import { logger } from './utils/logger';
@@ -259,6 +260,17 @@ app.use('/api/auth/register', authLimiter);
 
 // Other routes
 app.use('/api/auth', authRoutes);
+
+/* Everything below this line is gated on Terms acceptance.
+ *
+ * Mounted after /api/auth so signing in, signing out and accepting the Terms
+ * all stay reachable while gated — otherwise a user who has not accepted could
+ * not reach the endpoint that lets them accept.
+ *
+ * Requests with no token pass straight through; the gate only has an opinion
+ * about people who are signed in. See middleware/requireTermsAccepted.ts. */
+app.use('/api', requireTermsAccepted);
+
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/competitions', competitionRoutes);
 app.use('/api/users', userRoutes);

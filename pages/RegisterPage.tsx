@@ -17,6 +17,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [universityCode, setUniversityCode] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -54,6 +55,10 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
       setError('University code is required');
       return;
     }
+    if (!acceptedTerms) {
+      setError('You must accept the Terms of Service to register');
+      return;
+    }
 
     setIsRegistering(true);
 
@@ -67,7 +72,8 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
           username,
           fullName,
           password,
-          universityCode: universityCode.toUpperCase()
+          universityCode: universityCode.toUpperCase(),
+          acceptedTerms
         })
       });
 
@@ -271,6 +277,43 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                     {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+              </div>
+
+              {/* The acceptance record starts here. The server re-checks this
+                  on /auth/register, so posting past the form does not create an
+                  account without it. */}
+              <div className="pt-1">
+                <label
+                  htmlFor="register-terms"
+                  className="flex items-start gap-3 cursor-pointer text-sm leading-relaxed text-fg-soft"
+                >
+                  <input
+                    id="register-terms"
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    disabled={isRegistering}
+                    className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-edge-light bg-canvas accent-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon"
+                    required
+                  />
+                  <span>
+                    I have read and agree to the{' '}
+                    <Link
+                      to="/terms"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brand hover:text-brand-neon underline underline-offset-4"
+                    >
+                      Terms of Service
+                    </Link>
+                    . I am at least 13 years old, and if I am under 18 I have my parent or
+                    guardian’s permission.
+                  </span>
+                </label>
+                <p className="mt-2 ml-8 text-xs leading-relaxed text-faint">
+                  You may only use what you learn here against the targets CyberKhana names for
+                  you. Anywhere else is a crime.
+                </p>
               </div>
 
               <Button

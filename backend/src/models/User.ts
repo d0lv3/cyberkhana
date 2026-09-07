@@ -52,6 +52,15 @@ export interface IUser extends Document {
   competitionPenalties?: ICompetitionPenalty[];
   competitionBonusPoints?: ICompetitionBonusPoint[];
   linuxCourseProgress?: ILinuxCourseProgress;
+  /** When this user accepted the Terms of Service. Absent for accounts created
+   *  before acceptance was recorded — they are gated until they accept. */
+  termsAcceptedAt?: Date;
+  /** Which version of the Terms they accepted, so a later revision re-prompts. */
+  termsVersion?: string;
+  /** When this admin accepted the Ambassador Agreement. Only meaningful for
+   *  role 'admin'; absent means the Management area stays locked. */
+  ambassadorAgreementAcceptedAt?: Date;
+  ambassadorAgreementVersion?: string;
   createdAt: Date;
   updatedAt: Date;
   bonusPoints: number;
@@ -154,6 +163,20 @@ const UserSchema: Schema = new Schema({
   bonusPoints: {
     type: Number,
     default: 0
+  },
+  // No default: an absent value is exactly what "has not accepted" means, and
+  // every account that existed before this field did reads that way correctly.
+  termsAcceptedAt: {
+    type: Date
+  },
+  termsVersion: {
+    type: String
+  },
+  ambassadorAgreementAcceptedAt: {
+    type: Date
+  },
+  ambassadorAgreementVersion: {
+    type: String
   }
 }, {
   timestamps: true

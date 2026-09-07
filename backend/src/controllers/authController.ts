@@ -6,6 +6,12 @@ import University from '../models/University';
 import { generateToken, hashPassword, comparePassword } from '../utils/auth';
 import { IJWTPayload } from '../types';
 import { AuthRequest } from '../middleware/auth';
+import {
+  CURRENT_TERMS_VERSION,
+  hasAcceptedCurrentTerms,
+  CURRENT_AMBASSADOR_AGREEMENT_VERSION,
+  hasAcceptedCurrentAmbassadorAgreement
+} from '../config/terms';
 
 // The auth cookie used to expire in 24 hours while the JWT inside it was signed
 // for 7 days, so the two disagreed for six days out of every seven.
@@ -82,7 +88,14 @@ export const registerValidation = [
   body('fullName').trim().notEmpty().withMessage('Full name is required'),
   body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
   body('universityCode').trim().isLength({ min: 2, max: 10 }).withMessage('University code must be 2-10 characters')
-    .matches(/^[A-Z0-9@_-]+$/).withMessage('University code must be alphanumeric uppercase or special characters (@, _, -)')
+    .matches(/^[A-Z0-9@_-]+$/).withMessage('University code must be alphanumeric uppercase or special characters (@, _, -)'),
+  // Checked here as well as in the form, so an account cannot be created by
+  // posting straight at the endpoint without the acceptance being recorded.
+  // Written as a custom check rather than .equals('true') because the client
+  // sends a JSON boolean, and only the string form would survive that.
+  body('acceptedTerms')
+    .custom((value) => value === true || value === 'true')
+    .withMessage('You must accept the Terms of Service to register')
 ];
 
 export const loginValidation = [
@@ -117,7 +130,10 @@ export const register = async (req: Request, res: Response) => {
       fullName,
       password: hashedPassword,
       universityCode: universityCode.toUpperCase(),
-      role: 'user'
+      role: 'user',
+      // Stamped from the server clock, not from anything the client sent.
+      termsAcceptedAt: new Date(),
+      termsVersion: CURRENT_TERMS_VERSION
     });
 
     await user.save();
@@ -151,7 +167,8 @@ export const register = async (req: Request, res: Response) => {
         universityName: university.name,
         points: user.bonusPoints || 0, // New users start with 0 (or bonus if set somehow)
         competitionPoints: 0,
-        unlockedHints: []
+        unlockedHints: [],
+        termsAccepted: true
       }
     });
   } catch (error) {
@@ -197,7 +214,10 @@ export const login = async (req: Request, res: Response) => {
         user: {
           id: superAdmin._id,
           username: superAdmin.username,
-          role: 'super-admin'
+          role: 'super-admin',
+          // Super admins operate the platform rather than participate in it,
+          // and live on a different model with no acceptance field. Never gated.
+          termsAccepted: true
         }
       });
     }
@@ -264,7 +284,13 @@ export const login = async (req: Request, res: Response) => {
         universityName: university?.name || user.universityCode,
         points: stats.points,
         competitionPoints: user.competitionPoints || 0,
-        unlockedHints: user.unlockedHints || []
+        unlockedHints: user.unlockedHints || [],
+        // Drives the acceptance dialog the client shows before letting anyone
+        // in. The server gates the API on this too — see requireTermsAccepted.
+        termsAccepted: hasAcceptedCurrentTerms(user),
+        // Ambassadors can sign in through this endpoint as well as
+        // /login-admin, so the Management gate needs the flag from both.
+        ambassadorAgreementAccepted: hasAcceptedCurrentAmbassadorAgreement(user)
       }
     });
   } catch (error) {
@@ -325,7 +351,9 @@ export const loginAdmin = async (req: Request, res: Response) => {
         role: user.role,
         universityCode: user.universityCode,
         universityName: university?.name || user.universityCode,
-        points: user.points
+        points: user.points,
+        termsAccepted: hasAcceptedCurrentTerms(user),
+        ambassadorAgreementAccepted: hasAcceptedCurrentAmbassadorAgreement(user)
       }
     });
   } catch (error) {
@@ -368,7 +396,8 @@ export const loginSuperAdmin = async (req: Request, res: Response) => {
       user: {
         id: superAdmin._id,
         username: superAdmin.username,
-        role: 'super-admin'
+        role: 'super-admin',
+        termsAccepted: true
       }
     });
   } catch (error) {
@@ -422,5 +451,91 @@ export const changeSuperAdminPassword = async (req: AuthRequest, res: Response) 
     res.json({ message: 'Password updated successfully' });
   } catch (error) {
     res.status(500).json({ error: 'Server error while changing password' });
+  }
+};
+
+/**
+ * Records that the signed-in user accepts the Terms of Service as they
+ * currently stand.
+ *
+ * The client shows a dialog it will not let anyone dismiss, but that dialog is
+ * only the prompt — this is what actually unlocks the account, and
+ * `requireTermsAccepted` gates the rest of the API on the record it writes.
+ * Nothing about the acceptance comes from the request body: the user is taken
+ * from the JWT, the version from server config, the time from the server clock.
+ */
+export const acceptTerms = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    // Super admins are never gated and do not live on the User model.
+    if (req.user.role === 'super-admin') {
+      return res.json({ termsAccepted: true, termsVersion: CURRENT_TERMS_VERSION });
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Re-accepting an already-accepted version is a no-op rather than an error:
+    // two tabs open on the dialog should not produce a failure in one of them.
+    if (!hasAcceptedCurrentTerms(user)) {
+      user.termsAcceptedAt = new Date();
+      user.termsVersion = CURRENT_TERMS_VERSION;
+      await user.save();
+    }
+
+    res.json({
+      termsAccepted: true,
+      termsVersion: user.termsVersion,
+      termsAcceptedAt: user.termsAcceptedAt
+    });
+  } catch (error) {
+    console.error('Accept terms error:', error);
+    res.status(500).json({ error: 'Server error while recording acceptance' });
+  }
+};
+
+/**
+ * Records that the signed-in ambassador accepts the Ambassador Agreement.
+ *
+ * Separate from acceptTerms because the two documents are versioned and gated
+ * separately: the Terms unlock the platform, this unlocks the Management area.
+ * Restricted to role 'admin' — nobody else has ambassador powers to unlock, and
+ * letting an ordinary account write the field would put a meaningless
+ * acceptance on record.
+ */
+export const acceptAmbassadorAgreement = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.user?.userId) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Only student ambassadors accept this agreement.' });
+    }
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!hasAcceptedCurrentAmbassadorAgreement(user)) {
+      user.ambassadorAgreementAcceptedAt = new Date();
+      user.ambassadorAgreementVersion = CURRENT_AMBASSADOR_AGREEMENT_VERSION;
+      await user.save();
+    }
+
+    res.json({
+      ambassadorAgreementAccepted: true,
+      ambassadorAgreementVersion: user.ambassadorAgreementVersion,
+      ambassadorAgreementAcceptedAt: user.ambassadorAgreementAcceptedAt
+    });
+  } catch (error) {
+    console.error('Accept ambassador agreement error:', error);
+    res.status(500).json({ error: 'Server error while recording acceptance' });
   }
 };
