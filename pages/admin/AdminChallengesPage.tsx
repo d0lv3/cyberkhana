@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { resolveFileUrl } from '../../utils/url';
 import { challengeService } from '../../services/challengeService';
 import Card from '../../components/ui/card';
 import Button from '../../components/ui/button';
@@ -972,7 +973,7 @@ const AdminChallengesPage: React.FC = () => {
                       <span className="text-zinc-400 text-sm">{selectedChallengeForWriteup.writeup.pdfFile.name}</span>
                     </div>
                     <button
-                      onClick={() => window.open(selectedChallengeForWriteup.writeup.pdfFile.url, '_blank', 'noopener,noreferrer')}
+                      onClick={() => window.open(resolveFileUrl(selectedChallengeForWriteup.writeup.pdfFile.url), '_blank', 'noopener,noreferrer')}
                       className="text-emerald-400 hover:text-emerald-300 text-sm underline"
                     >
                       View

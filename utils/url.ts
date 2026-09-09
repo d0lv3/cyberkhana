@@ -40,5 +40,44 @@ export const fileNameFromUrl = (value: string): string => {
   }
 };
 
+/**
+ * Hosts that have, at some point, served this platform's uploads directory.
+ *
+ * The apex and www are on that list because uploads were once stamped with
+ * `https://cyberkhana.tech/api/uploads/...` — correct when the apex ran the
+ * platform, wrong the moment the marketing site moved there and took the domain
+ * with it. Only these hosts are rewritten: a challenge legitimately linking to
+ * `https://someone-else.org/api/uploads/x.zip` must be left exactly as it is.
+ */
+const OUR_UPLOAD_HOSTS = new Set([
+  'cyberkhana.tech',
+  'www.cyberkhana.tech',
+  'app.cyberkhana.tech',
+]);
+
+/**
+ * The URL to actually fetch a stored attachment from.
+ *
+ * Rows saved before the domain split hold an absolute URL pointing at a host
+ * that no longer serves `/api`. Reducing those to a path lets the browser
+ * resolve them against whichever host is serving the app, so old challenges
+ * work without rewriting the database. Everything else is returned untouched.
+ */
+export const resolveFileUrl = (value: string): string => {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return trimmed;
+  // Already relative — nothing to do. Uploads are stored this way now.
+  if (trimmed.startsWith('/') && !trimmed.startsWith('//')) return trimmed;
+  try {
+    const url = new URL(trimmed);
+    if (OUR_UPLOAD_HOSTS.has(url.hostname) && url.pathname.startsWith('/api/uploads/')) {
+      return `${url.pathname}${url.search}`;
+    }
+  } catch {
+    // Not a parseable absolute URL; hand it back and let the caller decide.
+  }
+  return trimmed;
+};
+
 /** Files we host ourselves, as opposed to a link out to somebody else's server. */
 export const isUploadedFileUrl = (url: string): boolean => /\/api\/uploads\//.test(url);

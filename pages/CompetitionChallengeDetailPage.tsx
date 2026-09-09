@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { resolveFileUrl } from '../utils/url';
 import { useNow, isCompetitionOver } from '../src/hooks/useCompetitionClock';
 import { useParams, useNavigate } from 'react-router-dom';
 import { competitionService } from '../services/competitionService';
@@ -537,7 +538,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
                     {challenge.files.map((file, index) => (
                       <a
                         key={index}
-                        href={file.url}
+                        href={resolveFileUrl(file.url)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-3 p-3 bg-canvas/70 hover:bg-edge/60 rounded-xl border border-edge hover:border-edge-light transition-all"

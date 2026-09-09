@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { resolveFileUrl } from '../utils/url';
 import { useParams, useNavigate } from 'react-router-dom';
 import { challengeService } from '../services/challengeService';
 import { userService } from '../services/userService';
@@ -353,7 +354,7 @@ const NewChallengeDetailPage: React.FC = () => {
                     {challenge.files.map((file, index) => (
                       <a
                         key={index}
-                        href={file.url}
+                        href={resolveFileUrl(file.url)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center justify-between p-4 bg-canvas/80 rounded-xl border border-edge hover:border-brand-neon/30 hover:bg-edge/50 transition-all group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
@@ -400,7 +401,7 @@ const NewChallengeDetailPage: React.FC = () => {
                         </div>
                       </div>
                       <Button
-                        onClick={() => window.open(challenge.writeup!.pdfFile!.url, '_blank')}
+                        onClick={() => window.open(resolveFileUrl(challenge.writeup!.pdfFile!.url), '_blank')}
                         className="bg-edge hover:bg-edge/80 text-white"
                       >
                         Source PDF

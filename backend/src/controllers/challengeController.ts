@@ -12,6 +12,23 @@ import University from '../models/University';
 import { normaliseChallengeTarget } from '../utils/challengeTarget';
 import { normaliseChallengeFiles } from '../utils/challengeFiles';
 
+/**
+ * The public URL for a file we just wrote to the uploads directory.
+ *
+ * This used to be hardcoded to `https://cyberkhana.tech/...`. That was the
+ * platform's host once, but the apex is a separate marketing site now and only
+ * app.cyberkhana.tech runs this API — so every URL written here pointed at an
+ * nginx that has no /api, and every attachment 404'd.
+ *
+ * Root-relative is the fix and it cannot drift again: the browser resolves it
+ * against whatever host is serving the app, which is the same origin the rest
+ * of the client already calls for `/api`. The hash in a HashRouter URL does not
+ * affect that resolution, so the original "absolute for HashRouter" reasoning
+ * does not apply to a path with a leading slash.
+ */
+const uploadedFileUrl = (filename: string): string =>
+  `/api/uploads/${encodeURIComponent(filename)}`;
+
 // Get solvers for a challenge
 export const getChallengeSolvers = async (req: AuthRequest, res: Response) => {
   try {
@@ -900,9 +917,7 @@ export const uploadWriteupPdfController = async (req: AuthRequest, res: Response
         return res.status(400).json({ error: 'No file uploaded' });
       }
 
-      // Construct absolute URL for better compatibility with HashRouter
-      // Use fixed HTTPS URL without www for Cloudflare compatibility
-      const fileUrl = `https://cyberkhana.tech/api/uploads/${encodeURIComponent(req.file.filename)}`;
+      const fileUrl = uploadedFileUrl(req.file.filename);
 
       res.json({
         name: req.file.originalname,
@@ -931,8 +946,7 @@ export const uploadChallengeFilesController = async (req: AuthRequest, res: Resp
       }
 
       const files = (req.files as Express.Multer.File[]).map(file => {
-        // Use fixed HTTPS URL without www for Cloudflare compatibility
-        const fileUrl = `https://cyberkhana.tech/api/uploads/${encodeURIComponent(file.filename)}`;
+        const fileUrl = uploadedFileUrl(file.filename);
 
         return {
           name: file.originalname,

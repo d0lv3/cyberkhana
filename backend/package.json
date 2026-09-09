@@ -10,7 +10,8 @@
     "setup-db": "tsx scripts/setup-db.ts",
     "test-db": "tsx scripts/test-connection.ts",
     "seed-mock": "tsx scripts/seed-mock-data.ts",
-    "seed-mock:dry": "tsx scripts/seed-mock-data.ts --dry-run"
+    "seed-mock:dry": "tsx scripts/seed-mock-data.ts --dry-run",
+    "fix-upload-urls": "tsx scripts/fix-upload-urls.ts"
   },
   "dependencies": {
     "@types/multer": "^2.1.0",
