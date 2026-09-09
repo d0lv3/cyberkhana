@@ -347,7 +347,7 @@ const NewChallengeDetailPage: React.FC = () => {
                 <Card className="p-6 bg-panel/80 border-edge">
                   <h3 className="text-lg font-bold text-fg mb-4 flex items-center gap-2">
                     <Download size={18} className="text-muted" />
-                    Attached Files
+                    Attached files
                   </h3>
                   <div className="space-y-3">
                     {challenge.files.map((file, index) => (

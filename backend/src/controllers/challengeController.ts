@@ -10,6 +10,7 @@ import path from 'path';
 import Announcement from '../models/Announcement';
 import University from '../models/University';
 import { normaliseChallengeTarget } from '../utils/challengeTarget';
+import { normaliseChallengeFiles } from '../utils/challengeFiles';
 
 // Get solvers for a challenge
 export const getChallengeSolvers = async (req: AuthRequest, res: Response) => {
@@ -286,9 +287,16 @@ export const createChallenge = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: target.error });
     }
 
+    // A file URL reaches an <a href> exactly like the target link does.
+    const files = normaliseChallengeFiles(challengePayload);
+    if ('error' in files) {
+      return res.status(400).json({ error: files.error });
+    }
+
     const challenge = new Challenge({
       ...challengePayload,
       ...target.patch,
+      ...(files.files ? { files: files.files } : {}),
       universityCode: req.user?.universityCode
     });
 
@@ -334,6 +342,11 @@ export const updateChallenge = async (req: AuthRequest, res: Response) => {
       return res.status(400).json({ error: target.error });
     }
 
+    const files = normaliseChallengeFiles(editable);
+    if ('error' in files) {
+      return res.status(400).json({ error: files.error });
+    }
+
     // An empty flag means "leave the flag alone", not "clear it".
     if (!editable.flag) {
       const { flag, ...updateData } = editable;
@@ -345,6 +358,9 @@ export const updateChallenge = async (req: AuthRequest, res: Response) => {
     // and this is the API that reliably unsets rather than a bare assignment.
     for (const [key, value] of Object.entries(target.patch)) {
       challenge.set(key, value);
+    }
+    if (files.files) {
+      challenge.set('files', files.files);
     }
 
     await challenge.save();

@@ -12,6 +12,8 @@
  * clears the other, so nothing downstream has to decide which wins.
  */
 
+import { isHttpUrl } from './url';
+
 export type TargetKind = 'none' | 'link' | 'address';
 
 export interface ChallengeTarget {
@@ -45,18 +47,9 @@ export const isValidPort = (port: unknown): boolean => {
   return Number.isInteger(n) && n >= 1 && n <= 65535;
 };
 
-/** http(s) only. A `javascript:` or `data:` href in a field admins can type
- *  into is a stored-XSS vector the moment it reaches an anchor. */
-export const isValidLink = (link: string): boolean => {
-  const value = link.trim();
-  if (!value) return false;
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:';
-  } catch {
-    return false;
-  }
-};
+/** Re-exported so this module stays the one place the target's rules live,
+ *  while the http(s) rule itself is shared with the file-link field. */
+export const isValidLink = isHttpUrl;
 
 /** The message to show under the field, or '' when it is fine. */
 export const targetError = (kind: TargetKind, t: ChallengeTarget): string => {

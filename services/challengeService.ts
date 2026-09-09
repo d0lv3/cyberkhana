@@ -47,10 +47,13 @@ export const challengeService = {
   publishHint: (id: string, hintIndex: number) =>
     apiService.post(`/challenges/${id}/publish-hint`, { hintIndex }),
 
-  uploadChallengeFiles: async (files: FileList) => {
+  /* Takes an array as well as a FileList: the challenge form now stages files
+     alongside links in one list, so what it has to upload is a subset, not the
+     picker's own FileList. */
+  uploadChallengeFiles: async (files: FileList | File[]) => {
     const formData = new FormData();
-    for (let i = 0; i < files.length; i++) {
-      formData.append('files', files[i]);
+    for (const file of Array.from(files)) {
+      formData.append('files', file);
     }
 
     const token = localStorage.getItem('token');

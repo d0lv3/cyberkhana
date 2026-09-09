@@ -9,6 +9,10 @@ import { PlusCircle, Trash2 } from 'lucide-react';
 import { useConfirmation } from '../../src/contexts/ConfirmationContext';
 import { useToast } from '../../src/hooks/useToast';
 import ChallengeTargetFields from '../../components/admin/ChallengeTargetFields';
+import ChallengeFilesField, {
+  ChallengeFileEntry,
+  entriesFromFiles,
+} from '../../components/admin/ChallengeFilesField';
 import { TargetKind, targetError, targetKind, targetPayload } from '../../utils/challengeTarget';
 import { calculateDynamicScore } from '../../src/utils/decayCalculator';
 
@@ -105,7 +109,11 @@ const AdminChallengesPage: React.FC = () => {
      ever stores the one that was picked. */
   const [challengeTargetKind, setChallengeTargetKind] = useState<TargetKind>('none');
   const [decayPreset, setDecayPreset] = useState('Medium');
-  const [challengeFiles, setChallengeFiles] = useState<FileList | null>(null);
+  /* Attachments as one ordered list the author edits directly. It replaced a
+     bare FileList, which could only ever describe "the files picked just now"
+     and so had no way to express keeping, reordering or removing the ones
+     already on the challenge. */
+  const [fileEntries, setFileEntries] = useState<ChallengeFileEntry[]>([]);
   const [filter, setFilter] = useState<'all' | 'published' | 'unpublished'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [difficultyFilter, setDifficultyFilter] = useState<string>('all');
@@ -141,13 +149,26 @@ const AdminChallengesPage: React.FC = () => {
     }
 
     try {
-      let uploadedFiles: Array<{ name: string; url: string }> = [];
-
-      // Upload files if any
-      if (challengeFiles && challengeFiles.length > 0) {
-        const uploadResult = await challengeService.uploadChallengeFiles(challengeFiles);
-        uploadedFiles = uploadResult.files;
+      /* Only the entries still holding a local File need the upload round-trip;
+         everything else already has a URL. They are uploaded in one request and
+         zipped back by position, so the author's ordering survives. */
+      const pending = fileEntries.filter((e) => e.file);
+      let uploaded: Array<{ name: string; url: string }> = [];
+      if (pending.length > 0) {
+        const result = await challengeService.uploadChallengeFiles(pending.map((e) => e.file!));
+        uploaded = Array.isArray(result?.files) ? result.files : [];
+        if (uploaded.length !== pending.length) {
+          throw new Error('The server accepted a different number of files than were sent');
+        }
       }
+      let next = 0;
+      const files = fileEntries.map((entry) =>
+        entry.file
+          ? // The server names an upload from the file it received, which is the
+            // name players will see; trust it over the staged one.
+            { name: uploaded[next].name || entry.name, url: uploaded[next++].url }
+          : { name: entry.name.trim() || entry.url!, url: entry.url! },
+      );
 
       // Prepare challenge data
       // When editing, only include flag if it's not empty
@@ -158,7 +179,8 @@ const AdminChallengesPage: React.FC = () => {
         // moves from a link to an address does not keep the stale link for the
         // player side to find first.
         ...targetPayload(challengeTargetKind, formData),
-        files: uploadedFiles.length > 0 ? uploadedFiles : undefined,
+        // Always the full list: this is what lets a removal actually remove.
+        files,
         // Include alternative flags (filter out empty strings)
         flags: flags.filter(f => f.trim() !== ''),
         // Include first blood bonus
@@ -341,6 +363,7 @@ const AdminChallengesPage: React.FC = () => {
         hints: (challenge as any).hints || [],
       });
       setChallengeTargetKind(targetKind(challenge as any));
+      setFileEntries(entriesFromFiles((challenge as any).files));
       setDecayPreset(getDecayPresetLabel(challengeDecay));
     } else {
       setEditingChallenge(null);
@@ -366,9 +389,9 @@ const AdminChallengesPage: React.FC = () => {
         hints: [],
       });
       setChallengeTargetKind('none');
+      setFileEntries([]);
       setDecayPreset('Medium');
     }
-    setChallengeFiles(null);
     setIsModalOpen(true);
   };
 
@@ -681,18 +704,7 @@ const AdminChallengesPage: React.FC = () => {
               onChange={(patch) => setFormData((prev) => ({ ...prev, ...patch }))}
             />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-zinc-200 mb-2 font-medium">Upload Files (Optional)</label>
-                <input
-                  type="file"
-                  multiple
-                  onChange={(e) => setChallengeFiles(e.target.files)}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-zinc-200 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:bg-zinc-700 file:text-zinc-200 hover:file:bg-zinc-600"
-                />
-                <p className="text-zinc-500 text-xs mt-1">You can select multiple files</p>
-              </div>
-            </div>
+            <ChallengeFilesField value={fileEntries} onChange={setFileEntries} />
 
             <div>
               <label className="block text-zinc-200 mb-2 font-medium">Description</label>
