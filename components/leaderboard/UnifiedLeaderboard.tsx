@@ -70,7 +70,7 @@ const PodiumCard: React.FC<{
   const isMe = !!entry.isCurrentUser;
 
   return (
-    <div className="relative pt-6">
+    <div className="podium-card relative pt-6">
       {rank === 1 && (
         <Crown
           size={26}
@@ -101,7 +101,7 @@ const PodiumCard: React.FC<{
 
       {/* Rank badge */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 top-3 z-30 w-7 h-7 rounded-lg flex items-center justify-center text-sm font-black shadow-sm"
+        className="podium-rank absolute left-1/2 -translate-x-1/2 top-3 z-30 w-7 h-7 rounded-lg flex items-center justify-center text-sm font-black shadow-sm"
         style={{ backgroundColor: tier.accent, color: '#11161f' }}
       >
         {rank}
@@ -126,7 +126,7 @@ const PodiumCard: React.FC<{
             onSelect();
           }
         }}
-        className={`relative w-full ${height} drop-shadow-[0_10px_28px_rgba(0,0,0,0.4)] ${
+        className={`podium-shield relative w-full ${height} drop-shadow-[0_10px_28px_rgba(0,0,0,0.4)] ${
           onSelect ? 'cursor-pointer' : ''
         }`}
       >
@@ -135,9 +135,9 @@ const PodiumCard: React.FC<{
         {isMe && <div className="absolute inset-[1px]" style={{ clipPath: SHIELD, backgroundColor: '#00a859' }} />}
 
         <div className="absolute inset-[2px] overflow-hidden bg-panel" style={{ clipPath: SHIELD }}>
-          <div className="relative z-10 h-full w-full min-w-0 flex flex-col items-center justify-center px-3 sm:px-4 text-center">
+          <div className="podium-content relative z-10 h-full w-full min-w-0 flex flex-col items-center justify-center px-3 sm:px-4 text-center">
             <div
-              className="rounded-full bg-inset flex items-center justify-center overflow-hidden"
+              className="podium-avatar rounded-full bg-inset flex items-center justify-center overflow-hidden"
               style={{
                 width: highlight ? 84 : 64,
                 height: highlight ? 84 : 64,
@@ -153,7 +153,7 @@ const PodiumCard: React.FC<{
               )}
             </div>
 
-            <p className="mt-3 font-bold text-fg truncate max-w-full" title={entry.player}>
+            <p className="podium-name mt-3 font-bold text-fg truncate max-w-full" title={entry.player}>
               {entry.player}
             </p>
             {isMe && <span className="mt-0.5 text-[11px] font-bold text-brand">You</span>}
@@ -166,7 +166,7 @@ const PodiumCard: React.FC<{
               </span>
             ) : null}
 
-            <p className="mt-2 text-lg font-black" style={{ color: tier.accent }} dir="ltr">
+            <p className="podium-score mt-2 text-lg font-black" style={{ color: tier.accent }} dir="ltr">
               {points.toLocaleString('en-US')}
               <span className="ms-1 text-[11px] font-semibold text-muted">pts</span>
             </p>
@@ -261,7 +261,7 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
       {podium.length > 0 && (
         <section className="overflow-visible">
           {/* Mobile shows 1 → 2 → 3; desktop reorders to 2 · 1 · 3 with #1 raised. */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-3 items-end max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 items-end max-w-3xl mx-auto">
             <div className="order-2 sm:order-1">
               {podium[1] && (
                 <PodiumCard

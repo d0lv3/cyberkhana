@@ -115,7 +115,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, classNa
         aria-label={title ? undefined : 'Dialog'}
         aria-labelledby={title ? titleId : undefined}
         tabIndex={-1}
-        className={`w-full ${className || 'max-w-md'} animate-modal-enter relative focus:outline-none`}
+        className={`mobile-dialog-panel w-full ${className || 'max-w-md'} animate-modal-enter relative focus:outline-none`}
       >
         {title && (
           <div className="flex justify-between items-center mb-4">

@@ -14,7 +14,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
   const displayName = user.fullName || user.displayName || user.username || user.name;
 
   return (
-    <header className="flex-shrink-0 bg-canvas/95 border-b border-edge-strong backdrop-blur-md sticky top-0 z-30">
+    <header className="app-header flex-shrink-0 bg-canvas/95 border-b border-edge-strong backdrop-blur-md sticky top-0 z-30">
       <div className="flex items-center justify-between h-14 px-4 sm:px-6">
         {/* Mobile logo */}
         <Link to="/dashboard" aria-label="CyberKhana" className="md:hidden inline-flex items-center justify-center touch:min-h-tap touch:min-w-tap">
@@ -72,7 +72,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
           <button
             onClick={onLogout}
             aria-label="Log out"
-            className="w-10 h-10 touch:w-11 touch:h-11 rounded-lg bg-panel border border-edge flex items-center justify-center text-dim hover:text-red-400 hover:border-red-500/30 transition-all"
+            className="hidden md:flex w-10 h-10 touch:w-11 touch:h-11 rounded-lg bg-panel border border-edge items-center justify-center text-dim hover:text-red-400 hover:border-red-500/30 transition-all"
           >
             <LogOut size={16} />
           </button>

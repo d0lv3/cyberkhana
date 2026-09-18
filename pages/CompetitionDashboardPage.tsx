@@ -342,7 +342,7 @@ const CompetitionDashboardPage: React.FC = () => {
           backgroundPosition: 'center right',
         }}
       >
-        <div className="max-w-7xl mx-auto px-4 md:px-8 pt-8 pb-10">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 pt-4 pb-6 sm:pt-8 sm:pb-10">
           <button
             onClick={() => navigate('/competition')}
             className="group flex items-center gap-2 text-muted hover:text-fg mb-6 transition-colors text-sm"
@@ -364,7 +364,7 @@ const CompetitionDashboardPage: React.FC = () => {
                   </span>
                 )}
               </div>
-              <h1 className="text-4xl md:text-5xl font-black text-fg tracking-tight">{competition.name}</h1>
+              <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-fg tracking-tight break-words">{competition.name}</h1>
               {!ended && (
                 <p className="text-muted mt-2 flex items-center gap-2 text-sm">
                   <Clock className="w-4 h-4" /> {formatTimeRemaining(competition.endTime, now, competition.hasTimeLimit)} remaining
@@ -372,7 +372,7 @@ const CompetitionDashboardPage: React.FC = () => {
               )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="competition-actions flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
               <Button
                 onClick={() => navigate(`/competition/${id}/leaderboard`)}
                 className="bg-surface-alt border border-edge text-fg-soft hover:bg-surface hover:border-brand/40"

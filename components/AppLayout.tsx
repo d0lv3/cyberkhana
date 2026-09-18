@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
@@ -24,6 +24,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout, user: userProp }) => {
     localStorage.setItem(SIDEBAR_KEY, String(collapsed));
   }, [collapsed]);
 
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => { mainRef.current?.scrollTo({ top: 0, left: 0 }); }, [location.pathname]);
+
   return (
     <div className="flex app-shell text-fg-soft bg-canvas">
       <Sidebar user={user} collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
@@ -33,13 +36,14 @@ const AppLayout: React.FC<AppLayoutProps> = ({ onLogout, user: userProp }) => {
             scroll inside its own box, never pan the whole shell sideways and
             take the header with it. */}
         <main
-          className={`flex-1 overflow-y-auto overflow-x-hidden scroll-contain ${
+          ref={mainRef}
+          className={`app-main min-h-0 flex-1 overflow-y-auto overflow-x-hidden scroll-contain ${
             isEdgeToEdge ? 'p-0' : 'p-4 sm:p-6 md:p-8'
           }`}
         >
           {/* Clears the fixed bottom nav (56px) plus the home indicator. */}
           <div
-            className={`${isEdgeToEdge ? 'max-w-none' : 'max-w-7xl'} mx-auto min-w-0 pb-[calc(4.5rem+env(safe-area-inset-bottom,0px))] md:pb-0`}
+            className={`${isEdgeToEdge ? 'max-w-none' : 'max-w-7xl'} mx-auto min-w-0 mobile-nav-clearance md:pb-0`}
           >
              <Outlet />
           </div>

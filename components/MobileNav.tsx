@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import MobileSheet from './ui/MobileSheet';
 import {
   LayoutDashboard,
   Target,
@@ -43,25 +44,6 @@ const MobileNav: React.FC<MobileNavProps> = ({ user, onLogout }) => {
     setSheetOpen(false);
   }, [location.pathname]);
 
-  // The sheet is a modal surface, so the page behind it must not scroll.
-  useEffect(() => {
-    if (!sheetOpen) return;
-    const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previous;
-    };
-  }, [sheetOpen]);
-
-  useEffect(() => {
-    if (!sheetOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setSheetOpen(false);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [sheetOpen]);
-
   const items: MobileNavItem[] = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Home' },
     { to: '/challenges', icon: Code, label: 'Challenges' },
@@ -84,15 +66,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ user, onLogout }) => {
   return (
     <>
       {/* ── More sheet ── */}
-      {sheetOpen && (
-        <div className="md:hidden fixed inset-0 z-50" role="dialog" aria-modal="true" aria-label="More">
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={() => setSheetOpen(false)}
-            className="absolute inset-0 w-full bg-black/60 backdrop-blur-sm animate-fade-in"
-          />
-          <div className="absolute inset-x-0 bottom-0 rounded-t-2xl border-t border-edge-strong bg-canvas pb-safe animate-slide-in">
+      <MobileSheet open={sheetOpen} onClose={() => setSheetOpen(false)} label={'More'}>
             <div className="flex items-center justify-between px-5 pt-4 pb-2">
               <p className="text-sm font-bold text-fg">More</p>
               <button
@@ -110,6 +84,7 @@ const MobileNav: React.FC<MobileNavProps> = ({ user, onLogout }) => {
                 <NavLink
                   key={to}
                   to={to}
+                  onClick={() => setSheetOpen(false)}
                   className={({ isActive }) =>
                     [
                       'flex items-center gap-3 rounded-xl px-3 min-h-tap text-sm font-semibold transition-colors select-none',
@@ -148,13 +123,11 @@ const MobileNav: React.FC<MobileNavProps> = ({ user, onLogout }) => {
                 </button>
               )}
             </nav>
-          </div>
-        </div>
-      )}
+      </MobileSheet>
 
       {/* ── Bottom bar ── */}
       <nav
-        className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-canvas/95 backdrop-blur-md border-t border-edge-strong pb-safe"
+        className="mobile-bottom-nav md:hidden fixed bottom-0 inset-x-0 z-40 bg-canvas/95 backdrop-blur-md border-t border-edge-strong pb-safe"
         aria-label="Primary"
       >
         <div className="grid grid-cols-5">

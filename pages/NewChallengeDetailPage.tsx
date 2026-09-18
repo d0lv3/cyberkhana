@@ -208,7 +208,7 @@ const NewChallengeDetailPage: React.FC = () => {
   if (!challenge) {
     return (
       <div className="min-h-screen bg-canvas flex items-center justify-center p-4">
-        <Card className="max-w-md p-8 text-center border-edge bg-panel">
+        <Card className="max-w-md p-4 sm:p-8 text-center border-edge bg-panel">
           <XCircle className="w-16 h-16 text-danger mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-fg mb-2">Challenge not found</h2>
           <p className="text-muted mb-6">The challenge you are looking for does not exist or has been removed.</p>
@@ -246,7 +246,7 @@ const NewChallengeDetailPage: React.FC = () => {
           }}
         />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 w-full pt-8 pb-10">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 w-full pt-4 pb-6 sm:pt-8 sm:pb-10">
           <button
             onClick={() => navigate('/challenges')}
             className="group flex items-center gap-2 touch:min-h-tap text-muted hover:text-brand-neon mb-6 transition-colors select-none"
@@ -257,7 +257,7 @@ const NewChallengeDetailPage: React.FC = () => {
             <span className="text-sm font-semibold">Back to challenges</span>
           </button>
 
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-8 min-w-0">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 md:gap-4 sm:p-8 min-w-0">
             <div className="flex-1 min-w-0 space-y-4">
               <div className="flex flex-wrap items-center gap-3">
                 <span
@@ -273,7 +273,7 @@ const NewChallengeDetailPage: React.FC = () => {
                 </div>
               </div>
 
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-fg leading-tight break-words">
+              <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-fg leading-tight break-words">
                 {challenge.title}
               </h1>
 
@@ -320,12 +320,12 @@ const NewChallengeDetailPage: React.FC = () => {
       </div>
 
       <div className="container mx-auto px-4 mt-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:p-8">
           {/* Main Column */}
           <div className="lg:col-span-8 space-y-8">
             {/* Description Section */}
-            <Card className="p-8 bg-panel/80 backdrop-blur-md border-edge shadow-2xl overflow-hidden relative group">
-              <div className="pointer-events-none absolute top-0 end-0 p-8 opacity-[0.06]">
+            <Card className="p-4 sm:p-8 bg-panel/80 backdrop-blur-md border-edge shadow-2xl overflow-hidden relative group">
+              <div className="pointer-events-none absolute top-0 end-0 p-4 sm:p-8 opacity-[0.06]">
                 <Book size={120} style={{ color: accent }} />
               </div>
 
@@ -383,7 +383,7 @@ const NewChallengeDetailPage: React.FC = () => {
 
             {/* Writeup Section */}
             {challenge.writeup?.isUnlocked && (challenge.writeup.content || challenge.writeup.pdfFile) && (
-              <Card className="p-8 bg-panel/80 border-edge border-l-4 border-l-brand">
+              <Card className="p-4 sm:p-8 bg-panel/80 border-edge border-l-4 border-l-brand">
                 <h2 className="text-xl font-bold text-fg mb-6 flex items-center gap-3">
                   <CheckCircle size={20} className="text-brand" />
                   Writeup
@@ -409,7 +409,7 @@ const NewChallengeDetailPage: React.FC = () => {
                     </div>
                   )}
                   {challenge.writeup.content && (
-                    <div className="prose prose-invert max-w-none text-fg-soft leading-relaxed font-normal bg-canvas/30 p-8 rounded-2xl border border-edge/50 whitespace-pre-wrap">
+                    <div className="prose prose-invert max-w-none text-fg-soft leading-relaxed font-normal bg-canvas/30 p-4 sm:p-8 rounded-2xl border border-edge/50 whitespace-pre-wrap">
                       {challenge.writeup.content}
                     </div>
                   )}
@@ -424,7 +424,7 @@ const NewChallengeDetailPage: React.FC = () => {
           {/* Sidebar */}
           <div className="lg:col-span-4 space-y-8">
             {/* Submission Card */}
-            <Card className={`p-8 transition-all duration-500 ${solved ? 'bg-brand-neon/5 border-brand-neon/20' : 'bg-panel border-edge shadow-2xl shadow-brand-neon/5'}`}>
+            <Card className={`p-4 sm:p-8 transition-all duration-500 ${solved ? 'bg-brand-neon/5 border-brand-neon/20' : 'bg-panel border-edge shadow-2xl shadow-brand-neon/5'}`}>
               <h2 className="text-xl font-bold text-fg mb-6 flex items-center gap-2">
                 <Target size={20} className={solved ? 'text-brand-neon' : 'text-muted'} />
                 Flag Submission
@@ -506,7 +506,7 @@ const NewChallengeDetailPage: React.FC = () => {
 
             {/* Hints Card */}
             {challenge.hints && challenge.hints.length > 0 && (
-              <Card className="p-8 bg-panel border-edge">
+              <Card className="p-4 sm:p-8 bg-panel border-edge">
                 <h2 className="text-xl font-bold text-fg mb-6 flex items-center gap-2">
                   <HelpCircle size={20} className="text-muted" />
                   Hints
@@ -559,7 +559,7 @@ const NewChallengeDetailPage: React.FC = () => {
             )}
 
             {/* Solvers Card */}
-            <Card className="p-8 bg-panel border-edge">
+            <Card className="p-4 sm:p-8 bg-panel border-edge">
               <h2 className="text-xl font-bold text-fg mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users size={20} className="text-muted" />
@@ -627,7 +627,7 @@ const NewChallengeDetailPage: React.FC = () => {
       </Modal>
 
       <Modal isOpen={showHintModal} onClose={() => setShowHintModal(false)} className="max-w-sm">
-        <div className="p-8 bg-canvas border border-edge rounded-3xl">
+        <div className="p-4 sm:p-8 bg-canvas border border-edge rounded-3xl">
           <h3 className="text-xl font-black text-fg mb-4 tracking-tight flex items-center gap-2">
             <Lock className="text-amber" />
             Unlock Hint?

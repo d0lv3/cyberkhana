@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ContainerScroll } from '../components/ui/container-scroll-animation';
 import Button from '../components/ui/EnhancedButton';
 import Input from '../components/ui/input';
 import CyberMatrixHero from '../components/ui/cyber-matrix-hero';
-import { Shield, KeyRound, LogIn, School, Eye, EyeOff, UserPlus, Lock } from 'lucide-react';
+import { ArrowLeft, Shield, KeyRound, LogIn, School, Eye, EyeOff, UserPlus, Lock } from 'lucide-react';
 import BrandLogo from '../components/ui/BrandLogo';
 
 interface RegisterPageProps {
@@ -12,6 +12,13 @@ interface RegisterPageProps {
 }
 
 const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
+  const [showShowcase, setShowShowcase] = useState(() => window.matchMedia('(min-width: 768px)').matches);
+  useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 768px)');
+    const update = () => setShowShowcase(desktop.matches);
+    desktop.addEventListener('change', update);
+    return () => desktop.removeEventListener('change', update);
+  }, []);
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
@@ -95,7 +102,13 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
   };
 
   return (
-    <div className="bg-canvas min-h-screen">
+    <div className="bg-canvas app-min-shell">
+      <div className="md:hidden max-w-md mx-auto px-4 pt-4">
+        <Link to="/" className="inline-flex min-h-tap items-center gap-2 text-sm text-muted hover:text-brand">
+          <ArrowLeft size={16} /> Back to home
+        </Link>
+      </div>
+      {showShowcase && <>
       <CyberMatrixHero onCTAClick={() => {
         const registerForm = document.getElementById('register-form');
         if (registerForm) {
@@ -122,10 +135,11 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
           draggable={false}
         />
       </ContainerScroll>
+      </>}
 
-      <div id="register-form" className="flex items-center justify-center -mt-[25rem] md:-mt-[35rem] pb-20 relative z-10 px-4">
+      <div id="register-form" className="flex items-center justify-center pt-4 md:pt-0 md:-mt-[35rem] pb-12 md:pb-20 relative z-10 px-4">
         <div className="w-full max-w-md">
-          <div className="bg-panel/95 border border-edge rounded-2xl shadow-2xl backdrop-blur-xl p-8">
+          <div className="bg-panel/95 border border-edge rounded-2xl shadow-2xl backdrop-blur-xl p-4 sm:p-8">
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-brand/20 rounded-full mb-4">
                 <BrandLogo variant="mark" alt="" className="h-8 w-8 object-contain" />

@@ -208,7 +208,7 @@ const EnhancedChallengesPage: React.FC = () => {
   }
 
   return (
-    <div className="text-fg-soft pb-24">
+    <div className="text-fg-soft pb-6">
 
       {/* Toast queue */}
       {toasts.length > 0 && (
@@ -243,11 +243,11 @@ const EnhancedChallengesPage: React.FC = () => {
           }}
         />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-6 pb-10">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 md:px-8 pt-4 pb-6 md:pt-6 md:pb-10">
           <Breadcrumbs />
 
-          <div className="mt-6 flex flex-col-reverse items-center gap-6 md:flex-row md:items-center md:justify-between md:gap-10">
-            <div className="min-w-0 flex-1 text-center md:text-start">
+          <div className="mt-4 flex flex-row items-center gap-3 md:flex-row md:items-center md:justify-between md:gap-10">
+            <div className="min-w-0 flex-1 text-start">
               <span
                 className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-semibold"
                 style={{ color: accent, borderColor: `${accent}59`, backgroundColor: `${accent}14` }}
@@ -257,10 +257,10 @@ const EnhancedChallengesPage: React.FC = () => {
                 {filteredAndSortedChallenges.length === 1 ? 'challenge' : 'challenges'}
               </span>
 
-              <h1 className="mt-3 text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-fg">
+              <h1 className="mt-3 text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-fg">
                 {activeCategoryData.label}
               </h1>
-              <p className="mt-3 max-w-xl text-base md:text-lg text-muted mx-auto md:mx-0">
+              <p className="mt-3 max-w-xl text-sm md:text-lg text-muted mx-auto md:mx-0">
                 {activeCategoryData.blurb}
               </p>
             </div>
@@ -269,7 +269,7 @@ const EnhancedChallengesPage: React.FC = () => {
               key={activeCategoryData.art}
               kind={activeCategoryData.art}
               glow
-              className="h-36 w-44 flex-shrink-0 md:h-52 md:w-64 lg:h-60 lg:w-72"
+              className="h-20 w-20 sm:h-32 sm:w-36 flex-shrink-0 md:h-52 md:w-64 lg:h-60 lg:w-72"
             />
           </div>
         </div>
@@ -277,7 +277,7 @@ const EnhancedChallengesPage: React.FC = () => {
 
       {/* ── HORIZONTAL CATEGORY TABS ── */}
       <div className="bg-panel border-b border-edge sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 flex scroll-x py-4 gap-2">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 flex scroll-x py-3 md:py-4 gap-2">
           {CATEGORIES.map(cat => {
             const isActive = selectedCategory === cat.value;
             return (
@@ -310,9 +310,9 @@ const EnhancedChallengesPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
         <div className="bg-panel border border-edge rounded-xl p-4 flex flex-col lg:flex-row gap-4 items-center justify-between">
           
-          <div className="flex w-full lg:w-auto items-center gap-4">
+          <div className="flex flex-col sm:flex-row w-full lg:w-auto items-stretch sm:items-center gap-3">
             {/* Search */}
-            <div className="relative flex-1 lg:w-64">
+            <div className="relative min-w-0 flex-1 lg:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-faint" />
               <input
                 type="text"
@@ -331,7 +331,7 @@ const EnhancedChallengesPage: React.FC = () => {
                 onChange={(e) => setSelectedUniversity(e.target.value)}
                 aria-label="View challenges for university"
                 title="University"
-                className="bg-inset border border-edge text-sm font-semibold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
+                className="min-w-0 max-w-full bg-inset border border-edge text-sm font-semibold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
               >
                 {universities.length === 0 && <option value="">No universities</option>}
                 {universities.map((u) => (
@@ -343,13 +343,13 @@ const EnhancedChallengesPage: React.FC = () => {
             )}
           </div>
 
-          <div className="flex w-full lg:w-auto items-center gap-3 overflow-x-auto pb-2 lg:pb-0">
+          <div className="challenge-filters grid grid-cols-2 sm:flex w-full lg:w-auto items-center gap-2 sm:gap-3">
             {/* Status Filter */}
             <select
               aria-label="Filter by status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="bg-inset border border-edge text-sm font-semibold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
+              className="min-w-0 max-w-full bg-inset border border-edge text-sm font-semibold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
             >
               <option value="all">All challenges</option>
               <option value="uncompleted">Unsolved</option>
@@ -361,7 +361,7 @@ const EnhancedChallengesPage: React.FC = () => {
               aria-label="Filter by difficulty"
               value={difficultyFilter}
               onChange={(e) => setDifficultyFilter(e.target.value)}
-              className="bg-inset border border-edge text-sm font-semibold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
+              className="min-w-0 max-w-full bg-inset border border-edge text-sm font-semibold text-fg-soft rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
             >
               <option value="all">Any difficulty</option>
               <option value="Very Easy">Very Easy</option>
@@ -376,7 +376,7 @@ const EnhancedChallengesPage: React.FC = () => {
               aria-label="Sort challenges"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="bg-inset border border-edge text-fg-soft text-sm font-semibold rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
+              className="min-w-0 max-w-full bg-inset border border-edge text-fg-soft text-sm font-semibold rounded-lg px-3 py-2 outline-none focus:border-brand-neon"
             >
               {SORT_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
@@ -438,12 +438,12 @@ const EnhancedChallengesPage: React.FC = () => {
                       
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-3 mb-1 min-w-0">
-                          <h3 className="text-base sm:text-lg font-bold text-fg truncate group-hover:text-brand-neon transition-colors">{challenge.title}</h3>
+                          <h3 className="text-base sm:text-lg font-bold text-fg line-clamp-2 group-hover:text-brand-neon transition-colors">{challenge.title}</h3>
                           <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-inset border border-edge text-muted">
                             {challenge.category}
                           </span>
                         </div>
-                        <p className="text-sm text-faint line-clamp-1 group-hover:text-muted transition-colors">{challenge.description}</p>
+                        <p className="text-sm text-faint line-clamp-2 group-hover:text-muted transition-colors">{challenge.description}</p>
                       </div>
                     </div>
 

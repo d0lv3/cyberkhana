@@ -161,18 +161,18 @@ const NewDashboardPage: React.FC = () => {
       : 0;
 
   return (
-    <div className="text-fg-soft pb-24 px-4 sm:px-6 lg:px-8 py-8">
+    <div className="text-fg-soft pb-6 px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* ── COMMAND CENTER HERO ── */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative rounded-2xl border border-edge bg-panel overflow-hidden p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6"
+          className="relative rounded-2xl border border-edge bg-panel overflow-hidden p-4 sm:p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6"
         >
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[radial-gradient(circle_at_center,rgba(159,239,0,0.05),transparent_60%)] -translate-y-1/2 translate-x-1/4 pointer-events-none" />
           
-          <div className="relative z-10 w-full md:w-auto text-center md:text-left">
+          <div className="relative z-10 w-full md:w-auto text-left">
             <h1 className="text-3xl md:text-5xl font-black text-fg tracking-tight">
               Welcome back,<br/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-neon to-brand">
@@ -202,7 +202,7 @@ const NewDashboardPage: React.FC = () => {
         {/* ── METRICS GRID ── */}
         {/* Three tiles, not four: the hero already states the rank, and a grid
             that repeats it is a grid with nothing to say. */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {[
             { label: 'Flags captured', value: stats.solvedCount, icon: Flag },
             { label: 'Percentile', value: topPercent !== null ? `Top ${topPercent}%` : '–', icon: Activity },
@@ -220,7 +220,7 @@ const NewDashboardPage: React.FC = () => {
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
-                className="bg-panel border border-edge rounded-xl p-4 flex items-center gap-4 min-w-0"
+                className="bg-panel border border-edge rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 min-w-0"
               >
                 <div className="w-10 h-10 shrink-0 rounded-lg flex items-center justify-center border border-edge bg-inset">
                   <Icon className="w-5 h-5 text-muted" />
