@@ -18,7 +18,7 @@ const announcements = require('../dist/routes/announcements').default;
 const { initializeSocket } = require('../dist/services/socketService');
 const { joinCompetitionRoom } = require('../dist/services/competitionRooms');
 const { io: clientIO } = require('socket.io-client');
-const { eventLeaderboard, eventAccess, mutateEvent } = require('../dist/services/eventCompetition');
+const { eventLeaderboard, eventAccess, mutateEvent, canUnregister } = require('../dist/services/eventCompetition');
 let mongo, http, io, base, students, admin, invitedAdmin, outsiders, challenges;
 const token = u => jwt.sign({ userId: String(u._id), username: u.username, role: u.role, universityCode: u.universityCode }, process.env.JWT_SECRET);
 async function request(user, method, route, body, expected = 200) {
@@ -32,7 +32,7 @@ async function createEvent(capacity = 30, codes = ['A', 'B', 'C']) {
     registrationDeadline: new Date(Date.now() + 86400000).toISOString(), hasTimeLimit: false }, 201);
   return data._id;
 }
-async function register(id, users) { for (const user of users) await request(user, 'POST', `/competitions/${id}/register`); }
+async function register(id, users) { for (const user of users) await request(admin, 'POST', `/competitions/${id}/registrations`, { userId: String(user._id) }); }
 async function createTeam(id, user, name) {
   await request(user, 'POST', `/competitions/${id}/teams`, { name });
   return (await request(user, 'GET', `/competitions/${id}/event`)).data.team;
@@ -94,7 +94,7 @@ test('event registration, invitation authorization, team races and scoring', asy
   await t.test('registration cannot duplicate or exceed capacity under contention', async () => {
     await request(students[0], 'POST', `/competitions/${id}/register`, undefined, 409);
     const limited = await createEvent(1, ['A']);
-    const results = await Promise.all(students.slice(14, 19).map(u => request(u, 'POST', `/competitions/${limited}/register`, undefined, null)));
+    const results = await Promise.all(students.slice(14, 19).map(u => request(u, 'POST', `/competitions/${limited}/register`, { teamAction: 'create', name: u.username }, null)));
     assert.equal(results.filter(r => r.status === 200).length, 1);
     assert.equal(results.filter(r => r.status === 409).length, 4);
     assert.equal((await Competition.findById(limited)).eventState.registrations.length, 1);
@@ -163,7 +163,7 @@ test('event registration, invitation authorization, team races and scoring', asy
     assert.equal(individual.mode, 'individual'); assert.equal(individual.leaderboard.reduce((n, r) => n + r.solvedChallenges, 0), 3);
   });
   await t.test('deadline closes self-service but host additions keep capacity and university checks', async () => {
-    await mutateEvent(id, c => { c.registrationDeadline = new Date(Date.now() - 1000); });
+    await mutateEvent(id, c => { c.registrationDeadline = new Date(Date.now() - 1000); c.eventState.registrations.find(r => r.userId === String(students[11]._id)).registeredAt = new Date(Date.now() - 3600000).toISOString(); });
     await request(students[20], 'POST', `/competitions/${id}/register`, undefined, 400);
     await request(students[11], 'DELETE', `/competitions/${id}/register`, undefined, 403);
     await request(admin, 'POST', `/competitions/${id}/registrations`, { userId: String(students[20]._id) });
@@ -194,7 +194,7 @@ test('event registration, invitation authorization, team races and scoring', asy
   });
 });
 
-test('withdrawing before the deadline preserves earned history and blocks team transfers', async () => {
+test('withdrawing within one hour preserves earned history and blocks team transfers', async () => {
   const id = await createEvent(4, ['A']);
   await register(id, [students[21], students[22]]);
   const team = await createTeam(id, students[21], 'Withdrawal fixture');
@@ -227,6 +227,48 @@ test('declined university invitations remain hidden and equal scores use the ear
       solves: ['late', 'early'].map((teamId, i) => ({ teamId, challengeId: 'challenge', userId: teamId, solvedAt: `2026-09-22T12:0${1-i}:00.000Z`, firstBlood: false })) }
   };
   assert.deepEqual(eventLeaderboard(fixture).leaderboard.map(r => r._id), ['early', 'late']);
+});
+
+test('registration requires a team and atomically creates or joins it before the event starts', async () => {
+  const id = await createEvent(10, ['A']);
+  const route = `/competitions/${id}/register`;
+  await request(students[0], 'POST', route, undefined, 400);
+  await request(students[0], 'POST', route, { teamAction: 'join', inviteCode: 'INVALID' }, 404);
+  assert.equal((await Competition.findById(id)).eventState.registrations.length, 0);
+  const attempts = await Promise.all(['First', 'Second'].map(name => request(students[0], 'POST', route, { teamAction: 'create', name }, null)));
+  assert.deepEqual(attempts.map(r => r.status).sort(), [200, 409]);
+  const state = (await Competition.findById(id)).eventState;
+  assert.equal(state.registrations.length, 1); assert.equal(state.teams.length, 1);
+  const team = state.teams[0];
+  const joins = await Promise.all(students.slice(1, 5).map(user => request(user, 'POST', route, { teamAction: 'join', inviteCode: team.inviteCode }, null)));
+  assert.equal(joins.filter(r => r.status === 200).length, 3);
+  assert.equal(joins.filter(r => r.status === 409).length, 1);
+  const finalState = (await Competition.findById(id)).eventState;
+  assert.equal(finalState.registrations.length, 4); assert.equal(finalState.teams[0].members.length, 4);
+  await request(students[5], 'POST', route, { teamAction: 'create', name: team.name }, 409);
+  assert.equal((await Competition.findById(id)).eventState.registrations.length, 4);
+  const data = (await request(students[0], 'GET', `/competitions/${id}/event`)).data;
+  assert.equal(data.team.members.length, 4); assert.deepEqual(data.challenges, []);
+});
+
+test('withdrawal closes at exactly one hour and the API enforces it independently of registration deadline', async () => {
+  const id = await createEvent(5, ['A']);
+  await request(students[0], 'POST', `/competitions/${id}/register`, { teamAction: 'create', name: 'One hour' });
+  const snapshot = await Competition.findById(id).lean();
+  const at = Date.parse(snapshot.eventState.registrations[0].registeredAt), uid = String(students[0]._id);
+  assert.equal(canUnregister(snapshot, uid, at + 3599999), true);
+  assert.equal(canUnregister(snapshot, uid, at + 3600000), false);
+  await mutateEvent(id, c => { c.eventState.registrations[0].registeredAt = new Date(Date.now() - 3600001).toISOString(); });
+  const card = (await request(students[0], 'GET', `/competitions/${id}/registration`)).data;
+  assert.equal(card.canUnregister, false);
+  await request(students[0], 'DELETE', `/competitions/${id}/register`, undefined, 403);
+  assert.equal((await Competition.findById(id)).eventState.registrations.length, 1);
+  await request(admin, 'DELETE', `/competitions/${id}/registrations/${uid}`);
+  await request(students[1], 'POST', `/competitions/${id}/register`, { teamAction: 'create', name: 'Recent registration' });
+  await mutateEvent(id, c => { c.registrationDeadline = new Date(Date.now() - 1); });
+  await request(students[1], 'DELETE', `/competitions/${id}/register`);
+  const empty = (await Competition.findById(id)).eventState;
+  assert.equal(empty.registrations.length, 0); assert.equal(empty.teams.length, 0);
 });
 
 test('legacy missing-type and explicit workshop competitions keep existing behavior', async () => {

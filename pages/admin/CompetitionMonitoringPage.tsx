@@ -1,3 +1,4 @@
+import EventParticipationPanel from '../../components/competition/EventParticipationPanel';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { competitionService } from '../../services/competitionService';
@@ -13,6 +14,9 @@ import {
 } from 'lucide-react';
 
 interface Competition {
+  type?: string;
+  canManage?: boolean;
+  registrationCount?: number;
   _id: string;
   name: string;
   status: string;
@@ -46,6 +50,7 @@ const CompetitionMonitoringPage: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [isLive, setIsLive] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
@@ -110,11 +115,13 @@ const CompetitionMonitoringPage: React.FC = () => {
     socket.on('competitionActivity', onActivity);
     socket.on('flagSubmitted', onFlagSubmitted);
     socket.on('competitionUpdate', onCompetitionUpdate);
+    socket.on('eventChanged', onCompetitionUpdate);
 
     return () => {
       socket.off('competitionActivity', onActivity);
       socket.off('flagSubmitted', onFlagSubmitted);
       socket.off('competitionUpdate', onCompetitionUpdate);
+      socket.off('eventChanged', onCompetitionUpdate);
     };
   }, [socket, isConnected, id]);
 
@@ -124,7 +131,8 @@ const CompetitionMonitoringPage: React.FC = () => {
       else setLoading(true);
 
       const competitionData = await competitionService.getCompetitionById(id!);
-      if (competitionData.type === 'event') { navigate(`/events/${id}`, { replace: true }); return; }
+      if (competitionData.type === 'event' && !competitionData.canManage) throw new Error('Only the host can monitor this event');
+      setError('');
       setCompetition(competitionData);
 
       const leaderboardResponse = await competitionService.getCompetitionLeaderboard(id!);
@@ -138,8 +146,8 @@ const CompetitionMonitoringPage: React.FC = () => {
 
       calculateStats(competitionData, leaderboardData, activityData);
       setLastUpdate(new Date());
-    } catch (err) {
-      console.error('Error fetching competition data:', err);
+    } catch (err: any) {
+      setCompetition(null); setLeaderboard([]); setActivities([]); setError(err.message || 'Could not load competition');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -156,7 +164,7 @@ const CompetitionMonitoringPage: React.FC = () => {
       : 0;
 
     // `solves` here means "challenges in this category that have been solved",
-    // not the raw solve count — see the bar that renders it.
+    // not the raw solve count â€” see the bar that renders it.
     const categoryMap = new Map();
     competition?.challenges?.forEach((challenge: any) => {
       const category = challenge.category;
@@ -219,11 +227,11 @@ const CompetitionMonitoringPage: React.FC = () => {
   const isSharedCompetition = (competition?.universityCodes?.length || 0) > 1;
 
   const handleViewUser = (user: any) => {
-    setSelectedUser(user);
+    setSelectedUser(competition?.type === 'event' ? leaderboard.find(row => row._id === (user.teamId || user._id)) || user : user);
   };
 
   const handleViewChallenge = (challenge: any) => {
-    setSelectedChallenge(challenge);
+    setSelectedChallenge(competition?.challenges.find(c => c._id === (challenge.challengeId || challenge._id)) || challenge);
   };
 
   if (loading) {
@@ -272,7 +280,8 @@ const CompetitionMonitoringPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="outline" onClick={() => navigate(`/competition/${id}/leaderboard?present=1`)}>Maximize leaderboard</Button>
             <div className="text-xs text-faint font-mono mr-4">
               Last updated: <span className="text-muted">{formatTimeAgo(lastUpdate)}</span>
             </div>
@@ -295,6 +304,8 @@ const CompetitionMonitoringPage: React.FC = () => {
           </div>
         </motion.div>
 
+        {error && <p role="alert" className="mb-6 text-red-400">{error}</p>}
+        {competition?.type === 'event' && competition.canManage && <details className="mb-6 rounded-xl border border-edge bg-panel p-4"><summary className="cursor-pointer text-fg font-bold">Registration and team management Â· {competition.registrationCount} participants</summary><div className="mt-4"><EventParticipationPanel event={competition} onChange={() => fetchCompetitionData(true)} /></div></details>}
         {/* Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-surface-alt border border-edge-soft p-5 rounded-xl">
@@ -310,7 +321,7 @@ const CompetitionMonitoringPage: React.FC = () => {
           <div className="bg-surface-alt border border-edge-soft p-5 rounded-xl">
             <div className="flex items-center gap-2 mb-2">
               <Users className="w-5 h-5 text-info" />
-              <span className="text-xs text-dim">Participants</span>
+              <span className="text-xs text-dim">{competition?.type === 'event' ? 'Active Teams' : 'Participants'}</span>
             </div>
             <p className="text-2xl font-black text-fg">
               {stats.activeParticipants}
@@ -347,7 +358,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                   : 'border-transparent text-dim hover:text-fg-soft'
               }`}
             >
-              {tab === 'leaderboard' ? 'Leaderboard' : tab === 'students' ? 'Student Progress' : 'Live Activity'}
+              {tab === 'leaderboard' ? 'Leaderboard' : tab === 'students' ? (competition?.type === 'event' ? 'Team Progress' : 'Student Progress') : 'Live Activity'}
             </button>
           ))}
         </div>
@@ -449,14 +460,14 @@ const CompetitionMonitoringPage: React.FC = () => {
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
                   <h2 className="text-xl font-bold text-fg flex items-center gap-2">
-                    <Users className="w-5 h-5 text-info" /> Student Progress
+                    <Users className="w-5 h-5 text-info" /> {competition?.type === 'event' ? 'Team Progress' : 'Student Progress'}
                   </h2>
                   <div className="relative w-full md:w-64">
                     <Search className="w-4 h-4 text-dim absolute left-3 top-1/2 -translate-y-1/2" />
                     <input
                       value={searchTerm}
                       onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                      placeholder="Search students..."
+                      placeholder={competition?.type === 'event' ? 'Search teams...' : 'Search students...'}
                       className="w-full bg-surface-alt border border-edge-soft rounded px-9 py-2 text-sm text-[#e2e8f6] placeholder:text-faint focus:outline-none focus:border-info"
                     />
                   </div>
@@ -470,7 +481,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                     const progressPct = totalChallenges > 0 ? Math.round(((user.solvedChallenges || 0) / totalChallenges) * 100) : 0;
 
                     // Find activities for this student
-                    const studentActivities = activities.filter((a: any) => a.userId === user._id || a.username === user.username);
+                    const studentActivities = activities.filter((a: any) => competition?.type === 'event' ? a.data?.teamId === user._id : a.userId === user._id || a.username === user.username);
                     const lastActive = studentActivities.length > 0
                       ? formatTimeAgo(new Date(studentActivities[0].solvedAt || studentActivities[0].timestamp))
                       : 'Never';
@@ -581,7 +592,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                     );
                   })}
                   {paginatedLeaderboard.length === 0 && (
-                    <div className="p-8 text-center text-faint">No students found</div>
+                    <div className="p-8 text-center text-faint">No participants found</div>
                   )}
                   {totalPages > 1 && (
                     <div className="p-4 flex justify-between items-center bg-[#151c29] border-t border-edge">
@@ -745,7 +756,7 @@ const CompetitionMonitoringPage: React.FC = () => {
              <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-surface-alt border border-[#3a4864] rounded-xl max-w-lg w-full p-6 shadow-2xl">
                 <div className="flex justify-between items-center mb-6">
                    <h3 className="font-black text-2xl text-fg flex items-center gap-2">
-                     <span className="text-brand-neon">&gt;</span> Profile: {selectedUser.username}
+                     <span className="text-brand-neon">&gt;</span> {competition?.type === 'event' ? 'Team' : 'Profile'}: {selectedUser.username}
                    </h3>
                    <Button variant="ghost" onClick={() => setSelectedUser(null)} className="text-dim hover:text-white p-1 hover:bg-edge-soft"><X className="w-5 h-5"/></Button>
                 </div>
@@ -764,7 +775,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex gap-3 mt-8">
-                  <Button variant="default" className="flex-1 bg-brand-neon text-canvas-alt font-black hover:bg-[#b0f52b]" onClick={() => navigate(`/profile/${selectedUser._id}`)}>
+                  <Button disabled={competition?.type === 'event'} variant="default" className="flex-1 bg-brand-neon text-canvas-alt font-black hover:bg-[#b0f52b]" onClick={() => navigate(`/profile/${selectedUser._id}`)}>
                     FULL PROFILE
                   </Button>
                   <Button variant="outline" className="flex-1 border-[#3a4864] text-[#dce5f9] hover:bg-edge" onClick={() => setSelectedUser(null)}>
@@ -817,7 +828,7 @@ const CompetitionMonitoringPage: React.FC = () => {
                 )}
                 
                 <div className="flex gap-3">
-                  <Button variant="default" className="flex-1 bg-amber text-canvas-alt font-black hover:bg-[#ffb041]" onClick={() => navigate(`/competitions/${id}/challenges/${selectedChallenge._id}`)}>
+                  <Button variant="default" className="flex-1 bg-amber text-canvas-alt font-black hover:bg-[#ffb041]" onClick={() => navigate(`/competition/${id}/challenge/${selectedChallenge._id}`)}>
                     View Challenge
                   </Button>
                   <Button variant="outline" className="flex-1 border-[#3a4864] text-[#dce5f9] hover:bg-edge" onClick={() => setSelectedChallenge(null)}>

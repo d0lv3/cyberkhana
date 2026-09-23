@@ -12,13 +12,19 @@ Implemented on 2026-09-23 alongside the existing workshop system. Competitions w
 - Host controls for invitations, challenge snapshots, starting/ending, participant registration, team membership, publishing hints and score adjustments.
 - Socket updates for registration counts, invitations, rosters, activity and scoring. Removing registration evicts the participant from the event room and clears the event UI.
 
+## Shared competition screens
+
+Events use the existing workshop management cards, challenge picker, hint controls, monitoring dashboard, challenge dashboard and podium leaderboard. Registration/team controls are an embedded shared panel. Legacy `/events/:id` links redirect to `/competition/:id`. Monitoring uses team totals and team progress for events, and event standings preserve the server's earliest-last-solve order. Team entries do not open individual profiles.
+
+Admins can maximize either competition type's leaderboard from the monitoring screen or the leaderboard itself. Presentation mode fills the viewport, hides the app navigation and supports Escape or Exit fullscreen. The leaderboard button also requests native browser fullscreen where supported. Live refresh and the team/individual toggle continue to work while maximized.
+
 ## Rules and scope
 
 The host university's admins and super-admins manage the event. Invited admins respond for their own university; accepting an invitation does not grant host permissions. Teams may span accepted universities, and one-person teams are valid.
 
-Students can register or withdraw before the deadline, subject to capacity. Hosts may add participants after the deadline while the event is open, but cannot exceed capacity or add students from unaccepted universities. Withdrawing also removes team membership.
+Students register before the deadline, subject to capacity, and must create or join a team in the registration dialog. Registration and team membership commit atomically; an invalid invite, full team, duplicate team name or capacity failure leaves neither a registration nor an orphan team. Students may unregister only during the first hour after their registration timestamp, even if the registration deadline has since passed. At exactly one hour, self-service withdrawal is locked. Ended events do not allow withdrawal. Hosts may add participants after the deadline while the event is open, but cannot exceed capacity or add students from unaccepted universities. Withdrawing also removes team membership.
 
-Ordinary roster transfers lock after the team's first solve, hint purchase or score adjustment. Withdrawal is still allowed before the registration deadline. Host removals retain history, and removed members cannot move their earned contributions to another team. Hosts can restore their original membership. Empty teams without history disband; empty teams with scoring history remain archived so standings cannot be erased by leaving.
+Ordinary roster transfers lock after the team's first solve, hint purchase or score adjustment. Withdrawal is still allowed during the first hour after registration. Host removals retain history, and removed members cannot move their earned contributions to another team. Hosts can restore their original membership. Empty teams without history disband; empty teams with scoring history remain archived so standings cannot be erased by leaving.
 
 Event scores are separate from personal platform/workshop points. A unique solve belongs to the team that earned it. Individual rankings attribute solves and hint charges to the player who performed them; team-wide adjustments appear in team rankings only. Dynamic decay is based on unique solving teams and recalculates totals consistently.
 
@@ -34,7 +40,7 @@ Nonparticipant responses use an explicit metadata allowlist. Student challenge r
 
 ## Validation
 
-`npm --prefix backend run test:events` builds the backend and runs 15 passing Node integration tests against disposable MongoDB data. Coverage includes concurrent capacity claims, concurrent team joins, four-member limits, duplicate teammate submissions, shared hint purchases, invitation acceptance/decline, HTTP/socket access gates, removal/eviction, captain succession, withdrawal after solving, team-history preservation, static/dynamic scores, first blood, tiebreaks, event closure and both explicit-workshop and missing-type legacy flows.
+`npm --prefix backend run test:events` builds the backend and runs 17 passing Node integration tests against disposable MongoDB data. Coverage includes concurrent capacity claims, concurrent team joins, four-member limits, duplicate teammate submissions, shared hint purchases, invitation acceptance/decline, HTTP/socket access gates, removal/eviction, captain succession, withdrawal after solving, mandatory atomic team selection at registration, exact one-hour withdrawal boundaries, team-history preservation, static/dynamic scores, first blood, tiebreaks, event closure and both explicit-workshop and missing-type legacy flows.
 
 The test runner uses `mongodb-memory-server`. To use a locally installed MongoDB binary instead of downloading one on Windows:
 

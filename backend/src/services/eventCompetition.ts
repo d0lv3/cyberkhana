@@ -29,6 +29,14 @@ export const eventTeamFor = (c: any, userId?: string): EventTeam | undefined => 
 export const teamLocked = (c: any, t: EventTeam) => t.hints.length > 0 || c.eventState.solves.some((s: EventSolve) => s.teamId === t.id) || t.adjustments.length > 0;
 export const eventOpen = (c: any, now = Date.now()) => c.status === 'active' && new Date(c.startTime).getTime() <= now && (!c.hasTimeLimit || !c.endTime || new Date(c.endTime).getTime() > now);
 export const registrationOpen = (c: any, now = Date.now()) => c.status !== 'ended' && new Date(c.registrationDeadline).getTime() > now && (!c.endTime || new Date(c.endTime).getTime() > now);
+export const unregisterUntil = (c: any, userId?: string) => {
+  const registration = c.eventState.registrations.find((r: Registration) => r.userId === userId);
+  return registration ? new Date(Date.parse(registration.registeredAt) + 3600000).toISOString() : null;
+};
+export const canUnregister = (c: any, userId?: string, now = Date.now()) => {
+  const until = unregisterUntil(c, userId);
+  return c.status !== 'ended' && !!until && now < Date.parse(until);
+};
 export const eventId = () => randomBytes(12).toString('hex');
 export const inviteCode = () => randomBytes(9).toString('hex').toUpperCase();
 export const uniqueSolves = (c: any): EventSolve[] => {
@@ -55,9 +63,10 @@ export const teamScore = (c: any, t: EventTeam) => {
 export const eventMetadata = (c: any, u?: IJWTPayload) => ({
   _id: String(c._id), type: 'event', name: c.name, universityCode: c.universityCode,
   universityCodes: c.eventState.invitations.filter((i: any) => i.status === 'accepted').map((i: any) => i.universityCode),
-  startTime: c.startTime, endTime: c.endTime, status: c.status, hasTimeLimit: c.hasTimeLimit,
+  startTime: c.startTime, endTime: c.endTime, status: c.status, hasTimeLimit: c.hasTimeLimit, duration: c.duration,
   requiresSecurityCode: false, registrationDeadline: c.registrationDeadline, capacity: c.capacity,
   registrationCount: c.eventState.registrations.length, registered: eventRegistered(c, u?.userId),
+  unregisterUntil: unregisterUntil(c, u?.userId), canUnregister: canUnregister(c, u?.userId),
   canRegister: u?.role === 'user', registrationOpen: registrationOpen(c), canManage: eventOwner(c, u), challenges: [],
 });
 
@@ -72,7 +81,8 @@ export const eventDetails = (c: any, u: IJWTPayload) => {
       const { flag, flags, ...safe } = ch.toObject ? ch.toObject() : ch;
       const solved = solves.find(s => s.teamId === team?.id && s.challengeId === String(ch._id));
       return { ...safe, ...(owner ? { flag, flags } : {}), points: eventPoints(c, ch, solves), currentPoints: eventPoints(c, ch, solves),
-        solves: solves.filter(s => s.challengeId === String(ch._id)).length, solvers: [],
+        solves: solves.filter(s => s.challengeId === String(ch._id)).length,
+        solvers: solves.filter(s => s.challengeId === String(ch._id)).map(s => ({ username: s.username, teamId: s.teamId, solvedAt: s.solvedAt, isFirstBlood: s.firstBlood })),
         solvedBy: solved?.username, solvedByTeammate: !!solved && solved.userId !== u.userId,
         hints: (ch.hints || []).map((h: any, index: number) => ({ cost: h.cost, isPublished: !!h.isPublished,
           text: owner || h.isPublished || team?.hints.some(p => p.challengeId === String(ch._id) && p.index === index) ? h.text : 'LOCKED' })),

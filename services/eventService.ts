@@ -3,7 +3,7 @@ import { apiService } from './api';
 export const eventService = {
   details: (id: string) => apiService.get(`/competitions/${id}/event`),
   candidates: (id: string, search: string) => apiService.get(`/competitions/${id}/registration-candidates`, { search }),
-  register: (id: string) => apiService.post(`/competitions/${id}/register`),
+  register: (id: string, team: { teamAction: 'create' | 'join'; name?: string; inviteCode?: string }) => apiService.post(`/competitions/${id}/register`, team),
   unregister: (id: string) => apiService.delete(`/competitions/${id}/register`),
   createTeam: (id: string, name: string) => apiService.post(`/competitions/${id}/teams`, { name }),
   joinTeam: (id: string, inviteCode: string) => apiService.post(`/competitions/${id}/teams/join`, { inviteCode }),

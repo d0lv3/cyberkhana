@@ -19,6 +19,8 @@ export interface UnifiedLeaderboardEntry {
 interface UnifiedLeaderboardProps {
   title: string;
   subtitle?: string;
+  entryLabel?: 'Player' | 'Team';
+  preserveOrder?: boolean;
   entries: UnifiedLeaderboardEntry[];
   totalFlags: number;
   loading?: boolean;
@@ -184,6 +186,8 @@ const ROW_GRID = 'grid grid-cols-[2.5rem_1fr_auto] sm:grid-cols-[3.5rem_1fr_7rem
 const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
   title,
   subtitle,
+  entryLabel = 'Player',
+  preserveOrder = false,
   entries,
   totalFlags,
   loading = false,
@@ -197,9 +201,9 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
     () =>
       [...entries]
         .map((e) => ({ ...e, points: toNumber(e.points), flagsPwned: toNumber(e.flagsPwned) }))
-        .sort((a, b) => b.points - a.points || b.flagsPwned - a.flagsPwned)
+        .sort((a, b) => preserveOrder ? 0 : b.points - a.points || b.flagsPwned - a.flagsPwned)
         .map((e, i) => ({ ...e, rank: i + 1 })),
-    [entries],
+    [entries, preserveOrder],
   );
 
   const filtered = useMemo(() => {
@@ -251,7 +255,7 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
       <div>
         <span className="inline-flex items-center gap-2 rounded-full border border-edge bg-inset px-3 py-1 text-xs font-semibold text-muted">
           <Trophy size={12} className="text-brand" />
-          Player leaderboard
+          {entryLabel} leaderboard
         </span>
         <h1 className="mt-3 text-3xl md:text-4xl font-black text-fg">{title}</h1>
         {subtitle ? <p className="mt-2 text-muted">{subtitle}</p> : null}
@@ -343,20 +347,20 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search player"
-          aria-label="Search player"
+          placeholder={`Search ${entryLabel.toLowerCase()}`}
+          aria-label={`Search ${entryLabel.toLowerCase()}`}
           className="w-full rounded-lg border border-edge bg-inset py-2.5 ps-9 pe-3 text-sm text-fg placeholder:text-faint focus:border-brand/50 focus:outline-none"
         />
       </div>
 
       {/* ── The board ── */}
-      {rest.length === 0 ? (
+      {rest.length === 0 ? (filtered.length > 0 ? null :
         <div className="rounded-2xl border border-edge bg-panel py-14 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-edge bg-inset">
             <Trophy size={22} className="text-faint" />
           </div>
           <h3 className="text-base font-bold text-fg">
-            {search ? 'No player matches that search' : 'Nobody on the board yet'}
+            {search ? `No ${entryLabel.toLowerCase()} matches that search` : 'Nobody on the board yet'}
           </h3>
           <p className="mx-auto mt-1.5 max-w-sm text-sm text-muted">
             {search ? 'Try a different name or username.' : 'Capture a flag and you will be the first.'}
@@ -366,7 +370,7 @@ const UnifiedLeaderboard: React.FC<UnifiedLeaderboardProps> = ({
         <div className="overflow-hidden rounded-2xl border border-edge bg-panel">
           <div className={`${ROW_GRID} border-b border-edge px-4 sm:px-5 py-3 text-xs font-semibold text-dim`}>
             <span>Rank</span>
-            <span>Player</span>
+            <span>{entryLabel}</span>
             <span className="hidden sm:block">Flags</span>
             <span className="text-end">Points</span>
           </div>

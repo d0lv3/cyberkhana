@@ -8,7 +8,7 @@ import User from '../models/User';
 import rateLimit from 'express-rate-limit';
 import { getIO } from '../services/socketService';
 import { assertEvent, EventError, EventState, EventTeam, Registration, eventAccess, eventDetails, eventId, eventLeaderboard, eventMetadata,
-  eventOpen, eventOwner, eventPoints, eventRegistered, eventTeamFor, eventVisible, inviteCode, leaveEventTeam, mutateEvent, registrationOpen, teamLocked, teamScore, uniqueSolves } from '../services/eventCompetition';
+  eventOpen, eventOwner, eventPoints, eventRegistered, eventTeamFor, eventVisible, inviteCode, leaveEventTeam, mutateEvent, registrationOpen, canUnregister, teamLocked, teamScore, solvePoints, uniqueSolves } from '../services/eventCompetition';
 
 const fail = (res: Response, error: any) => {
   if (!(error instanceof EventError)) console.error('Event competition failed:', error);
@@ -109,6 +109,8 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
         return res.json(uniqueSolves(initial).filter(s => s.teamId === team?.id).map(s => s.challengeId));
       }
       if (route === '/activity') return res.json(uniqueSolves(initial).slice(-30).reverse().map(s => ({ type: s.firstBlood ? 'first_blood' : 'solve', timestamp: s.solvedAt,
+        userId: s.userId, challengeId: s.challengeId, teamId: s.teamId, points: solvePoints(initial, s),
+        category: initial.challenges.find((ch: any) => String(ch._id) === s.challengeId)?.category,
         username: s.username, challengeTitle: initial.challenges.find((ch: any) => String(ch._id) === s.challengeId)?.title,
         data: { username: s.username, challengeId: s.challengeId, teamId: s.teamId } })));
       const solvers = route.match(/^\/challenges\/([a-f\d]{24})\/solvers$/i);
@@ -153,14 +155,30 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
         const userId = String(registrationUser._id);
         assertEvent(!eventRegistered(c, userId), 'Already registered', 409);
         assertEvent(state.registrations.length < c.capacity, 'This event is full', 409);
+        if (!regRoute) {
+          assertEvent(body.teamAction === 'create' || body.teamAction === 'join', 'Choose create or join a team to register');
+          assertEvent(!state.teams.some(t => t.lockedMembers?.includes(userId)), 'Your participation history locks team transfers. Contact the host to restore registration.', 409);
+          if (body.teamAction === 'create') {
+            const name = text(body.name, 'Team name', 60);
+            assertEvent(!state.teams.some(t => t.name.toLowerCase() === name.toLowerCase()), 'Team name is already taken', 409);
+            state.teams.push({ id: eventId(), name, inviteCode: inviteCode(), captainId: userId, members: [userId], hints: [], adjustments: [] });
+          } else {
+            const code = text(body.inviteCode, 'Invite code', 30).toUpperCase();
+            const team = state.teams.find(t => t.inviteCode === code && t.members.length > 0);
+            assertEvent(team, 'Invalid invite code', 404);
+            assertEvent(team.members.length < 4, 'Team is full', 409);
+            assertEvent(!teamLocked(c, team), 'Team roster is locked', 409);
+            team.members.push(userId);
+          }
+        }
         state.registrations.push({ userId, username: registrationUser.username, universityCode: registrationUser.universityCode, registeredAt: new Date().toISOString() });
         return { success: true };
       }
       if (method === 'DELETE' && (route === '/register' || regRoute?.[1])) {
         const target = regRoute?.[1] || u.userId;
-        assertEvent(regRoute ? owner : registrationOpen(c), regRoute ? 'Only the host can remove participants' : 'Registration is closed', 403);
+        assertEvent(regRoute ? owner : canUnregister(c, target), regRoute ? 'Only the host can remove participants' : 'Unregistration is only available during the first hour after registration', 403);
         assertEvent(eventRegistered(c, target), 'Participant not registered', 404);
-        // Registration can always be withdrawn before its deadline, including
+        // Registration can be withdrawn during its first hour, including
         // after a solve. Keep historical contributions and the transfer lock.
         leaveEventTeam(c, target, true);
         state.registrations = state.registrations.filter(r => r.userId !== target);

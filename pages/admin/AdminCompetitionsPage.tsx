@@ -1,4 +1,5 @@
-import EventCard from '../../components/competition/EventCard';
+import EventParticipationPanel from '../../components/competition/EventParticipationPanel';
+import { eventService } from '../../services/eventService';
 import EventInvitations from '../../components/competition/EventInvitations';
 import { ChallengeCategory } from '../../types';
 import React, { useState, useEffect } from 'react';
@@ -16,6 +17,9 @@ import { useToast } from '../../src/hooks/useToast';
 
 interface Competition {
   type?: 'workshop' | 'event';
+  canManage?: boolean;
+  registrationCount?: number;
+  capacity?: number;
   _id: string;
   name: string;
   securityCode?: string;
@@ -95,7 +99,7 @@ const AdminCompetitionsPage: React.FC = () => {
     try {
       setLoading(true);
       const data = await competitionService.getCompetitions();
-      setCompetitions(data);
+      setCompetitions(await Promise.all(data.filter((c: any) => c.type !== 'event' || c.canManage).map((c: any) => c.type === 'event' ? eventService.details(c._id) : c)));
       setError('');
     } catch (err: any) {
       setError(err.message);
@@ -412,7 +416,7 @@ const AdminCompetitionsPage: React.FC = () => {
 
       <EventInvitations onChange={fetchCompetitions} />
       <div className="grid gap-4 mt-4">
-        {competitions.map((competition) => competition.type === 'event' ? <EventCard key={competition._id} event={competition} onChange={fetchCompetitions} /> : (
+        {competitions.map((competition) => (
           <Card key={competition._id} className="p-4 sm:p-6">
             {/* Stacked until lg: the action cluster on its own is wider than a
                 phone, so side-by-side could only ever overflow. */}
@@ -420,7 +424,7 @@ const AdminCompetitionsPage: React.FC = () => {
               <div className="min-w-0">
                 <h3 className="text-lg sm:text-xl font-bold text-zinc-100 mb-2 break-words">{competition.name}</h3>
                 <div className="flex gap-x-4 gap-y-1 text-sm text-zinc-500 flex-wrap">
-                  {competition.requiresSecurityCode !== false ? (
+                  {competition.type === 'event' ? <span className="text-brand">Event · {competition.registrationCount}/{competition.capacity} registered</span> : competition.requiresSecurityCode !== false ? (
                     <span>Security Code: <span className="text-emerald-400 font-mono">{competition.securityCode}</span></span>
                   ) : (
                     <span className="text-yellow-400">Open (No Code Required)</span>
@@ -463,19 +467,20 @@ const AdminCompetitionsPage: React.FC = () => {
                 {competition.status === 'active' && (
                   <Button variant="secondary" onClick={() => handleStatusChange(competition._id, 'ended')}>End</Button>
                 )}
-                <Button
+                {competition.type !== 'event' && <Button
                   variant="destructive"
                   onClick={() => handleDeleteCompetition(competition)}
                 >
                   Delete
-                </Button>
+                </Button>}
               </div>
             </div>
 
+            {competition.type === 'event' && <details className="mb-4"><summary className="cursor-pointer font-semibold text-fg">Registration and teams</summary><div className="mt-4"><EventParticipationPanel event={competition} onChange={fetchCompetitions} /></div></details>}
             <div className="border-t border-zinc-700 pt-4">
               <div className="flex justify-between items-center mb-3">
                 <h4 className="text-lg font-semibold text-zinc-200">Challenges</h4>
-                <Button onClick={() => openChallengeSelection(competition)}>
+                <Button disabled={competition.type === 'event' && competition.status !== 'pending'} onClick={() => openChallengeSelection(competition)}>
                   Add Challenges
                 </Button>
               </div>

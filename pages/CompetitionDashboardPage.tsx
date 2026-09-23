@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import EventParticipationPanel from '../components/competition/EventParticipationPanel';
+import { useSocket } from '../src/contexts/SocketContext';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNow, isCompetitionOver, formatTimeRemaining } from '../src/hooks/useCompetitionClock';
 import { useParams, useNavigate } from 'react-router-dom';
 import { competitionService } from '../services/competitionService';
@@ -44,6 +46,8 @@ interface CompetitionChallenge {
   description: string;
   author: string;
   solves: number;
+  solvedByTeammate?: boolean;
+  solvedBy?: string;
   difficulty?: string;
   currentPoints?: number;
   firstBloodBonus?: number;
@@ -76,6 +80,8 @@ const rankIcon = (rank: number) => {
 const CompetitionDashboardPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { socket, isConnected, joinCompetition, leaveCompetition } = useSocket();
+  const version = useRef(0);
   const [competition, setCompetition] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -120,19 +126,34 @@ const CompetitionDashboardPage: React.FC = () => {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [id]);
 
+  useEffect(() => {
+    if (!id || competition?.type !== 'event') return;
+    if (isConnected) joinCompetition(id);
+    const refresh = () => { void fetchCompetition(); void fetchLeaderboardAndActivity(); void fetchAnnouncements(); };
+    const changed = (data: any) => { if (data.competitionId === id) refresh(); };
+    const revoked = (data: any) => { if (data.competitionId === id) { ++version.current; setCompetition(null); setLeaderboard([]); setError('Your event registration has been removed.'); setLoading(false); } };
+    socket?.on('eventChanged', changed); socket?.on('eventAccessRevoked', revoked);
+    window.addEventListener('focus', refresh);
+    if (isConnected) refresh();
+    return () => { leaveCompetition(id); socket?.off('eventChanged', changed); socket?.off('eventAccessRevoked', revoked); window.removeEventListener('focus', refresh); };
+  }, [id, competition?.type, socket, isConnected, joinCompetition, leaveCompetition]);
+
   const getStoredSecurityCode = (): string | null =>
     localStorage.getItem(`competition_${id}_security_code`);
 
   const fetchCompetition = async () => {
+    const request = ++version.current;
     try {
       setLoading(true);
       const storedCode = getStoredSecurityCode();
       const data = await competitionService.getCompetitionById(id!, storedCode || undefined);
-      if (data.type === 'event') { navigate(`/events/${id}`, { replace: true }); return; }
+      if (request !== version.current) return;
       setCompetition(data);
       await fetchSolvedChallenges();
       setError('');
     } catch (err: any) {
+      if (request !== version.current) return;
+      setCompetition(null);
       const errorMsg = err.message || 'Failed to fetch competition';
       if (errorMsg.includes('security code')) {
         localStorage.removeItem(`competition_${id}_security_code`);
@@ -141,7 +162,7 @@ const CompetitionDashboardPage: React.FC = () => {
         setError(errorMsg);
       }
     } finally {
-      setLoading(false);
+      if (request === version.current) setLoading(false);
     }
   };
 
@@ -242,9 +263,9 @@ const CompetitionDashboardPage: React.FC = () => {
 
   const userRank = useMemo(() => {
     if (!user || leaderboard.length === 0) return 0;
-    const idx = leaderboard.findIndex(e => e.username === user.username);
+    const idx = leaderboard.findIndex(e => competition?.type === 'event' ? e._id === competition.team?.id : e.username === user.username);
     return idx >= 0 ? idx + 1 : 0;
-  }, [leaderboard, user]);
+  }, [leaderboard, user, competition]);
 
   const isSharedCompetition = (competition?.universityCodes?.length || 0) > 1;
 
@@ -362,6 +383,8 @@ const CompetitionDashboardPage: React.FC = () => {
                   <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-bold bg-amber/10 border border-amber/30 text-amber">
                     <Clock className="w-3 h-3" /> Ended
                   </span>
+                ) : competition.status === 'pending' ? (
+                  <span className="text-amber text-xs font-bold">Event not started</span>
                 ) : (
                   <span className="inline-flex items-center gap-2 px-3 py-1 rounded-lg text-xs font-bold bg-brand/10 border border-brand/30 text-brand">
                     <span className="w-2 h-2 rounded-full bg-brand animate-pulse" /> Live
@@ -369,7 +392,7 @@ const CompetitionDashboardPage: React.FC = () => {
                 )}
               </div>
               <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-fg tracking-tight break-words">{competition.name}</h1>
-              {!ended && (
+              {!ended && competition.status !== 'pending' && (
                 <p className="text-muted mt-2 flex items-center gap-2 text-sm">
                   <Clock className="w-4 h-4" /> {formatTimeRemaining(competition.endTime, now, competition.hasTimeLimit)} remaining
                 </p>
@@ -404,6 +427,7 @@ const CompetitionDashboardPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
 
+        {competition.type === 'event' && <EventParticipationPanel event={competition} onChange={async () => { await fetchCompetition(); await fetchLeaderboardAndActivity(); }} />}
         {/* Announcements Panel */}
         <AnimatePresence>
           {showAnnouncements && (
@@ -447,18 +471,18 @@ const CompetitionDashboardPage: React.FC = () => {
           </div>
           <div className="bg-panel border border-edge rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-dim">Your Rank</span>
+              <span className="text-xs text-dim">{competition.type === 'event' ? 'Team Rank' : 'Your Rank'}</span>
               <Award className="w-4 h-4 text-amber" />
             </div>
             <p className="text-2xl font-black text-fg">{userRank > 0 ? `#${userRank}` : '-'}</p>
-            <p className="text-[10px] text-faint mt-1">of {leaderboard.length} participants</p>
+            <p className="text-[10px] text-faint mt-1">of {leaderboard.length} {competition.type === 'event' ? 'teams' : 'participants'}</p>
           </div>
           <div className="bg-panel border border-edge rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs text-dim">Your Points</span>
+              <span className="text-xs text-dim">{competition.type === 'event' ? 'Team Points' : 'Your Points'}</span>
               <Trophy className="w-4 h-4 text-brand-neon" />
             </div>
-            <p className="text-2xl font-black text-fg">{user?.competitionPoints || 0}</p>
+            <p className="text-2xl font-black text-fg">{competition.type === 'event' ? competition.team?.score ?? 0 : user?.competitionPoints || 0}</p>
             <p className="text-[10px] text-faint mt-1">pts earned</p>
           </div>
           <div className="bg-panel border border-edge rounded-xl p-5">
@@ -575,12 +599,13 @@ const CompetitionDashboardPage: React.FC = () => {
                               </span>
                             )}
                             <span className="text-faint">{challenge.solves} solves</span>
+                            {challenge.solvedByTeammate && <span className="text-brand">Solved by teammate {challenge.solvedBy}</span>}
                             {firstBloodUser && (
                               <span className="flex items-center gap-1 text-amber font-medium">
                                 <Zap className="w-3 h-3" /> {firstBloodUser}
                               </span>
                             )}
-                            {isAdmin && !ended && (
+                            {isAdmin && !ended && (competition.type !== 'event' || competition.status === 'pending') && (
                               <button
                                 onClick={async (e) => {
                                   e.stopPropagation();
