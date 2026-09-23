@@ -19,6 +19,10 @@ const CATEGORY_META: Record<string, { color: string; bg: string; border: string;
   Forensics:             { color: '#34d399', bg: 'rgba(52,211,153,0.07)', border: 'rgba(52,211,153,0.2)',  icon: Target },
   'Social Engineering':  { color: '#fbbf24', bg: 'rgba(251,191,36,0.07)', border: 'rgba(251,191,36,0.2)',  icon: Users },
   Miscellaneous:         { color: '#9aa5bf', bg: 'rgba(154,165,191,0.07)',border: 'rgba(154,165,191,0.2)', icon: Book },
+  OSINT: { color: '#22d3ee', bg: 'rgba(34,211,238,0.07)', border: 'rgba(34,211,238,0.2)', icon: Target },
+  Network: { color: '#818cf8', bg: 'rgba(129,140,248,0.07)', border: 'rgba(129,140,248,0.2)', icon: Users },
+  'Full Pwn': { color: '#fb923c', bg: 'rgba(251,146,60,0.07)', border: 'rgba(251,146,60,0.2)', icon: Zap },
+  Pwn: { color: '#f43f5e', bg: 'rgba(244,63,94,0.07)', border: 'rgba(244,63,94,0.2)', icon: Zap },
 };
 
 const DIFFICULTY_META: Record<string, { color: string; bg: string; dot: string }> = {

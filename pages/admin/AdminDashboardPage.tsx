@@ -143,6 +143,8 @@ const AdminDashboardPage: React.FC = () => {
       'Miscellaneous': 'bg-zinc-500',
       'Misc': 'bg-zinc-500',
       'OSINT': 'bg-cyan-500',
+      'Network': 'bg-indigo-500',
+      'Full Pwn': 'bg-orange-500',
     };
     return colors[category] || 'bg-zinc-500';
   };

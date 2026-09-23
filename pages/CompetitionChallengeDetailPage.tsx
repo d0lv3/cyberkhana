@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useSocket } from '../src/contexts/SocketContext';
+import React, { useState, useEffect, useRef } from 'react';
 import { resolveFileUrl } from '../utils/url';
 import { useNow, isCompetitionOver } from '../src/hooks/useCompetitionClock';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -43,6 +44,10 @@ const getDifficultyColor = (diff: string) => {
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
+  OSINT: 'text-cyan-400',
+  Network: 'text-indigo-400',
+  'Full Pwn': 'text-orange-400',
+  Pwn: 'text-red-400',
   'Web Exploitation': 'text-blue-400',
   'Reverse Engineering': 'text-purple-400',
   'Binary Exploitation': 'text-red-400',
@@ -55,6 +60,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 const CompetitionChallengeDetailPage: React.FC = () => {
   const { id, challengeId } = useParams<{ id: string; challengeId: string }>();
   const navigate = useNavigate();
+  const { socket, isConnected, joinCompetition, leaveCompetition } = useSocket();
   const [competition, setCompetition] = useState<any>(null);
   const [challenge, setChallenge] = useState<CompetitionChallenge | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,6 +74,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
   const [showHintModal, setShowHintModal] = useState(false);
   const [selectedHint, setSelectedHint] = useState<{ index: number; cost: number; title: string } | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const fetchVersion = useRef(0);
 
   // Re-renders once a second so the end of the competition actually closes this
   // page, rather than waiting for a rejected submission to reveal it.
@@ -99,6 +106,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
   }, []);
 
   const fetchData = async () => {
+    const request = ++fetchVersion.current;
     try {
       setLoading(true);
       const profileData = JSON.parse(localStorage.getItem('user') || '{}');
@@ -106,6 +114,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
       const [competitionData] = await Promise.all([
         competitionService.getCompetitionById(id!, storedCode)
       ]);
+      if (request !== fetchVersion.current) return;
 
       setCompetition(competitionData);
       setCurrentUser(profileData);
@@ -120,37 +129,52 @@ const CompetitionChallengeDetailPage: React.FC = () => {
 
       // Find the challenge in the competition
       const foundChallenge = competitionData.challenges.find((c: CompetitionChallenge) => c._id === challengeId);
-      if (foundChallenge) {
-        setChallenge(foundChallenge);
-      }
+      setChallenge(foundChallenge || null);
 
       // Check if this challenge is already solved
       try {
         const solved = await competitionService.getSolvedChallenges(id!, profileData.id);
+        if (request !== fetchVersion.current) return;
         setSolvedChallenges(solved);
         setSolved(solved.includes(challengeId!));
       } catch (err) {
+        if (request !== fetchVersion.current) return;
         setSolvedChallenges([]);
         setSolved(false);
       }
 
       // Get unlocked hints
-      setUnlockedHints(profileData.unlockedHints || []);
+      setUnlockedHints(competitionData.type === 'event'
+        ? (foundChallenge?.hints || []).flatMap((hint: any, index: number) => hint.text !== 'LOCKED' ? [`${id}_${challengeId}_${index}`] : [])
+        : profileData.unlockedHints || []);
 
       setMessage({ type: '', text: '' });
     } catch (err: any) {
+      if (request !== fetchVersion.current) return;
       const errorMsg = err.message || '';
       if (errorMsg.includes('security code')) {
         // Security code missing/invalid — redirect to competition dashboard to enter it
         navigate(`/competition/${id}`);
         return;
       }
+      if (competition?.type === 'event') { setChallenge(null); setCompetition(null); }
       console.error('Error fetching data:', err);
       setMessage({ type: 'error', text: 'Failed to load challenge' });
     } finally {
-      setLoading(false);
+      if (request === fetchVersion.current) setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (competition?.type !== 'event' || !id) return;
+    if (isConnected) joinCompetition(id);
+    const refresh = (data: any) => { if (data.competitionId === id) void fetchData(); };
+    const revoked = (data: any) => { if (data.competitionId === id) { ++fetchVersion.current; setChallenge(null); setCompetition(null); navigate('/competition'); } };
+    const reconnect = () => { void fetchData(); };
+    socket?.on('eventChanged', refresh); socket?.on('eventAccessRevoked', revoked);
+    socket?.on('connect', reconnect); window.addEventListener('focus', reconnect);
+    return () => { leaveCompetition(id); socket?.off('eventChanged', refresh); socket?.off('eventAccessRevoked', revoked); socket?.off('connect', reconnect); window.removeEventListener('focus', reconnect); };
+  }, [socket, isConnected, competition?.type, id, challengeId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,6 +198,8 @@ const CompetitionChallengeDetailPage: React.FC = () => {
 
         // Refresh the competition dashboard to show solved challenge
         refreshCompetitionDashboard(id!);
+        // HTTP success must refresh team balance even if realtime is disconnected.
+        if (competition?.type === 'event') await fetchData();
 
         // Update user data
         // Refresh from the server rather than adding `result.points` locally:
@@ -208,8 +234,8 @@ const CompetitionChallengeDetailPage: React.FC = () => {
   };
 
   const handlePurchaseHint = (hintIndex: number, cost: number) => {
-    if (!currentUser || (currentUser.competitionPoints || 0) < cost) {
-      setMessage({ type: 'error', text: 'Not enough competition points to purchase this hint!' });
+    if (!currentUser || (competition?.type === 'event' ? (competition.team?.score ?? 0) : (currentUser.competitionPoints || 0)) < cost) {
+      setMessage({ type: 'error', text: competition?.type === 'event' ? 'Not enough team points to purchase this hint!' : 'Not enough competition points to purchase this hint!' });
       return;
     }
     setSelectedHint({ index: hintIndex, cost, title: `Hint ${hintIndex + 1}` });
@@ -237,6 +263,12 @@ const CompetitionChallengeDetailPage: React.FC = () => {
         setChallenge({ ...challenge, hints: updatedHints });
       }
 
+      if (competition?.type === 'event') {
+        setCompetition({ ...competition, team: { ...competition.team, score: result.teamPoints } });
+        setMessage({ type: 'success', text: 'Hint unlocked for your team!' });
+        setShowHintModal(false); setSelectedHint(null);
+        return;
+      }
       // Update user points from the response
       const newPoints = result.remainingPoints;
       const updatedUser = { ...currentUser, competitionPoints: newPoints, unlockedHints: [...(currentUser.unlockedHints || []), hintId] };
@@ -293,6 +325,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
     <div className="min-h-screen bg-canvas text-fg-soft pb-16">
       <div className="container mx-auto px-4 md:px-8 py-8 md:py-10">
         <div className="max-w-6xl mx-auto">
+          {competition?.type === 'event' && <div className="mb-5 rounded-xl border border-indigo-400/30 bg-indigo-500/10 p-4 text-indigo-200">{competition.team ? `Team: ${competition.team.name} · ${competition.team.score} points` : 'Join a team on the event dashboard to submit flags or unlock hints.'}{(challenge as any).solvedByTeammate && <p className="text-emerald-300 mt-2">Solved by teammate {(challenge as any).solvedBy}</p>}</div>}
           {/* Header */}
           <div className="mb-8">
             <button
@@ -427,7 +460,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
                     </div>
                     <Button
                       type="submit"
-                      disabled={submitting}
+                      disabled={submitting || (competition?.type === 'event' && !competition.team && !isAdmin)}
                       className="w-full"
                     >
                       {submitting ? 'Submitting...' : 'Submit Flag'}
@@ -458,7 +491,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
                     {challenge.hints
                       .map((hint: any, index: number) => {
                         const hintId = `${challenge._id}-${index}`;
-                        const isUnlocked = unlockedHints.includes(hintId);
+                        const isUnlocked = unlockedHints.includes(hintId) || (competition?.type === 'event' && hint.text !== 'LOCKED');
 
                         if (isUnlocked) {
                           return (
@@ -490,11 +523,11 @@ const CompetitionChallengeDetailPage: React.FC = () => {
                               </div>
                               <Button
                                 onClick={() => handlePurchaseHint(index, hint.cost)}
-                                disabled={!currentUser || (currentUser.competitionPoints || 0) < hint.cost || isCompetitionEnded()}
+                                disabled={!currentUser || (competition?.type === 'event' ? !competition.team || competition.team.score < hint.cost : (currentUser.competitionPoints || 0) < hint.cost) || isCompetitionEnded()}
                                 className="w-full"
                                 variant="secondary"
                               >
-                                {currentUser && (currentUser.competitionPoints || 0) < hint.cost
+                                {currentUser && (competition?.type === 'event' ? (competition.team?.score ?? 0) : (currentUser.competitionPoints || 0)) < hint.cost
                                   ? 'Not enough points'
                                   : `Unlock for ${hint.cost} points`}
                               </Button>

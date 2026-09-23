@@ -15,6 +15,7 @@ import { requireTermsAccepted } from './middleware/requireTermsAccepted';
 import { requestLogger } from './middleware/requestLogger';
 import { startCompetitionScheduler } from './services/competitionScheduler';
 import { logger } from './utils/logger';
+import { joinCompetitionRoom } from './services/competitionRooms';
 
 import authRoutes from './routes/auth';
 import challengeRoutes from './routes/challenges';
@@ -151,12 +152,12 @@ io.on('connection', (socket: any) => {
 
   // Join user's personal room for direct messages
   socket.join(`user:${userId}`);
+  if (socket.user.role === 'admin') socket.join(`university-admin:${universityCode}`);
 
   logger.info('socket.user.connected', { userId, universityCode });
 
   socket.on('joinCompetition', (data: { competitionId: string }) => {
-    socket.join(`competition:${data.competitionId}`);
-    logger.info('socket.user.join_competition', { userId, competitionId: data.competitionId });
+    void joinCompetitionRoom(socket, data?.competitionId);
   });
 
   socket.on('leaveCompetition', (data: { competitionId: string }) => {

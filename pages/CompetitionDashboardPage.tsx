@@ -13,6 +13,9 @@ import {
 } from 'lucide-react';
 
 const CATEGORY_COLORS: Record<string, { accent: string; bg: string; border: string }> = {
+  OSINT: { accent: '#22d3ee', bg: 'rgba(34,211,238,0.12)', border: 'rgba(34,211,238,0.25)' },
+  Network: { accent: '#818cf8', bg: 'rgba(129,140,248,0.12)', border: 'rgba(129,140,248,0.25)' },
+  'Full Pwn': { accent: '#fb923c', bg: 'rgba(251,146,60,0.12)', border: 'rgba(251,146,60,0.25)' },
   'Web Exploitation': { accent: '#60a5fa', bg: 'rgba(96,165,250,0.12)', border: 'rgba(96,165,250,0.25)' },
   'Reverse Engineering': { accent: '#a855f7', bg: 'rgba(168,85,247,0.12)', border: 'rgba(168,85,247,0.25)' },
   'Cryptography': { accent: '#f3a43a', bg: 'rgba(243,164,58,0.12)', border: 'rgba(243,164,58,0.25)' },
@@ -125,6 +128,7 @@ const CompetitionDashboardPage: React.FC = () => {
       setLoading(true);
       const storedCode = getStoredSecurityCode();
       const data = await competitionService.getCompetitionById(id!, storedCode || undefined);
+      if (data.type === 'event') { navigate(`/events/${id}`, { replace: true }); return; }
       setCompetition(data);
       await fetchSolvedChallenges();
       setError('');

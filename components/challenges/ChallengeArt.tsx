@@ -23,12 +23,20 @@ export type ArtKind =
   | 'reversing'
   | 'forensics'
   | 'social'
+  | 'osint'
+  | 'network'
+  | 'fullpwn'
   | 'misc';
 
 /** Challenge.category → the art that represents it. */
 export const ART_FOR_CATEGORY: Record<string, ArtKind> = {
   'Web Exploitation': 'web',
   'Binary Exploitation': 'pwn',
+  Pwn: 'pwn',
+  OSINT: 'osint',
+  Network: 'network',
+  'Full Pwn': 'fullpwn',
+  Misc: 'misc',
   Cryptography: 'crypto',
   'Reverse Engineering': 'reversing',
   Forensics: 'forensics',
@@ -44,6 +52,9 @@ export const ART_ACCENT: Record<ArtKind, string> = {
   reversing: '#a855f7',
   forensics: '#34d399',
   social: '#fbbf24',
+  osint: '#22d3ee',
+  network: '#818cf8',
+  fullpwn: '#fb923c',
   misc: '#9aa5bf',
 };
 
@@ -442,14 +453,94 @@ const SocialScene: React.FC<SceneProps> = ({ accent, detailed, uid }) => {
   );
 };
 
-/** Fallback: three plain solids of different heights. */
-const MiscScene: React.FC<SceneProps> = ({ accent, uid }) => (
+/** An open-source investigation board with connected clues and a search lens. */
+const OsintScene: React.FC<SceneProps> = ({ accent, detailed, uid }) => {
+  const c = shades(accent);
+  return (
+    <g>
+      <Shadow x={30} y={30} rx={54} ry={26} blur={`blur-${uid}`} />
+      <Box x={0} y={0} z={0} w={60} d={60} h={7} accent={accent} lift={-0.12} />
+      <g transform={faceTop(0, 0, 7)} stroke={c.line} strokeWidth="2" fill="none">
+        <path d="M14 14 L44 16 L28 44 Z M14 14 L28 44" />
+      </g>
+      {[[5, 5], [35, 7], [19, 35]].map(([x, y], i) => (
+        <g key={i}>
+          <Box x={x} y={y} z={8} w={18} d={18} h={4} accent={accent} lift={0.08} />
+          <g transform={faceTop(x, y, 12)} fill="#0b1220">
+            <circle cx="9" cy="6" r="3" />
+            <path d="M4 15 v-2 a5 5 0 0 1 10 0 v2 Z" />
+          </g>
+        </g>
+      ))}
+      <g transform={`translate(${iso(32, 26, 49).join(',')})`}>
+        <path d="M14 14 L32 33" stroke={c.left} strokeWidth="9" strokeLinecap="round" />
+        <circle r="22" fill="#0b1220" fillOpacity="0.9" stroke={c.top} strokeWidth="5" />
+        <circle r="18.5" fill="none" stroke={c.line} strokeWidth="1" />
+        <circle cy="-5" r="6" fill={accent} />
+        <path d="M-10 12 v-2 a10 10 0 0 1 20 0 v2 Z" fill={accent} />
+        {detailed && <path d="M-14 -4 A15 15 0 0 1 -5 -14" fill="none" stroke="white" strokeWidth="2" opacity="0.55" />}
+      </g>
+    </g>
+  );
+};
+
+/** A switch routing packets between three raised network nodes. */
+const NetworkScene: React.FC<SceneProps> = ({ accent, detailed, uid }) => (
+  <g>
+    <Shadow x={30} y={30} rx={60} ry={29} blur={`blur-${uid}`} />
+    <g transform={faceTop(0, 0, 2)} fill="none" stroke={accent} strokeWidth="3" strokeLinejoin="round">
+      <path d="M12 12 H32 V32 H56 M32 32 V57 H10" />
+      {detailed && <path d="M19 12 h5 M32 22 v5 M40 32 h5 M20 57 h5" stroke="white" />}
+    </g>
+    <Box x={0} y={0} z={3} w={24} d={24} h={18} accent={accent} />
+    <Box x={43} y={20} z={3} w={24} d={24} h={18} accent={accent} lift={0.06} />
+    <Box x={0} y={45} z={3} w={24} d={24} h={18} accent={accent} lift={-0.06} />
+    {[[0, 24], [43, 44], [0, 69]].map(([x, y], i) => (
+      <g key={i} transform={faceLeft(x, y, 21)}>
+        <rect x="3" y="5" width="18" height="8" rx="1" fill="#0b1220" />
+        {[5, 10, 15].map(p => <rect key={p} x={p} y="7" width="3" height="3" fill={accent} />)}
+      </g>
+    ))}
+    <Cylinder cx={32} cy={32} z={3} r={12} h={28} accent={accent} lift={0.12} />
+    <g transform={faceTop(20, 20, 31)} stroke="#0b1220" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 9 H19 l-4 -4 M20 15 H5 l4 4" />
+    </g>
+  </g>
+);
+
+/** A captured server with a root prompt and a flag planted above the chassis. */
+const FullPwnScene: React.FC<SceneProps> = ({ accent, detailed, uid }) => (
   <g>
     <Shadow x={28} y={28} rx={54} ry={26} blur={`blur-${uid}`} />
-    <Box x={0} y={0} z={0} w={26} d={26} h={34} accent={accent} />
+    <Box x={0} y={0} z={0} w={56} d={56} h={7} accent={accent} lift={-0.16} />
+    <Box x={9} y={9} z={7} w={38} d={38} h={49} accent={accent} />
+    <g transform={faceLeft(9, 47, 56)}>
+      <rect x="4" y="5" width="30" height="24" rx="2" fill="#0b1220" />
+      <path d="M9 12 l5 5 l-5 5 M19 22 h9" stroke={accent} strokeWidth="2.5" fill="none" />
+      {[34, 41].map(y => <rect key={y} x="5" y={y} width="23" height="3" rx="1" fill="#0b1220" opacity="0.65" />)}
+      <circle cx="32" cy="42" r="2" fill="#9fef00" />
+    </g>
+    <g transform={`translate(${iso(28, 28, 56).join(',')})`}>
+      <path d="M0 0 V-35" stroke={mix(accent, WHITE, 0.55)} strokeWidth="3" />
+      <path d="M1 -35 L24 -29 L1 -17 Z" fill={accent} />
+      {detailed && <path d="M6 -29 l3 4 l6 -3" fill="none" stroke="#0b1220" strokeWidth="2" />}
+    </g>
+  </g>
+);
+
+/** A puzzle assembled from blocks, with the final piece hovering above its slot. */
+const MiscScene: React.FC<SceneProps> = ({ accent, detailed, uid }) => (
+  <g>
+    <Shadow x={28} y={28} rx={54} ry={26} blur={`blur-${uid}`} />
+    <Box x={0} y={0} z={0} w={26} d={26} h={18} accent={accent} />
     <Box x={30} y={0} z={0} w={26} d={26} h={18} accent={accent} lift={-0.08} />
-    <Box x={0} y={30} z={0} w={26} d={26} h={22} accent={accent} lift={-0.04} />
-    <Box x={30} y={30} z={0} w={26} d={26} h={44} accent={accent} lift={0.06} />
+    <Box x={0} y={30} z={0} w={26} d={26} h={18} accent={accent} lift={-0.04} />
+    <Box x={30} y={30} z={34} w={26} d={26} h={18} accent={accent} lift={0.12} />
+    <Cylinder cx={43} cy={43} z={52} r={6} h={5} accent={accent} lift={0.16} />
+    {detailed && <g transform={faceTop(30, 30, 1)}>
+      <rect width="26" height="26" fill="none" stroke={accent} strokeWidth="1.5" strokeDasharray="3 3" />
+      <path d="M8 13 h10 M13 8 v10" stroke={accent} strokeWidth="2" />
+    </g>}
   </g>
 );
 
@@ -461,6 +552,9 @@ const SCENES: Record<ArtKind, React.FC<SceneProps>> = {
   reversing: ReversingScene,
   forensics: ForensicsScene,
   social: SocialScene,
+  osint: OsintScene,
+  network: NetworkScene,
+  fullpwn: FullPwnScene,
   misc: MiscScene,
 };
 

@@ -124,6 +124,7 @@ const CompetitionMonitoringPage: React.FC = () => {
       else setLoading(true);
 
       const competitionData = await competitionService.getCompetitionById(id!);
+      if (competitionData.type === 'event') { navigate(`/events/${id}`, { replace: true }); return; }
       setCompetition(competitionData);
 
       const leaderboardResponse = await competitionService.getCompetitionLeaderboard(id!);

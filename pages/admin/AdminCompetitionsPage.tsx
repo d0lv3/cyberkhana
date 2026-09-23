@@ -1,3 +1,6 @@
+import EventCard from '../../components/competition/EventCard';
+import EventInvitations from '../../components/competition/EventInvitations';
+import { ChallengeCategory } from '../../types';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { competitionService } from '../../services/competitionService';
@@ -12,6 +15,7 @@ import { useConfirmation } from '../../src/contexts/ConfirmationContext';
 import { useToast } from '../../src/hooks/useToast';
 
 interface Competition {
+  type?: 'workshop' | 'event';
   _id: string;
   name: string;
   securityCode?: string;
@@ -63,6 +67,10 @@ const AdminCompetitionsPage: React.FC = () => {
   const [challengeCategoryFilter, setChallengeCategoryFilter] = useState('');
   const [challengeSearchTerm, setChallengeSearchTerm] = useState('');
   const [timeMode, setTimeMode] = useState<'datetime' | 'timer'>('datetime');
+  const [competitionType, setCompetitionType] = useState<'workshop' | 'event'>('workshop');
+  const [registrationDeadline, setRegistrationDeadline] = useState('');
+  const [capacity, setCapacity] = useState(100);
+  const [invitedUniversities, setInvitedUniversities] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     securityCode: '',
@@ -154,7 +162,7 @@ const AdminCompetitionsPage: React.FC = () => {
 
         const secondaryUniversityCode = formData.secondaryUniversityCode.trim().toUpperCase();
         const universityCodes = Array.from(
-          new Set([primaryUniversityCode, secondaryUniversityCode].filter(Boolean))
+          new Set([primaryUniversityCode, ...(competitionType === 'event' ? invitedUniversities : [secondaryUniversityCode])].filter(Boolean))
         );
 
         if (universityCodes.length === 0) {
@@ -186,6 +194,8 @@ const AdminCompetitionsPage: React.FC = () => {
         }
 
         await competitionService.createCompetition({
+          type: competitionType,
+          ...(competitionType === 'event' ? { registrationDeadline: new Date(registrationDeadline).toISOString(), capacity } : {}),
           name: formData.name,
           securityCode: formData.requiresSecurityCode ? formData.securityCode : undefined,
           requiresSecurityCode: formData.requiresSecurityCode,
@@ -194,7 +204,7 @@ const AdminCompetitionsPage: React.FC = () => {
           hasTimeLimit: formData.hasTimeLimit,
           startTime: startTimeISO,
           endTime: endTimeISO,
-          duration: timerDuration,
+          duration: competitionType === 'event' ? timerDuration || undefined : timerDuration,
         });
         toast('success', 'Competition created successfully');
       }
@@ -329,6 +339,7 @@ const AdminCompetitionsPage: React.FC = () => {
   };
 
   const openModal = (competition?: Competition) => {
+    setCompetitionType('workshop'); setInvitedUniversities([]); setRegistrationDeadline(''); setCapacity(100);
     if (competition) {
       setEditingCompetition(competition);
       setTimeMode('datetime');
@@ -399,8 +410,9 @@ const AdminCompetitionsPage: React.FC = () => {
         </div>
       )}
 
-      <div className="grid gap-4">
-        {competitions.map((competition) => (
+      <EventInvitations onChange={fetchCompetitions} />
+      <div className="grid gap-4 mt-4">
+        {competitions.map((competition) => competition.type === 'event' ? <EventCard key={competition._id} event={competition} onChange={fetchCompetitions} /> : (
           <Card key={competition._id} className="p-4 sm:p-6">
             {/* Stacked until lg: the action cluster on its own is wider than a
                 phone, so side-by-side could only ever overflow. */}
@@ -514,6 +526,17 @@ const AdminCompetitionsPage: React.FC = () => {
             {editingCompetition ? 'Edit Competition' : 'Create Competition'}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-6">
+            <label className="block text-zinc-200">Competition type
+              <select className="mt-2 w-full rounded border border-zinc-700 bg-zinc-800 p-3" value={competitionType} onChange={e => { const type = e.target.value as 'workshop' | 'event'; setCompetitionType(type); if (type === 'event') setFormData({ ...formData, requiresSecurityCode: false }); }}>
+                <option value="workshop">Workshop — individual participation</option><option value="event">Event — registration and teams</option>
+              </select>
+            </label>
+            {competitionType === 'event' && <div className="space-y-4 rounded-xl border border-indigo-400/30 bg-indigo-500/5 p-4">
+              <p className="text-sm text-indigo-200">Students register first and compete in teams of up to four. Invited universities must accept before their students can register.</p>
+              <label className="block text-zinc-200">Registration deadline<input required type="datetime-local" className="mt-2 w-full rounded border border-zinc-700 bg-zinc-800 p-3" value={registrationDeadline} onChange={e => setRegistrationDeadline(e.target.value)} /></label>
+              <label className="block text-zinc-200">Participant capacity<input required type="number" min="1" max="10000" className="mt-2 w-full rounded border border-zinc-700 bg-zinc-800 p-3" value={capacity} onChange={e => setCapacity(Number(e.target.value))} /></label>
+              <fieldset><legend className="text-zinc-200 mb-2">Invite universities</legend><div className="max-h-48 overflow-y-auto space-y-2">{universities.filter(university => university.code !== (currentUser?.role === 'super-admin' ? formData.primaryUniversityCode : currentUser?.universityCode)).map(university => <label key={university.code} className="flex gap-2 text-sm text-zinc-300"><input type="checkbox" checked={invitedUniversities.includes(university.code)} onChange={e => setInvitedUniversities(prev => e.target.checked ? [...prev, university.code] : prev.filter(code => code !== university.code))} />{university.name}</label>)}</div></fieldset>
+            </div>}
             <div>
               <label className="block text-zinc-200 mb-2">Competition Name</label>
               <Input
@@ -556,12 +579,12 @@ const AdminCompetitionsPage: React.FC = () => {
                 )}
 
                 <div>
-                  <label className="block text-sm text-zinc-400 mb-2">Partner University (Optional)</label>
+                  <label className="block text-sm text-zinc-400 mb-2">{competitionType === 'event' ? 'Universities selected above' : 'Partner University (Optional)'}</label>
                   <select
                     value={formData.secondaryUniversityCode}
                     onChange={(e) => setFormData({ ...formData, secondaryUniversityCode: e.target.value })}
                     className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    disabled={!formData.primaryUniversityCode && currentUser?.role === 'super-admin'}
+                    disabled={competitionType === 'event' || (!formData.primaryUniversityCode && currentUser?.role === 'super-admin')}
                   >
                     <option value="">No partner university</option>
                     {universities
@@ -588,7 +611,7 @@ const AdminCompetitionsPage: React.FC = () => {
                     className={`relative w-10 h-5 rounded-full transition-colors ${
                       formData.requiresSecurityCode ? 'bg-emerald-500' : 'bg-zinc-600'
                     }`}
-                    onClick={() => setFormData({ ...formData, requiresSecurityCode: !formData.requiresSecurityCode })}
+                    disabled={competitionType === 'event'} onClick={() => setFormData({ ...formData, requiresSecurityCode: !formData.requiresSecurityCode })}
                   >
                     <div 
                       className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
@@ -772,12 +795,9 @@ const AdminCompetitionsPage: React.FC = () => {
               className="px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="">All Categories</option>
-              <option value="Web Exploitation">Web Exploitation</option>
-              <option value="Reverse Engineering">Reverse Engineering</option>
-              <option value="Cryptography">Cryptography</option>
-              <option value="Pwn">Pwn</option>
-              <option value="Miscellaneous">Miscellaneous</option>
-              <option value="Forensics">Forensics</option>
+              {Object.values(ChallengeCategory).map(category => (
+                <option key={category} value={category}>{category === ChallengeCategory.MISC ? 'Misc' : category}</option>
+              ))}
             </select>
           </div>
 

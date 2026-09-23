@@ -43,6 +43,11 @@ export interface ICompetitionChallenge extends Document {
 }
 
 export interface ICompetition extends Document {
+  type?: 'workshop' | 'event';
+  registrationDeadline?: Date;
+  capacity?: number;
+  eventRevision?: number;
+  eventState?: import('../services/eventCompetition').EventState;
   name: string;
   securityCode?: string; // Made optional
   requiresSecurityCode: boolean; // New field
@@ -73,6 +78,10 @@ const CompetitionFileSchema = new Schema({
 });
 
 const CompetitionChallengeSchema: Schema = new Schema({
+  sourceChallengeId: String,
+  challengeLink: String,
+  challengeHost: String,
+  challengePort: Number,
   title: {
     type: String,
     required: true
@@ -153,6 +162,11 @@ const CompetitionChallengeSchema: Schema = new Schema({
 });
 
 const CompetitionSchema: Schema = new Schema({
+  type: { type: String, enum: ['workshop', 'event'], default: 'workshop' },
+  registrationDeadline: Date,
+  capacity: { type: Number, min: 1, max: 10000 },
+  eventRevision: { type: Number, default: 0 },
+  eventState: { type: Schema.Types.Mixed },
   name: {
     type: String,
     required: true

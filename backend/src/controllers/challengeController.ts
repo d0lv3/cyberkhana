@@ -715,6 +715,7 @@ export const integrateCompetitionChallenge = async (req: AuthRequest, res: Respo
     if (!competition) {
       return res.status(404).json({ error: 'Competition not found' });
     }
+      if (competition.type === 'event') return res.status(400).json({ error: 'Use the event management panel for event challenges and team adjustments' });
 
     const allowedUniversityCodes = Array.from(
       new Set(

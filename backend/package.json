@@ -11,7 +11,8 @@
     "test-db": "tsx scripts/test-connection.ts",
     "seed-mock": "tsx scripts/seed-mock-data.ts",
     "seed-mock:dry": "tsx scripts/seed-mock-data.ts --dry-run",
-    "fix-upload-urls": "tsx scripts/fix-upload-urls.ts"
+    "fix-upload-urls": "tsx scripts/fix-upload-urls.ts",
+    "test:events": "npm run build && node --test tests/event-competition.test.cjs"
   },
   "dependencies": {
     "@types/multer": "^2.1.0",
@@ -38,6 +39,7 @@
     "@types/node": "^20.10.6",
     "@types/socket.io": "^3.0.0",
     "autoprefixer": "^10.4.21",
+    "mongodb-memory-server": "^11.3.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17",
     "tsx": "^4.7.0",

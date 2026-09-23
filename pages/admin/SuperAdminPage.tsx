@@ -1,3 +1,4 @@
+import { ChallengeCategory } from '../../types';
 import React, { useState, useEffect } from 'react';
 import { challengeService } from '../../services/challengeService';
 import { universityService } from '../../services/universityService';
@@ -455,12 +456,9 @@ const SuperAdminPage: React.FC = () => {
               className="px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="">All Categories</option>
-              <option value="Web Exploitation">Web Exploitation</option>
-              <option value="Reverse Engineering">Reverse Engineering</option>
-              <option value="Cryptography">Cryptography</option>
-              <option value="Pwn">Pwn</option>
-              <option value="Miscellaneous">Miscellaneous</option>
-              <option value="Forensics">Forensics</option>
+              {Object.values(ChallengeCategory).map(category => (
+                <option key={category} value={category}>{category === ChallengeCategory.MISC ? 'Misc' : category}</option>
+              ))}
             </select>
           </div>
 

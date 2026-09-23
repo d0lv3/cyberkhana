@@ -1,7 +1,9 @@
 import { Response } from 'express';
 import Announcement from '../models/Announcement';
 import { AuthRequest } from '../middleware/auth';
-import { SocketEvents } from '../services/socketService';
+import { SocketEvents, getIO } from '../services/socketService';
+import Competition from '../models/Competition';
+import { eventAccess, eventOwner } from '../services/eventCompetition';
 
 const normalizeUniversityCode = (value: unknown): string =>
   typeof value === 'string' ? value.trim().toUpperCase() : '';
@@ -19,6 +21,7 @@ const getCompetitionUniversityCodes = (competition: any): string[] => {
 };
 
 const userHasCompetitionAccess = (competition: any, user?: AuthRequest['user']) => {
+  if (competition?.type === 'event') return eventAccess(competition, user);
   if (!competition || !user) {
     return false;
   }
@@ -45,7 +48,10 @@ export const getAnnouncements = async (req: AuthRequest, res: Response) => {
       .sort({ createdAt: -1 })
       .select('-__v');
 
-    res.json(announcements);
+    const eventIds = announcements.map(a => a.competitionId).filter(Boolean);
+    const events = await Competition.find({ _id: { $in: eventIds }, type: 'event' }).lean();
+    const denied = new Set(events.filter(c => !eventAccess(c, req.user)).map(c => String(c._id)));
+    res.json(announcements.filter(a => !denied.has(String(a.competitionId))));
   } catch (error) {
     console.error('Error fetching announcements:', error);
     res.status(500).json({ error: 'Error fetching announcements' });
@@ -181,7 +187,7 @@ export const createCompetitionAnnouncement = async (req: AuthRequest, res: Respo
       return res.status(404).json({ error: 'Competition not found' });
     }
 
-    if (!userHasCompetitionAccess(competition, req.user)) {
+    if (competition.type === 'event' ? !eventOwner(competition, req.user) : !userHasCompetitionAccess(competition, req.user)) {
       return res.status(403).json({ error: 'Access denied' });
     }
 
@@ -196,7 +202,8 @@ export const createCompetitionAnnouncement = async (req: AuthRequest, res: Respo
     await announcement.save();
 
     // Emit real-time event for new competition announcement
-    SocketEvents.emitAnnouncement(getCompetitionUniversityCodes(competition), announcement);
+    if (competition.type === 'event') getIO().to(`competition:${competitionId}`).emit('eventChanged', { competitionId });
+    else SocketEvents.emitAnnouncement(getCompetitionUniversityCodes(competition), announcement);
 
     res.status(201).json(announcement);
   } catch (error) {

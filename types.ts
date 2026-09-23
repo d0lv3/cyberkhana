@@ -4,7 +4,10 @@ export enum ChallengeCategory {
   CRYPTO = 'Cryptography',
   PWN = 'Pwn',
   MISC = 'Miscellaneous',
-  FORENSICS = 'Forensics'
+  FORENSICS = 'Forensics',
+  OSINT = 'OSINT',
+  NETWORK = 'Network',
+  FULL_PWN = 'Full Pwn'
 }
 
 export interface Hint {

@@ -1,3 +1,6 @@
+import EventCard from '../components/competition/EventCard';
+import EventInvitations from '../components/competition/EventInvitations';
+import { useSocket } from '../src/contexts/SocketContext';
 import React, { useState, useEffect } from 'react';
 import { useNow, isCompetitionOver, formatTimeRemaining } from '../src/hooks/useCompetitionClock';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +15,7 @@ import {
 import CompetitionArt, { CompetitionState, STATE_ACCENT } from '../components/competition/CompetitionArt';
 
 interface Competition {
+  type?: 'workshop' | 'event';
   _id: string;
   name: string;
   universityCode: string;
@@ -303,7 +307,13 @@ const CompetitionPage: React.FC = () => {
   const currentUser = userData ? JSON.parse(userData) : null;
   const isAdmin = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super-admin');
 
+  const { socket } = useSocket();
   useEffect(() => { fetchCompetitions(); }, []);
+  useEffect(() => {
+    const refresh = () => { void fetchCompetitions(); };
+    socket?.on('eventRegistrationChanged', refresh); socket?.on('eventInvitationResponded', refresh); socket?.on('connect', refresh);
+    return () => { socket?.off('eventRegistrationChanged', refresh); socket?.off('eventInvitationResponded', refresh); socket?.off('connect', refresh); };
+  }, [socket]);
 
   const fetchCompetitions = async () => {
     try {
@@ -437,9 +447,10 @@ const CompetitionPage: React.FC = () => {
           </button>
         </div>
 
+        <EventInvitations onChange={fetchCompetitions} />
         {competitions.length > 0 ? (
           <div className="space-y-3">
-            {competitions.map((comp) => (
+            {competitions.map((comp) => comp.type === 'event' ? <EventCard key={comp._id} event={comp} onChange={fetchCompetitions} /> : (
               <AdminCompetitionRow
                 key={comp._id}
                 competition={comp}
@@ -493,7 +504,7 @@ const CompetitionPage: React.FC = () => {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {activeComps.map((c, i) => (
-              <CompetitionCard key={c._id} competition={c} onEnter={(id) => navigate(`/competition/${id}`)} delay={i * 0.05} />
+              c.type === 'event' ? <EventCard key={c._id} event={c} onChange={fetchCompetitions} /> : <CompetitionCard key={c._id} competition={c} onEnter={(id) => navigate(`/competition/${id}`)} delay={i * 0.05} />
             ))}
           </div>
         </section>
@@ -508,7 +519,7 @@ const CompetitionPage: React.FC = () => {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {upcomingComps.map((c, i) => (
-              <CompetitionCard key={c._id} competition={c} onEnter={() => {}} delay={i * 0.05} />
+              c.type === 'event' ? <EventCard key={c._id} event={c} onChange={fetchCompetitions} /> : <CompetitionCard key={c._id} competition={c} onEnter={() => {}} delay={i * 0.05} />
             ))}
           </div>
         </section>
@@ -523,7 +534,7 @@ const CompetitionPage: React.FC = () => {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {pastComps.map((c, i) => (
-              <CompetitionCard key={c._id} competition={c} onEnter={() => {}} delay={i * 0.05} />
+              c.type === 'event' ? <EventCard key={c._id} event={c} onChange={fetchCompetitions} /> : <CompetitionCard key={c._id} competition={c} onEnter={() => {}} delay={i * 0.05} />
             ))}
           </div>
         </section>

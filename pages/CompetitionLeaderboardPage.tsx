@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { competitionService } from '../services/competitionService';
 import { useSocket } from '../src/contexts/SocketContext';
 import UnifiedLeaderboard, { UnifiedLeaderboardEntry } from '../components/leaderboard/UnifiedLeaderboard';
@@ -20,6 +20,7 @@ interface CompetitionLeaderboardUser {
 }
 
 const CompetitionLeaderboardPage: React.FC = () => {
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [competitionName, setCompetitionName] = useState('Competition');
   const [isSharedCompetition, setIsSharedCompetition] = useState(false);
@@ -60,6 +61,7 @@ const CompetitionLeaderboardPage: React.FC = () => {
         competitionService.getCompetitionLeaderboard(id),
       ]);
 
+      if (competitionData?.type === 'event') { navigate(`/events/${id}`, { replace: true }); return; }
       setCompetitionName(competitionData?.name || 'Competition');
       setIsSharedCompetition((competitionData?.universityCodes?.length || 0) > 1);
 

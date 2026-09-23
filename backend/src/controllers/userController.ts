@@ -907,6 +907,7 @@ export const deductPoints = async (req: AuthRequest, res: Response) => {
       if (!competition) {
         return res.status(404).json({ error: 'Competition not found' });
       }
+      if (competition.type === 'event') return res.status(400).json({ error: 'Use the event management panel for event challenges and team adjustments' });
 
       // Verify competition belongs to same university
       const allowedUniversityCodes = Array.from(
@@ -1069,6 +1070,7 @@ export const addPoints = async (req: AuthRequest, res: Response) => {
       if (!competition) {
         return res.status(404).json({ error: 'Competition not found' });
       }
+      if (competition.type === 'event') return res.status(400).json({ error: 'Use the event management panel for event challenges and team adjustments' });
 
       // Add to competition bonus points array
       if (!targetUser.competitionBonusPoints) {

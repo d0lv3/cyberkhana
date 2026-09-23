@@ -1,3 +1,4 @@
+import { ChallengeCategory } from '../../types';
 import React, { useState, useEffect, useMemo } from 'react';
 import { resolveFileUrl } from '../../utils/url';
 import { challengeService } from '../../services/challengeService';
@@ -525,12 +526,9 @@ const AdminChallengesPage: React.FC = () => {
               className="w-full bg-zinc-800 border border-zinc-700 text-zinc-100 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               <option value="all">All Categories</option>
-              <option value="Web Exploitation">Web Exploitation</option>
-              <option value="Cryptography">Cryptography</option>
-              <option value="Reverse Engineering">Reverse Engineering</option>
-              <option value="Pwn">Pwn</option>
-              <option value="Forensics">Forensics</option>
-              <option value="Miscellaneous">Miscellaneous</option>
+              {Object.values(ChallengeCategory).map(category => (
+                <option key={category} value={category}>{category === ChallengeCategory.MISC ? 'Misc' : category}</option>
+              ))}
             </select>
           </div>
 
@@ -664,12 +662,9 @@ const AdminChallengesPage: React.FC = () => {
                   className="w-full px-3 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-zinc-200"
                   required
                 >
-                  <option value="Web Exploitation">Web Exploitation</option>
-                  <option value="Reverse Engineering">Reverse Engineering</option>
-                  <option value="Cryptography">Cryptography</option>
-                  <option value="Pwn">Pwn</option>
-                  <option value="Miscellaneous">Miscellaneous</option>
-                  <option value="Forensics">Forensics</option>
+                  {Object.values(ChallengeCategory).map(category => (
+                    <option key={category} value={category}>{category === ChallengeCategory.MISC ? 'Misc' : category}</option>
+                  ))}
                 </select>
               </div>
               <div>

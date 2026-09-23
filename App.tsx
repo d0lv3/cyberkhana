@@ -1,3 +1,4 @@
+import EventCompetitionPage from './pages/EventCompetitionPage';
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { MotionConfig } from 'framer-motion';
@@ -131,6 +132,7 @@ const App: React.FC = () => {
               <Route path="dashboard" element={<NewDashboardPage />} />
               <Route path="challenges" element={<EnhancedChallengesPage />} />
               <Route path="challenges/:id" element={<NewChallengeDetailPage />} />
+              <Route path="events/:id" element={<EventCompetitionPage />} />
               <Route path="competition" element={<CompetitionPage />} />
               <Route path="competition/:id" element={<CompetitionDashboardPage />} />
               <Route path="competition/:id/challenge/:challengeId" element={<CompetitionChallengeDetailPage />} />

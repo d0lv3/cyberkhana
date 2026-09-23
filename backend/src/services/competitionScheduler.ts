@@ -1,5 +1,5 @@
 import Competition from '../models/Competition';
-import { SocketEvents } from './socketService';
+import { getIO, SocketEvents } from './socketService';
 import { logger } from '../utils/logger';
 
 /**
@@ -27,7 +27,7 @@ export const closeExpiredCompetitions = async (): Promise<number> => {
     status: 'active',
     hasTimeLimit: { $ne: false },
     endTime: { $ne: null, $lte: now }
-  }).select('_id name universityCode universityCodes endTime');
+  }).select('_id name universityCode universityCodes endTime type eventState.invitations');
 
   for (const competition of expired) {
     const id = (competition._id as any).toString();
@@ -41,7 +41,7 @@ export const closeExpiredCompetitions = async (): Promise<number> => {
 
     if (result.modifiedCount === 0) continue;
 
-    const codes = Array.from(
+    const codes = competition.type === 'event' ? (competition.eventState?.invitations || []).filter(i => i.status === 'accepted').map(i => i.universityCode) : Array.from(
       new Set(
         [competition.universityCode, ...((competition as any).universityCodes || [])]
           .filter(Boolean)
@@ -56,6 +56,7 @@ export const closeExpiredCompetitions = async (): Promise<number> => {
     });
 
     try {
+      if (competition.type === 'event') getIO().to(`competition:${id}`).emit('eventChanged', { competitionId: id });
       SocketEvents.emitCompetitionUpdate(codes, {
         competitionId: id,
         type: 'ended',

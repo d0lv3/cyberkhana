@@ -5,6 +5,8 @@ import User from '../models/User';
 import University from '../models/University';
 import { AuthRequest } from '../middleware/auth';
 import { SocketEvents } from '../services/socketService';
+import { createEventCompetition } from './eventCompetitionController';
+import { eventMetadata, eventVisible } from '../services/eventCompetition';
 
 const normalizeSecurityCode = (value: unknown): string =>
   typeof value === 'string' ? value.trim() : '';
@@ -122,6 +124,8 @@ export const getCompetitionChallengeSolvers = async (req: AuthRequest, res: Resp
 };
 
 export const createCompetition = async (req: AuthRequest, res: Response) => {
+  if (req.body.type === 'event') return createEventCompetition(req, res);
+  if (req.body.type && req.body.type !== 'workshop') return res.status(400).json({ error: 'Invalid competition type' });
   try {
     if (req.user?.role === 'user') {
       return res.status(403).json({ error: 'Only admins can create competitions' });
@@ -242,12 +246,14 @@ export const getCompetitions = async (req: AuthRequest, res: Response) => {
       ? req.query.universityCode as string
       : req.user?.universityCode;
 
-    const competitions = await Competition.find(buildCompetitionAccessQuery(universityCode));
+    const competitions = (await Competition.find(buildCompetitionAccessQuery(universityCode)))
+      .filter(c => c.type !== 'event' || eventVisible(c, req.user));
 
     // Calculate dynamic points for each competition's challenges
     const { calculateDynamicScore } = require('../models/Challenge');
     const competitionsWithDynamicPoints = await Promise.all(
       competitions.map(async (competition: any) => {
+        if (competition.type === 'event') return eventMetadata(competition, req.user);
         const challengesWithDynamicPoints = await Promise.all(
           competition.challenges.map(async (challenge: any) => {
             let effectivePoints: number;

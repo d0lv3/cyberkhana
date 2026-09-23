@@ -40,7 +40,7 @@ const CATEGORIES: Array<{ label: string; value: string; art: ArtKind; blurb: str
     label: 'All challenges',
     value: 'all',
     art: 'all',
-    blurb: 'Every target on the range, across all six disciplines. Pick an operation and deploy your container.',
+    blurb: 'Every target on the range, across all disciplines. Pick an operation and start exploring.',
   },
   {
     label: 'Web',
@@ -50,7 +50,7 @@ const CATEGORIES: Array<{ label: string; value: string; art: ArtKind; blurb: str
   },
   {
     label: 'Pwn',
-    value: 'Binary Exploitation',
+    value: 'Pwn',
     art: 'pwn',
     blurb: 'Take control of a running process. Overflow the buffer, corrupt the heap, redirect execution.',
   },
@@ -71,6 +71,22 @@ const CATEGORIES: Array<{ label: string; value: string; art: ArtKind; blurb: str
     value: 'Forensics',
     art: 'forensics',
     blurb: 'Reconstruct what happened from what was left behind — disk images, memory dumps and packet captures.',
+  },
+  {
+    label: 'OSINT', value: 'OSINT', art: 'osint',
+    blurb: 'Follow public clues, connect identities and uncover the story hidden in open sources.',
+  },
+  {
+    label: 'Network', value: 'Network', art: 'network',
+    blurb: 'Trace the traffic, map the services and find the weaknesses between connected systems.',
+  },
+  {
+    label: 'Full Pwn', value: 'Full Pwn', art: 'fullpwn',
+    blurb: 'Work through an entire machine, from the first foothold to privilege escalation and full control.',
+  },
+  {
+    label: 'Misc', value: 'Miscellaneous', art: 'misc',
+    blurb: 'Solve the unexpected: puzzles, scripting and challenges that cross the usual boundaries.',
   },
 ];
 
@@ -171,7 +187,8 @@ const EnhancedChallengesPage: React.FC = () => {
   const filteredAndSortedChallenges = useMemo(() => {
     let filtered = challenges.filter((challenge) => {
       const matchesSearch = challenge.title.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === 'all' || challenge.category === selectedCategory;
+      const matchesCategory = selectedCategory === 'all' || challenge.category === selectedCategory
+        || (selectedCategory === 'Pwn' && String(challenge.category) === 'Binary Exploitation');
       const matchesDifficulty = difficultyFilter === 'all' || challenge.difficulty === difficultyFilter;
       
       let matchesStatus = true;

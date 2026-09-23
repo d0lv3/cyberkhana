@@ -20,6 +20,7 @@ import {
 } from '../controllers/competitionController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 import rateLimit from 'express-rate-limit';
+import { dispatchEvent, getEventInvitations } from '../controllers/eventCompetitionController';
 
 const router = express.Router();
 
@@ -46,8 +47,10 @@ const securityCodeLimiter = rateLimit({
 });
 
 router.get('/', authenticate, getCompetitions);
+router.get('/invitations', authenticate, requireAdmin, getEventInvitations);
 router.post('/validate-code', authenticate, securityCodeLimiter, validateSecurityCode);
 router.post('/', authenticate, requireAdmin, createCompetition);
+router.use('/:id', authenticate, dispatchEvent);
 router.get('/:id', authenticate, getCompetition);
 router.get('/:id/details', authenticate, getCompetitionDetails);
 router.get('/:id/solved-challenges', authenticate, getSolvedChallenges);
