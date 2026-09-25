@@ -38,6 +38,8 @@ export interface ICompetitionChallenge extends Document {
   difficulty?: 'Very Easy' | 'Easy' | 'Medium' | 'Hard' | 'Expert';
   estimatedTime?: number;
   firstBloodBonus?: number;
+  /** Events only: hidden from players until this moment (a release wave). Unset means from the start. */
+  releaseAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -48,6 +50,12 @@ export interface ICompetition extends Document {
   description?: string;
   /** Events only: open automatically at startTime instead of waiting for the host. */
   autoStart?: boolean;
+  /** Events only: from this moment players see standings as they stood then, until revealed. */
+  scoreboardFreezeAt?: Date;
+  scoreboardRevealedAt?: Date;
+  /** Events only: when the host published the public results page. */
+  resultsPublishedAt?: Date;
+  certificatesIssuedAt?: Date;
   registrationDeadline?: Date;
   capacity?: number;
   eventRevision?: number;
@@ -160,7 +168,8 @@ const CompetitionChallengeSchema: Schema = new Schema({
   estimatedTime: {
     type: Number,
     default: 30
-  }
+  },
+  releaseAt: Date
 }, {
   timestamps: true
 });
@@ -169,6 +178,10 @@ const CompetitionSchema: Schema = new Schema({
   type: { type: String, enum: ['workshop', 'event'], default: 'workshop' },
   description: { type: String, maxlength: 5000 },
   autoStart: { type: Boolean, default: false },
+  scoreboardFreezeAt: Date,
+  scoreboardRevealedAt: Date,
+  resultsPublishedAt: Date,
+  certificatesIssuedAt: Date,
   registrationDeadline: Date,
   capacity: { type: Number, min: 1, max: 10000 },
   eventRevision: { type: Number, default: 0 },

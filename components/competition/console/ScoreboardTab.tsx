@@ -2,16 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight, Download, Search, ShieldOff, Trophy } from 'lucide-react';
 import { eventService } from '../../../services/eventService';
 import { rankBadge } from './OverviewTab';
-import { Chip, ConsoleButton, EmptyState, Panel, Segmented, formatDateTime, inputClass } from './ui';
+import { Chip, ConsoleButton, EmptyState, Panel, Segmented, downloadCsv, fileSlug, formatDateTime, inputClass } from './ui';
 
 const PAGE = 25;
-
-const csvCell = (value: unknown) => {
-  const text = value == null ? '' : String(value);
-  // A leading = + - @ turns a cell into a formula in spreadsheet apps; team names are user input.
-  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
-  return /[",\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
-};
 
 const ScoreboardTab: React.FC<{
   competition: any;
@@ -53,13 +46,7 @@ const ScoreboardTab: React.FC<{
     const lines = ranked.map(row => teamMode
       ? [row.rank, row.name, row.points, row.solvedChallenges, row.memberCount, row.lastSolveTime || '']
       : [row.rank, row.username, row.universityName || row.universityCode || '', row.points, row.solvedChallenges, row.lastSolveTime || '']);
-    const csv = [header, ...lines].map(line => line.map(csvCell).join(',')).join('\r\n');
-    const url = URL.createObjectURL(new Blob([`﻿${csv}`], { type: 'text/csv;charset=utf-8' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${c.name.replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '') || 'competition'}-${teamMode ? 'teams' : 'players'}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(`${fileSlug(c.name)}-${teamMode ? 'teams' : 'players'}.csv`, [header, ...lines]);
   };
 
   return (

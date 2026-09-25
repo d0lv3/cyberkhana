@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Maximize, Minimize, ArrowLeft } from 'lucide-react';
+import { Maximize, Minimize, ArrowLeft, Snowflake } from 'lucide-react';
 import { competitionService } from '../services/competitionService';
 import { eventService } from '../services/eventService';
 import { useSocket } from '../src/contexts/SocketContext';
@@ -19,6 +19,8 @@ const CompetitionLeaderboardPage: React.FC = () => {
   const [competition, setCompetition] = useState<any>(null), [rows, setRows] = useState<any[]>([]);
   const [total, setTotal] = useState(0), [mode, setMode] = useState<'team' | 'individual'>('team');
   const [timeline, setTimeline] = useState<TimelineSeries[]>([]);
+  // Hosts see what players see by default, so a projected scoreboard never leaks a freeze.
+  const [hostLive, setHostLive] = useState(false), [frozenAt, setFrozenAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true), [error, setError] = useState('');
   const [expanded, setExpanded] = useState(isAdmin && params.get('present') === '1');
   const [selected, setSelected] = useState<any>(null), [rank, setRank] = useState<number>();
@@ -29,15 +31,15 @@ const CompetitionLeaderboardPage: React.FC = () => {
     try {
       const [data, result] = await Promise.all([
         competitionService.getCompetitionById(id, localStorage.getItem(`competition_${id}_security_code`) || undefined),
-        eventService.leaderboard(id, mode),
+        eventService.leaderboard(id, mode, isAdmin && !hostLive ? 'public' : undefined),
       ]);
       if (request !== version.current) return;
-      setCompetition(data); setRows(Array.isArray(result) ? result : result.leaderboard || []); setTimeline(result.timeline || []);
+      setCompetition(data); setRows(Array.isArray(result) ? result : result.leaderboard || []); setTimeline(result.timeline || []); setFrozenAt(result.frozenAt || null);
       setTotal(result.totalChallenges ?? data.challenges.length); setError('');
     } catch (e: any) {
       if (request === version.current) { setRows([]); setCompetition(null); setError(e.message || 'Could not load leaderboard'); }
     } finally { if (request === version.current) setLoading(false); }
-  }, [id, mode]);
+  }, [id, mode, hostLive]);
   useEffect(() => { void refresh(); return () => { ++version.current; }; }, [refresh]);
   useEffect(() => {
     if (isConnected) { joinCompetition(id); void refresh(); }
@@ -74,10 +76,25 @@ const CompetitionLeaderboardPage: React.FC = () => {
         {isAdmin && <button ref={maximizeButton} autoFocus={expanded} className="flex items-center gap-2 rounded-lg border border-edge bg-panel px-4 py-2 text-fg" onClick={() => { if (expanded) restore(); else { setExpanded(true); void document.documentElement.requestFullscreen?.().catch(() => {}); } }}>{expanded ? <Minimize size={16} /> : <Maximize size={16} />}{expanded ? 'Exit fullscreen' : 'Maximize leaderboard'}</button>}
       </div>
     </div>
+    {(frozenAt || (hostLive && competition?.scoreboardFrozen)) && (
+      <div className="mb-6 flex flex-col gap-3 rounded-xl border border-info/30 bg-info/[0.07] px-5 py-3.5 text-sm sm:flex-row sm:items-center">
+        <Snowflake size={18} className="flex-shrink-0 text-info" />
+        <p className="flex-1 text-fg-soft">
+          {hostLive
+            ? <><span className="font-semibold text-fg">Live standings, visible to hosts only.</span> Players still see the frozen scoreboard.</>
+            : <><span className="font-semibold text-fg">Scoreboard frozen</span> at {new Date(frozenAt!).toLocaleString(undefined, { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}. These are the standings from that moment; the final scoreboard is revealed by the organizers.</>}
+        </p>
+        {isAdmin && competition?.canManage && !expanded && (
+          <button type="button" onClick={() => setHostLive(v => !v)} className="flex-shrink-0 text-xs font-semibold text-info hover:underline">
+            {hostLive ? 'Show players’ view' : 'Show live (hosts only)'}
+          </button>
+        )}
+      </div>
+    )}
     {teamMode && timeline.some(series => series.points.length) && (
       <section className="mb-6 rounded-xl border border-edge bg-panel p-4" aria-label="Score progression">
         <h2 className="mb-3 text-sm font-semibold text-fg">Score progression · top {Math.min(timeline.length, 8)} teams</h2>
-        <ScoreTimeline series={timeline} start={competition.startTime} end={competition.status === 'ended' ? competition.endTime : undefined} />
+        <ScoreTimeline series={timeline} start={competition.startTime} end={frozenAt || (competition.status === 'ended' ? competition.endTime : undefined)} />
       </section>
     )}
     <UnifiedLeaderboard title={`${competition?.name || 'Competition'} leaderboard`} subtitle={`${rows.length} ${teamMode ? 'teams' : 'players'} in this competition`} entryLabel={teamMode ? 'Team' : 'Player'} preserveOrder={competition?.type === 'event'}

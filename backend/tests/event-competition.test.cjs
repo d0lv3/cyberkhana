@@ -373,3 +373,186 @@ test('scheduled events open automatically once they have challenges', async () =
   assert.equal(timer.endTime.getTime(), start.getTime() + 90 * 60000);
   assert.equal((await request(admin, 'GET', `/competitions/${timed._id}/event`)).data.challenges.length, 1);
 });
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+/** A second host from university A, so each scenario's writes count against its own rate limit. */
+async function makeHost(username) {
+  return User.create({ username, universityCode: 'A', role: 'admin', password: 'fixture-only-password', ambassadorAgreementAcceptedAt: new Date(), ambassadorAgreementVersion: '2026-09-07' });
+}
+async function publicGet(route, expected = 200) {
+  const response = await fetch(`${base}${route}`);
+  const data = await response.json();
+  assert.equal(response.status, expected, `GET ${route}: ${JSON.stringify(data)}`);
+  return data;
+}
+async function startedEvent(host, teams, releases = [null, null]) {
+  const id = await createEvent(10, ['A']);
+  for (const [index, challenge] of challenges.entries()) {
+    await request(host, 'POST', `/competitions/${id}/challenges`, { challengeId: String(challenge._id), ...(releases[index] ? { releaseAt: releases[index] } : {}) });
+  }
+  for (const [user, name] of teams) await request(user, 'POST', `/competitions/${id}/register`, { teamAction: 'create', name });
+  await request(host, 'PATCH', `/competitions/${id}/status`, { status: 'active' });
+  const board = (await request(host, 'GET', `/competitions/${id}/event`)).data;
+  return { id, staticId: board.challenges.find(c => c.title === 'Private event target')._id, dynamicId: board.challenges.find(c => c.title === 'Dynamic event target')._id };
+}
+
+test('a frozen scoreboard shows players the standings at the freeze until the host reveals them', async () => {
+  const host = await makeHost('freezehost');
+  const { id, staticId, dynamicId } = await startedEvent(host, [[students[0], 'Early'], [students[1], 'Late']]);
+  await request(students[0], 'POST', `/competitions/${id}/submit`, { challengeId: staticId, flag: 'FLAG{team}' });
+  await sleep(10);
+  await request(host, 'PATCH', `/competitions/${id}/settings`, { scoreboardFreezeAt: new Date().toISOString() });
+  await sleep(10);
+  const late = (await request(students[1], 'POST', `/competitions/${id}/submit`, { challengeId: dynamicId, flag: 'FLAG{dynamic}' })).data;
+  assert.equal(late.frozen, true);
+  assert.equal(late.points, undefined); assert.equal(late.firstBlood, undefined);
+
+  const points = async (user, query = '') => {
+    const data = (await request(user, 'GET', `/competitions/${id}/leaderboard${query}`)).data;
+    return { frozenAt: data.frozenAt, points: Object.fromEntries(data.leaderboard.map(r => [r.name, r.points])) };
+  };
+  const frozen = await points(students[0]);
+  assert.ok(frozen.frozenAt);
+  assert.deepEqual(frozen.points, { Early: 120, Late: 0 });
+  assert.deepEqual((await points(host)).points, { Early: 120, Late: 900 });
+  assert.deepEqual((await points(host, '?view=public')).points, { Early: 120, Late: 0 });
+  assert.equal((await request(students[0], 'GET', `/competitions/${id}/registration`)).data.scoreboardFrozen, true);
+
+  const lateView = (await request(students[1], 'GET', `/competitions/${id}/event`)).data;
+  assert.equal(lateView.challenges.find(c => c._id === dynamicId).solves, 0, 'other players cannot see post-freeze solves');
+  assert.equal(lateView.team.score, 900, 'a team still sees its own score');
+  assert.deepEqual((await request(students[1], 'GET', `/competitions/${id}/solved-challenges`)).data, [dynamicId]);
+  assert.equal((await request(students[0], 'GET', `/competitions/${id}/activity`)).data.length, 1);
+  assert.equal((await request(host, 'GET', `/competitions/${id}/activity`)).data.length, 2);
+
+  await request(students[0], 'POST', `/competitions/${id}/scoreboard/reveal`, undefined, 403);
+  await request(host, 'POST', `/competitions/${id}/scoreboard/reveal`);
+  await request(host, 'POST', `/competitions/${id}/scoreboard/reveal`, undefined, 409);
+  const revealed = await points(students[0]);
+  assert.equal(revealed.frozenAt, null);
+  assert.deepEqual(revealed.points, { Early: 120, Late: 900 });
+});
+
+test('the submission log records every attempt, for hosts only', async () => {
+  const host = await makeHost('loghost');
+  const { id, staticId } = await startedEvent(host, [[students[2], 'Loggers'], [students[3], 'Watchers']]);
+  const submit = (user, flag, expected) => request(user, 'POST', `/competitions/${id}/submit`, { challengeId: staticId, flag }, expected);
+  await submit(students[2], 'FLAG{nope}', 400);
+  await submit(students[2], 'FLAG{dynamic}', 400);
+  await submit(students[2], 'x'.repeat(400), 400);
+  await submit(students[2], 'FLAG{team}', 200);
+  await submit(students[2], 'FLAG{team}', 409);
+  await submit(students[4], 'FLAG{team}', 403);
+  const watchers = (await request(host, 'GET', `/competitions/${id}/event`)).data.teams.find(t => t.name === 'Watchers');
+  await request(host, 'POST', `/competitions/${id}/teams/${watchers.id}/disqualification`, { reason: 'Log fixture' });
+  await submit(students[3], 'FLAG{team}', 403);
+
+  await request(students[2], 'GET', `/competitions/${id}/submissions`, undefined, 403);
+  const log = (await request(host, 'GET', `/competitions/${id}/submissions`)).data;
+  assert.deepEqual(log.summary, { total: 6, correct: 1, incorrect: 3, already_solved: 1, blocked: 1, flagged: 1 });
+  assert.equal(log.items[0].result, 'blocked');
+  assert.equal(log.items[0].detail, 'Your team has been disqualified from this event');
+  const wrong = log.items.filter(i => i.result === 'incorrect');
+  assert.equal(wrong.filter(i => i.matchedChallengeTitle === 'Dynamic event target').length, 1);
+  assert.ok(wrong.every(i => i.submitted.length <= 256));
+  assert.equal(log.items.find(i => i.result === 'correct').submitted, undefined);
+  assert.deepEqual(log.noisiestTeams.map(t => [t.teamName, t.incorrect]), [['Loggers', 3]]);
+
+  const firstPage = (await request(host, 'GET', `/competitions/${id}/submissions?result=incorrect&limit=2`)).data;
+  assert.equal(firstPage.items.length, 2);
+  const secondPage = (await request(host, 'GET', `/competitions/${id}/submissions?result=incorrect&limit=2&before=${firstPage.nextCursor}`)).data;
+  assert.equal(secondPage.items.length, 1); assert.equal(secondPage.nextCursor, null);
+  assert.equal((await request(host, 'GET', `/competitions/${id}/submissions?flagged=1`)).data.items.length, 1);
+  assert.equal(JSON.stringify((await request(students[2], 'GET', `/competitions/${id}/event`)).data).includes('FLAG{nope}'), false);
+});
+
+test('challenges released in waves stay hidden until their release time', async () => {
+  const host = await makeHost('wavehost');
+  const later = new Date(Date.now() + 3600000).toISOString();
+  const onlyLater = await createEvent(10, ['A']);
+  await request(host, 'POST', `/competitions/${onlyLater}/challenges`, { challengeId: String(challenges[1]._id), releaseAt: later });
+  await request(host, 'PATCH', `/competitions/${onlyLater}/status`, { status: 'active' }, 400);
+  const waveOnly = (await request(admin, 'POST', '/competitions', { type: 'event', name: 'Wave-only schedule', universityCodes: ['A'], universityCode: 'A', capacity: 5,
+    registrationDeadline: new Date(Date.now() + 86400000).toISOString(), startTime: new Date(Date.now() + 60000).toISOString(), autoStart: true, hasTimeLimit: false }, 201)).data._id;
+  await request(host, 'POST', `/competitions/${waveOnly}/challenges`, { challengeId: String(challenges[1]._id), releaseAt: later });
+  await mutateEvent(waveOnly, c => { c.startTime = new Date(Date.now() - 1000); });
+  await startScheduledEvents();
+  assert.equal((await Competition.findById(waveOnly).lean()).status, 'pending', 'an empty opening board does not auto-start');
+
+  const { id, staticId, dynamicId } = await startedEvent(host, [[students[5], 'Wavers']], [null, later]);
+  const player = () => request(students[5], 'GET', `/competitions/${id}/event`).then(r => r.data);
+  const before = await player();
+  assert.deepEqual(before.challenges.map(c => c._id), [staticId]);
+  assert.equal(before.nextRelease.count, 1);
+  assert.equal(JSON.stringify(before).includes('Dynamic event target'), false);
+  await request(students[5], 'POST', `/competitions/${id}/submit`, { challengeId: dynamicId, flag: 'FLAG{dynamic}' }, 404);
+  await request(students[5], 'GET', `/competitions/${id}/challenges/${dynamicId}/solvers`, undefined, 404);
+  assert.equal((await request(students[5], 'GET', `/competitions/${id}/leaderboard`)).data.totalChallenges, 1);
+  assert.equal((await request(host, 'GET', `/competitions/${id}/leaderboard`)).data.totalChallenges, 2);
+
+  await request(students[5], 'PATCH', `/competitions/${id}/challenges/${dynamicId}/release`, { releaseAt: null }, 403);
+  await request(host, 'PATCH', `/competitions/${id}/challenges/${dynamicId}/release`, { releaseAt: null });
+  const after = await player();
+  assert.equal(after.challenges.length, 2); assert.equal(after.nextRelease, null);
+  await request(students[5], 'POST', `/competitions/${id}/submit`, { challengeId: dynamicId, flag: 'FLAG{dynamic}' });
+  await request(host, 'PATCH', `/competitions/${id}/challenges/${dynamicId}/release`, { releaseAt: later }, 409);
+
+  const extra = await Challenge.create({ title: 'Mid-event wave', category: 'Network', points: 50, description: 'Added later', author: 'host', flag: 'FLAG{wave}', universityCode: 'A', scoringMode: 'static' });
+  await request(host, 'POST', `/competitions/${id}/challenges`, { challengeId: String(extra._id), releaseAt: later });
+  const scheduled = (await request(host, 'GET', `/competitions/${id}/event`)).data.challenges.find(c => c.title === 'Mid-event wave');
+  assert.equal(new Date(scheduled.releaseAt).getUTCSeconds(), 0, 'release times are whole minutes, so one wave opens together');
+  assert.equal((await player()).challenges.length, 2);
+  await request(host, 'DELETE', `/competitions/${id}/challenges/${scheduled._id}`);
+  await request(host, 'POST', `/competitions/${id}/challenges`, { challengeId: String(extra._id) });
+  const released = (await player()).challenges.find(c => c.title === 'Mid-event wave');
+  assert.ok(released, 'a challenge added mid-event without a release time is live at once');
+  await request(host, 'DELETE', `/competitions/${id}/challenges/${released._id}`, undefined, 400);
+});
+
+test('published results and certificates are public, final and minimal', async () => {
+  const host = await makeHost('resulthost');
+  const { id, staticId } = await startedEvent(host, [[students[6], 'Podium'], [students[7], 'Runners'], [students[8], 'Cheats']]);
+  await request(students[6], 'POST', `/competitions/${id}/submit`, { challengeId: staticId, flag: 'FLAG{team}' });
+  await request(students[8], 'POST', `/competitions/${id}/submit`, { challengeId: staticId, flag: 'FLAG{team}' });
+  await request(host, 'PATCH', `/competitions/${id}/settings`, { scoreboardFreezeAt: new Date().toISOString() });
+  await publicGet(`/competitions/${id}/results`, 404);
+  await request(host, 'POST', `/competitions/${id}/results/publish`, undefined, 400);
+  await request(host, 'POST', `/competitions/${id}/certificates/issue`, undefined, 400);
+  const teams = (await request(host, 'GET', `/competitions/${id}/event`)).data.teams;
+  const teamId = name => teams.find(t => t.name === name).id;
+  await request(host, 'POST', `/competitions/${id}/teams/${teamId('Cheats')}/disqualification`, { reason: 'Results fixture' });
+  await request(host, 'PATCH', `/competitions/${id}/status`, { status: 'ended' });
+  await request(host, 'POST', `/competitions/${id}/certificates/issue`, undefined, 409);
+
+  await request(students[6], 'POST', `/competitions/${id}/results/publish`, undefined, 403);
+  await request(host, 'POST', `/competitions/${id}/results/publish`);
+  const meta = (await request(students[6], 'GET', `/competitions/${id}/registration`)).data;
+  assert.equal(meta.resultsPublished, true); assert.equal(meta.scoreboardFrozen, false);
+  const results = await publicGet(`/competitions/${id}/results`);
+  assert.deepEqual(results.standings.map(r => [r.rank, r.name]), [[1, 'Podium'], [2, 'Runners']]);
+  assert.equal(results.challenges[0].firstBlood, 'Podium');
+  for (const secret of ['FLAG{', 'inviteCode', 'eventState', students[6].username, 'Cheats', 'registrations']) {
+    assert.equal(JSON.stringify(results).includes(secret), false, `results must not include ${secret}`);
+  }
+
+  assert.deepEqual((await request(host, 'POST', `/competitions/${id}/certificates/issue`)).data, { issued: 2, revoked: 0 });
+  await request(students[6], 'GET', `/competitions/${id}/certificates`, undefined, 403);
+  const mine = (await request(students[6], 'GET', `/competitions/${id}/certificate`)).data;
+  assert.match(mine.code, /^[a-f\d]{32}$/);
+  assert.equal((await request(students[8], 'GET', `/competitions/${id}/certificate`)).data, null);
+  const verified = await publicGet(`/competitions/certificates/${mine.code}`);
+  assert.equal(verified.rank, 1); assert.equal(verified.teamName, 'Podium'); assert.equal(verified.revoked, false);
+  assert.equal(verified.userId, undefined); assert.equal(verified.competitionId, undefined);
+  await publicGet('/competitions/certificates/not-a-code', 404);
+  await publicGet(`/competitions/certificates/${'0'.repeat(32)}`, 404);
+
+  await request(host, 'DELETE', `/competitions/${id}/teams/${teamId('Cheats')}/disqualification`);
+  await request(host, 'POST', `/competitions/${id}/teams/${teamId('Runners')}/disqualification`, { reason: 'Found after the event' });
+  assert.deepEqual((await request(host, 'POST', `/competitions/${id}/certificates/issue`)).data, { issued: 2, revoked: 1 });
+  assert.equal((await request(students[6], 'GET', `/competitions/${id}/certificate`)).data.code, mine.code, 'reissuing keeps codes stable');
+  const runners = (await request(host, 'GET', `/competitions/${id}/certificates`)).data.find(c => c.teamName === 'Runners');
+  assert.equal((await publicGet(`/competitions/certificates/${runners.code}`)).revoked, true);
+
+  await request(host, 'DELETE', `/competitions/${id}/results/publish`);
+  await publicGet(`/competitions/${id}/results`, 404);
+});

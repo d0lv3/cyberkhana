@@ -85,7 +85,8 @@ const ScoreTimeline: React.FC<{
   const xTicks = Array.from({ length: tickCount }, (_, i) => t0 + (span * i) / (tickCount - 1));
   const tickLabel = (t: number) => new Date(t).toLocaleString(undefined, span > 2 * 86400000
     ? { month: 'short', day: 'numeric' }
-    : span > 86400000 ? { weekday: 'short', hour: '2-digit', minute: '2-digit' } : { hour: '2-digit', minute: '2-digit' });
+    : span > 86400000 ? { weekday: 'short', hour: '2-digit', minute: '2-digit' }
+    : span > 15 * 60000 ? { hour: '2-digit', minute: '2-digit' } : { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
   const path = (s: TimelineSeries) => {
     let d = `M${x(t0)},${y(0)}`, last = 0;

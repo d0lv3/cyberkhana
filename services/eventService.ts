@@ -10,7 +10,8 @@ export const eventService = {
   leaveTeam: (id: string) => apiService.delete(`/competitions/${id}/teams/me`),
   addMember: (id: string, teamId: string, userId: string) => apiService.post(`/competitions/${id}/teams/${teamId}/members`, { userId }),
   removeMember: (id: string, teamId: string, userId: string) => apiService.delete(`/competitions/${id}/teams/${teamId}/members/${userId}`),
-  leaderboard: (id: string, mode: 'team' | 'individual') => apiService.get(`/competitions/${id}/leaderboard`, { mode }),
+  /** `view: 'public'` lets a host see what players see while the scoreboard is frozen. */
+  leaderboard: (id: string, mode: 'team' | 'individual', view?: 'public') => apiService.get(`/competitions/${id}/leaderboard`, view ? { mode, view } : { mode }),
   invitations: () => apiService.get('/competitions/invitations'),
   respond: (id: string, status: 'accepted' | 'declined') => apiService.post(`/competitions/${id}/invitation`, { status }),
   addParticipant: (id: string, userId: string) => apiService.post(`/competitions/${id}/registrations`, { userId }),
@@ -20,4 +21,18 @@ export const eventService = {
   reinstate: (id: string, teamId: string) => apiService.delete(`/competitions/${id}/teams/${teamId}/disqualification`),
   /** Partial update: name, description, capacity, schedule, and `invite` / `revoke` university codes. */
   updateSettings: (id: string, settings: Record<string, unknown>) => apiService.patch(`/competitions/${id}/settings`, settings),
+  /** `releaseAt` null: with the start (or now, once running). A future time holds it for a later wave. */
+  addChallenge: (id: string, challengeId: string, releaseAt?: string | null) =>
+    apiService.post(`/competitions/${id}/challenges`, releaseAt ? { challengeId, releaseAt } : { challengeId }),
+  release: (id: string, challengeId: string, releaseAt: string | null) => apiService.patch(`/competitions/${id}/challenges/${challengeId}/release`, { releaseAt }),
+  revealScoreboard: (id: string) => apiService.post(`/competitions/${id}/scoreboard/reveal`),
+  publishResults: (id: string) => apiService.post(`/competitions/${id}/results/publish`),
+  unpublishResults: (id: string) => apiService.delete(`/competitions/${id}/results/publish`),
+  submissions: (id: string, params: Record<string, string>) => apiService.get(`/competitions/${id}/submissions`, params),
+  issueCertificates: (id: string) => apiService.post(`/competitions/${id}/certificates/issue`),
+  certificates: (id: string) => apiService.get(`/competitions/${id}/certificates`),
+  myCertificate: (id: string) => apiService.get(`/competitions/${id}/certificate`),
+  // Public: no sign-in needed.
+  publicResults: (id: string) => apiService.get(`/competitions/${id}/results`),
+  verifyCertificate: (code: string) => apiService.get(`/competitions/certificates/${encodeURIComponent(code)}`),
 };

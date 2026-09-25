@@ -21,6 +21,7 @@ import {
 import { authenticate, requireAdmin } from '../middleware/auth';
 import rateLimit from 'express-rate-limit';
 import { dispatchEvent, getEventInvitations } from '../controllers/eventCompetitionController';
+import { getPublicResults, publicPageLimiter, verifyCertificate } from '../controllers/eventPublicController';
 
 const router = express.Router();
 
@@ -45,6 +46,10 @@ const securityCodeLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+// Public pages: no sign-in, so they are declared before `/:id` puts every route behind authenticate.
+router.get('/certificates/:code', publicPageLimiter, verifyCertificate);
+router.get('/:id/results', publicPageLimiter, getPublicResults);
 
 router.get('/', authenticate, getCompetitions);
 router.get('/invitations', authenticate, requireAdmin, getEventInvitations);

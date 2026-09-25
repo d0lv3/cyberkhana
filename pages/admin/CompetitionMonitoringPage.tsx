@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Flag, Monitor, Pause, Play, RefreshCw, Square, Trophy, Users, Ticket, Target } from 'lucide-react';
+import { ArrowLeft, Flag, Monitor, Pause, Play, RefreshCw, Snowflake, Square, Trophy, Users, Ticket, Target } from 'lucide-react';
 import { competitionService } from '../../services/competitionService';
 import { universityService } from '../../services/universityService';
 import { useSocket } from '../../src/contexts/SocketContext';
@@ -18,6 +18,8 @@ import ChallengesTab from '../../components/competition/console/ChallengesTab';
 import AnnouncementsTab from '../../components/competition/console/AnnouncementsTab';
 import SettingsTab from '../../components/competition/console/SettingsTab';
 import StudentsTab from '../../components/competition/console/StudentsTab';
+import SubmissionsTab from '../../components/competition/console/SubmissionsTab';
+import ResultsTab from '../../components/competition/console/ResultsTab';
 
 /** Where the schedule stands, as one line and (while running) a progress bar through the window. */
 const Timeline: React.FC<{ c: any; now: number }> = ({ c, now }) => {
@@ -222,6 +224,12 @@ const CompetitionMonitoringPage: React.FC = () => {
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <TypeBadge type={c.type} />
             <StatusPill state={state} />
+            {isEvent && c.scoreboardFrozen && (
+              <button type="button" onClick={() => openTab('results')} title="Players see the standings from the freeze. Reveal them from Results."
+                className="inline-flex items-center gap-1.5 rounded-md border border-info/30 bg-info/10 px-2 py-0.5 text-xs font-semibold text-info hover:bg-info/15">
+                <Snowflake size={12} /> Scoreboard frozen
+              </button>
+            )}
             <span className="text-xs text-faint">
               Hosted by {hostName}{universityCount > 1 ? ` · ${universityCount} universities` : ''}
             </span>
@@ -305,7 +313,9 @@ const CompetitionMonitoringPage: React.FC = () => {
       {tab === 'teams' && isEvent && <TeamsTab competition={c} rankOf={rankOf} focus={teamFocus} run={run} confirm={confirm} />}
       {tab === 'participants' && isEvent && <ParticipantsTab competition={c} universities={universities} now={now} run={run} confirm={confirm} />}
       {tab === 'students' && !isEvent && <StudentsTab competition={c} rows={rows} now={now} onProfile={userId => navigate(`/profile/${userId}`)} />}
-      {tab === 'challenges' && <ChallengesTab competition={c} isEvent={isEvent} run={run} confirm={confirm} onView={challengeId => navigate(`/competition/${id}/challenge/${challengeId}`)} />}
+      {tab === 'challenges' && <ChallengesTab competition={c} isEvent={isEvent} now={now} run={run} confirm={confirm} onView={challengeId => navigate(`/competition/${id}/challenge/${challengeId}`)} />}
+      {tab === 'submissions' && isEvent && <SubmissionsTab competition={c} live={live} now={now} />}
+      {tab === 'results' && isEvent && <ResultsTab competition={c} now={now} run={run} confirm={confirm} onOpenTab={openTab} />}
       {tab === 'announcements' && <AnnouncementsTab competition={c} isEvent={isEvent} now={now} run={run} confirm={confirm} />}
       {tab === 'settings' && isEvent && <SettingsTab competition={c} run={run} />}
     </div>

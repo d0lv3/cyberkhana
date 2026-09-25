@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CalendarClock, FileText, Save, Ticket } from 'lucide-react';
+import { CalendarClock, FileText, Save, Snowflake, Ticket } from 'lucide-react';
 import { eventService } from '../../../services/eventService';
 import { ConsoleButton, Field, Panel, Segmented, inputClass, toLocalInput } from './ui';
 
@@ -15,6 +15,8 @@ const initialForm = (c: any) => ({
   limit: (c.hasTimeLimit === false ? 'none' : c.duration && !(c.status === 'active' || c.endTime) ? 'duration' : 'window') as Limit,
   endTime: toLocalInput(c.endTime),
   duration: String(c.duration ?? 120),
+  freeze: (c.scoreboardFreezeAt ? 'at' : 'off') as 'off' | 'at',
+  freezeAt: toLocalInput(c.scoreboardFreezeAt),
 });
 
 const iso = (local: string) => (local ? new Date(local).toISOString() : null);
@@ -49,8 +51,20 @@ const SettingsTab: React.FC<{
     } else if (c.hasTimeLimit !== false && form.endTime !== baseline.endTime) {
       patch.endTime = iso(form.endTime);
     }
+    if (form.freeze !== baseline.freeze || (form.freeze === 'at' && form.freezeAt !== baseline.freezeAt)) {
+      patch.scoreboardFreezeAt = form.freeze === 'off' ? null : iso(form.freezeAt);
+    }
     return patch;
   };
+
+  // Where the event will end, if that is known yet, so a freeze can be set relative to it.
+  const plannedEnd = (() => {
+    if (form.limit === 'window' && form.endTime) return Date.parse(form.endTime);
+    if (!pending && c.endTime) return Date.parse(c.endTime);
+    if (form.limit === 'duration' && form.autoStart && form.startTime) return Date.parse(form.startTime) + Number(form.duration) * 60000;
+    return null;
+  })();
+  const freezeBefore = (minutes: number) => plannedEnd && set('freezeAt', toLocalInput(new Date(plannedEnd - minutes * 60000)));
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,6 +142,30 @@ const SettingsTab: React.FC<{
               </Field>
             ) : (
               <p className="text-sm text-muted">This event runs until you end it from the top of the console.</p>
+            )}
+          </Panel>
+
+          <Panel title="Scoreboard freeze" icon={<Snowflake size={16} />} bodyClassName="space-y-4 p-4">
+            <p className="text-sm text-muted">
+              From the freeze on, players and the public scoreboard see the standings as they were at that moment, so the final
+              result stays a surprise. You keep seeing it live, and reveal it from the Results tab.
+            </p>
+            <Segmented label="Freeze" value={form.freeze} onChange={v => set('freeze', v)} options={[
+              { value: 'off', label: 'No freeze' },
+              { value: 'at', label: 'Freeze at a set time' },
+            ]} />
+            {form.freeze === 'at' && (
+              <>
+                <Field label="Freezes at" htmlFor="event-freeze" hint={c.scoreboardRevealedAt ? 'Saving a new time freezes the scoreboard again, even though it was revealed.' : undefined}>
+                  <input id="event-freeze" required type="datetime-local" className={inputClass} value={form.freezeAt} onChange={e => set('freezeAt', e.target.value)} />
+                </Field>
+                {plannedEnd ? (
+                  <div className="flex flex-wrap gap-2">
+                    <ConsoleButton size="sm" onClick={() => freezeBefore(60)}>1 hour before the end</ConsoleButton>
+                    <ConsoleButton size="sm" onClick={() => freezeBefore(30)}>30 minutes before</ConsoleButton>
+                  </div>
+                ) : <p className="text-xs text-faint">Set an end time to place the freeze relative to it.</p>}
+              </>
             )}
           </Panel>
         </div>

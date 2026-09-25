@@ -226,3 +226,23 @@ export const toLocalInput = (value?: string | Date | null) => {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
+
+const csvCell = (value: unknown) => {
+  const text = value == null ? '' : String(value);
+  // A leading = + - @ turns a cell into a formula in spreadsheet apps; names and guesses are user input.
+  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+};
+
+/** Saves rows as a CSV file. The byte-order mark makes Excel read non-Latin names as UTF-8. */
+export const downloadCsv = (filename: string, rows: unknown[][]) => {
+  const csv = rows.map(row => row.map(csvCell).join(',')).join('\r\n');
+  const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+};
+
+export const fileSlug = (name: string) => name.replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '') || 'competition';

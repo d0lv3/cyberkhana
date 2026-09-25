@@ -1,21 +1,30 @@
 import { NextFunction, Response } from 'express';
-import { isValidObjectId } from 'mongoose';
+import { isValidObjectId, Types } from 'mongoose';
 import { AuthRequest, requireAdmin } from '../middleware/auth';
 import Competition from '../models/Competition';
 import Challenge from '../models/Challenge';
 import University from '../models/University';
 import User from '../models/User';
-import rateLimit from 'express-rate-limit';
+import EventSubmission, { SUBMITTED_TEXT_LIMIT, SubmissionResult } from '../models/EventSubmission';
+import Certificate from '../models/Certificate';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { getIO } from '../services/socketService';
 import { assertEvent, EventError, EventState, EventTeam, Registration, eventAccess, eventDetails, eventId, eventLeaderboard, eventMetadata,
-  eventOpen, eventOwner, eventPoints, eventRegistered, eventTeamFor, eventVisible, inviteCode, leaveEventTeam, mutateEvent, registrationOpen, canUnregister, teamLocked, teamScore, scoringContext, uniqueSolves } from '../services/eventCompetition';
+  eventOpen, eventOwner, eventPoints, eventRegistered, eventTeamFor, eventVisible, inviteCode, leaveEventTeam, mutateEvent, registrationOpen, canUnregister, teamLocked, teamScore, scoringContext, uniqueSolves,
+  isReleased, freezeCutoff, scoreboardView, flagMatches } from '../services/eventCompetition';
+import { issueCertificates, publicCertificate } from '../services/eventCertificates';
 
 const fail = (res: Response, error: any) => {
   if (!(error instanceof EventError)) console.error('Event competition failed:', error);
   return res.status(error instanceof EventError ? error.status : 500).json({ error: error instanceof EventError ? error.message : 'Could not complete event request' });
 };
-const eventWriteLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 120, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many event requests. Try again later.' } });
-const eventFlagLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 50, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many flag submissions. Try again later.' } });
+// Limits count per player. A university's students often share one public address, so keying
+// by IP let one classroom exhaust everyone's allowance; the per-address cap is only a backstop
+// against one person cycling through many accounts.
+const perPlayer = (req: any) => req.user?.userId || ipKeyGenerator(req.ip || '');
+const eventWriteLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 120, keyGenerator: perPlayer, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many event requests. Try again later.' } });
+const eventFlagLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 50, keyGenerator: perPlayer, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many flag submissions. Try again later.' } });
+const eventAddressLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 3000, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many requests from this network. Try again later.' } });
 const text = (value: unknown, label: string, max = 120) => {
   assertEvent(typeof value === 'string' && value.trim().length > 0 && value.trim().length <= max, `${label} must contain 1–${max} characters`);
   return value.trim();
@@ -43,6 +52,81 @@ function assertSchedule(c: any, changed: { start?: boolean; autoStart?: boolean 
     assertEvent(!c.hasTimeLimit || end != null || c.duration, 'Set an end time or duration for a timed event');
   }
   if (c.status === 'active' && c.hasTimeLimit && end != null) assertEvent(end > Date.now(), 'End time must be in the future. Use End event to close it now.');
+  const freeze = time(c.scoreboardFreezeAt);
+  assertEvent(freeze == null || !c.hasTimeLimit || end == null || freeze < end, 'The scoreboard must freeze before the event ends');
+}
+
+/** When a challenge added to an event becomes visible. Added mid-event without a later time: now. */
+function releaseTime(c: any, value: unknown) {
+  const at = optionalDate(value, 'release time');
+  // Waves are whole minutes, so challenges scheduled for the same minute always open together.
+  at?.setUTCSeconds(0, 0);
+  const when = c.status === 'active' && (!at || at.getTime() <= Date.now()) ? new Date() : at;
+  assertEvent(!when || !c.hasTimeLimit || !c.endTime || when.getTime() < new Date(c.endTime).getTime(), 'Release challenges before the event ends');
+  return when;
+}
+
+const SUBMISSION_RESULTS: SubmissionResult[] = ['correct', 'incorrect', 'already_solved', 'blocked'];
+
+/**
+ * Records one flag attempt in the host's log. `error` is what the submission threw, or null
+ * when it succeeded. Only registered players are logged: anyone else was refused before
+ * touching a flag. A failure here is reported and swallowed; the log never decides whether
+ * a submission counts.
+ */
+async function recordSubmission(c: any, u: any, body: any, error: unknown) {
+  try {
+    if (!u || u.role !== 'user' || !eventRegistered(c, u.userId)) return;
+    const challenge = c.challenges.find((ch: any) => String(ch._id) === String(body?.challengeId));
+    if (!challenge) return;
+    const code = error instanceof EventError ? error.code : undefined;
+    const result: SubmissionResult = !error ? 'correct' : code === 'incorrect' ? 'incorrect' : code === 'already_solved' ? 'already_solved' : 'blocked';
+    const submitted = typeof body.flag === 'string' ? body.flag : '';
+    // Another challenge's flag in the wrong box is a mix-up at best and shared flags at worst.
+    const other = result === 'incorrect' && submitted
+      ? c.challenges.find((ch: any) => String(ch._id) !== String(challenge._id) && flagMatches(ch, submitted)) : undefined;
+    const team = eventTeamFor(c, u.userId);
+    await EventSubmission.create({
+      competitionId: c._id, challengeId: String(challenge._id), challengeTitle: challenge.title,
+      userId: u.userId, username: u.username, teamId: team?.id, teamName: team?.name, result,
+      detail: result === 'blocked' ? (error instanceof EventError ? error.message : 'Server error').slice(0, 200) : undefined,
+      submitted: result === 'incorrect' ? submitted.slice(0, SUBMITTED_TEXT_LIMIT) : undefined,
+      matchedChallengeId: other ? String(other._id) : undefined, matchedChallengeTitle: other?.title,
+    });
+  } catch (logError) {
+    console.error('Could not record event submission:', logError);
+  }
+}
+
+/** A page of the submission log with a summary of the whole event. Host only; filters are whitelisted. */
+async function submissionLog(c: any, query: any) {
+  const competitionId = new Types.ObjectId(String(c._id));
+  const filter: any = { competitionId };
+  const pick = (value: unknown) => (typeof value === 'string' && /^[a-f\d]{24}$/i.test(value) ? value : undefined);
+  if (SUBMISSION_RESULTS.includes(query.result)) filter.result = query.result;
+  if (query.flagged === '1') filter.matchedChallengeId = { $exists: true };
+  if (pick(query.teamId)) filter.teamId = pick(query.teamId);
+  if (pick(query.challengeId)) filter.challengeId = pick(query.challengeId);
+  if (pick(query.userId)) filter.userId = pick(query.userId);
+  if (pick(query.before)) filter._id = { $lt: new Types.ObjectId(pick(query.before)) };
+  const limit = Math.min(200, Math.max(1, Number.parseInt(query.limit, 10) || 100));
+  const [rows, counts, noisiest, flagged] = await Promise.all([
+    EventSubmission.find(filter).sort({ _id: -1 }).limit(limit + 1).lean(),
+    EventSubmission.aggregate([{ $match: { competitionId } }, { $group: { _id: '$result', n: { $sum: 1 } } }]),
+    EventSubmission.aggregate([{ $match: { competitionId, result: 'incorrect' } },
+      { $group: { _id: '$teamId', teamName: { $last: '$teamName' }, n: { $sum: 1 } } }, { $sort: { n: -1 } }, { $limit: 5 }]),
+    EventSubmission.countDocuments({ competitionId, matchedChallengeId: { $exists: true } }),
+  ]);
+  const summary: Record<string, number> = { total: 0, correct: 0, incorrect: 0, already_solved: 0, blocked: 0, flagged };
+  for (const row of counts) { summary[row._id] = row.n; summary.total += row.n; }
+  return {
+    items: rows.slice(0, limit).map(row => ({ _id: String(row._id), createdAt: row.createdAt, result: row.result, detail: row.detail,
+      submitted: row.submitted, challengeId: row.challengeId, challengeTitle: row.challengeTitle, userId: row.userId, username: row.username,
+      teamId: row.teamId, teamName: row.teamName, matchedChallengeId: row.matchedChallengeId, matchedChallengeTitle: row.matchedChallengeTitle })),
+    nextCursor: rows.length > limit ? String(rows[limit - 1]._id) : null,
+    summary,
+    noisiestTeams: noisiest.map(row => ({ teamId: row._id, teamName: row.teamName, incorrect: row.n })),
+  };
 }
 
 export function notifyEvent(c: any) {
@@ -100,7 +184,7 @@ export const dispatchEvent = async (req: AuthRequest, res: Response, next: NextF
       const run = () => req.user?.role !== 'user'
         ? requireAdmin(req, res, () => { void handleEvent(req, res, c); })
         : void handleEvent(req, res, c);
-      return (req.path === '/submit' ? eventFlagLimiter : eventWriteLimiter)(req, res, run);
+      return eventAddressLimiter(req, res, () => (req.path === '/submit' ? eventFlagLimiter : eventWriteLimiter)(req, res, run));
     }
     return await handleEvent(req, res, c);
   } catch (error) { return fail(res, error); }
@@ -126,7 +210,11 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
         return res.json(users);
       }
       if (route === '/' || route === '/details' || route === '/event') return res.json(eventDetails(initial, u));
-      if (route === '/leaderboard') return res.json(eventLeaderboard(initial, req.query.mode === 'individual'));
+      if (route === '/leaderboard') {
+        // Hosts read live standings, but can ask for what players see, e.g. to put it on a projector.
+        const asPlayer = !eventOwner(initial, u) || req.query.view === 'public';
+        return res.json(eventLeaderboard(initial, req.query.mode === 'individual', { frozenAt: asPlayer ? freezeCutoff(initial) : null, releasedOnly: asPlayer }));
+      }
       if (route === '/solved-challenges') {
         const requested = typeof req.query.userId === 'string' ? req.query.userId : u.userId;
         assertEvent(eventOwner(initial, u) || requested === u.userId, 'Access denied', 403);
@@ -134,7 +222,7 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
         return res.json(uniqueSolves(initial, true).filter(s => s.teamId === team?.id).map(s => s.challengeId));
       }
       if (route === '/activity') {
-        const ctx = scoringContext(initial);
+        const ctx = scoringContext(scoreboardView(initial, u).view);
         const teamName = (teamId: string) => initial.eventState.teams.find((t: EventTeam) => t.id === teamId)?.name;
         return res.json(ctx.solves.slice(-30).reverse().map(s => ({ type: s.firstBlood ? 'first_blood' : 'solve', timestamp: s.solvedAt,
         userId: s.userId, challengeId: s.challengeId, teamId: s.teamId, teamName: teamName(s.teamId), points: ctx.solveValue(s),
@@ -143,7 +231,24 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
         data: { username: s.username, challengeId: s.challengeId, teamId: s.teamId } })));
       }
       const solvers = route.match(/^\/challenges\/([a-f\d]{24})\/solvers$/i);
-      if (solvers) return res.json(uniqueSolves(initial).filter(s => s.challengeId === solvers[1]).map(s => ({ username: s.username, teamId: s.teamId, solvedAt: s.solvedAt, isFirstBlood: s.firstBlood })));
+      if (solvers) {
+        const challenge = initial.challenges.find((ch: any) => String(ch._id) === solvers[1]);
+        assertEvent(challenge && (eventOwner(initial, u) || isReleased(challenge)), 'Challenge not found', 404);
+        return res.json(uniqueSolves(scoreboardView(initial, u).view).filter(s => s.challengeId === solvers[1]).map(s => ({ username: s.username, teamId: s.teamId, solvedAt: s.solvedAt, isFirstBlood: s.firstBlood })));
+      }
+      if (route === '/submissions') {
+        assertEvent(eventOwner(initial, u), 'Host required', 403);
+        return res.json(await submissionLog(initial, req.query));
+      }
+      if (route === '/certificates') {
+        assertEvent(eventOwner(initial, u), 'Host required', 403);
+        const certificates = await Certificate.find({ competitionId: initial._id }).lean();
+        return res.json(certificates.map(publicCertificate).sort((a, b) => (a.rank ?? Infinity) - (b.rank ?? Infinity) || a.name.localeCompare(b.name)));
+      }
+      if (route === '/certificate') {
+        const certificate = await Certificate.findOne({ competitionId: initial._id, userId: u.userId, revokedAt: null }).lean();
+        return res.json(certificate ? publicCertificate(certificate) : null);
+      }
       throw new EventError(404, 'Event endpoint not found');
     }
 
@@ -162,6 +267,15 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
       assertEvent(Array.isArray(body.invite) && body.invite.length <= 200, 'Select universities to invite');
       invited = [...new Set(body.invite.map((code: unknown) => text(code, 'University code', 50).toUpperCase()))] as string[];
       assertEvent(await University.countDocuments({ code: { $in: invited } }) === invited.length, 'One or more universities do not exist');
+    }
+    if (method === 'POST' && route === '/certificates/issue') {
+      assertEvent(eventOwner(initial, u), 'Only the host can manage this event', 403);
+      assertEvent(initial.status === 'ended', 'Issue certificates after the event ends');
+      assertEvent(!freezeCutoff(initial), 'Reveal the scoreboard before issuing certificates; they show final placings', 409);
+      const result = await issueCertificates(initial);
+      const committed = await mutateEvent(id, c => { c.certificatesIssuedAt = new Date(); });
+      notifyEvent(committed.competition);
+      return res.json(result);
     }
     let registrationUser: any;
     const regRoute = route.match(/^\/registrations(?:\/([a-f\d]{24}))?$/i);
@@ -250,23 +364,25 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
         assertEvent(u.role === 'user' && team, 'Join a team before submitting flags', 403);
         assertEvent(!team.disqualified, 'Your team has been disqualified from this event', 403);
         const challenge = c.challenges.find((ch: any) => String(ch._id) === body.challengeId);
-        assertEvent(challenge, 'Challenge not found', 404);
-        assertEvent(!state.solves.some(s => s.teamId === team.id && s.challengeId === body.challengeId), 'Your team already solved this challenge', 409);
+        // An unreleased challenge answers exactly like one that does not exist.
+        assertEvent(challenge && isReleased(challenge), 'Challenge not found', 404);
+        if (state.solves.some(s => s.teamId === team.id && s.challengeId === body.challengeId)) throw new EventError(409, 'Your team already solved this challenge', 'already_solved');
         const submitted = text(body.flag, 'Flag', 4096);
-        const normalize = (s: string) => s.replace(/[\u200B\u200C\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim().normalize('NFKC');
-        assertEvent([challenge.flag, ...(challenge.flags || [])].filter(Boolean).some(f => normalize(f) === normalize(submitted)), 'Incorrect flag');
+        if (!flagMatches(challenge, submitted)) throw new EventError(400, 'Incorrect flag', 'incorrect');
         // Counted against ranked teams only, matching how the scoreboard awards it.
         const firstBlood = !uniqueSolves(c).some(s => s.challengeId === body.challengeId);
         team.lockedMembers ||= [...team.members];
         state.solves.push({ teamId: team.id, challengeId: body.challengeId, userId: u.userId, username: u.username, solvedAt: new Date().toISOString(), firstBlood });
         challenge.solves = uniqueSolves(c).filter(s => s.challengeId === body.challengeId).length;
+        // While the scoreboard is frozen, a solve's value and first blood would say how many others solved it.
+        if (freezeCutoff(c)) return { success: true, frozen: true, message: 'Correct flag! Solved for your team. Points stay hidden until the scoreboard is revealed.' };
         const basePoints = eventPoints(c, challenge);
         return { success: true, points: basePoints + (firstBlood ? (challenge.firstBloodBonus ?? 20) : 0), basePoints, firstBlood, firstBloodBonus: firstBlood ? (challenge.firstBloodBonus ?? 20) : 0, message: 'Correct flag! Solved for your team.' };
       }
       const hintRoute = route.match(/^\/challenges\/([a-f\d]{24})\/(buy-hint|publish-hint)$/i);
       if (method === 'POST' && hintRoute) {
         const challenge = c.challenges.find((ch: any) => String(ch._id) === hintRoute[1]);
-        assertEvent(challenge && Number.isInteger(body.hintIndex) && body.hintIndex >= 0 && challenge.hints?.[body.hintIndex], 'Hint not found', 404);
+        assertEvent(challenge && (owner || isReleased(challenge)) && Number.isInteger(body.hintIndex) && body.hintIndex >= 0 && challenge.hints?.[body.hintIndex], 'Hint not found', 404);
         const hint = challenge.hints[body.hintIndex];
         if (hintRoute[2] === 'publish-hint') { assertEvent(owner, 'Host required', 403); hint.isPublished = true; return { success: true }; }
         assertEvent(eventOpen(c), 'Competition is not active');
@@ -346,6 +462,11 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
         }
         if (body.autoStart !== undefined) { beforeStart('start mode'); c.autoStart = body.autoStart === true; }
         if (body.endTime !== undefined) c.endTime = optionalDate(body.endTime, 'end time');
+        if (body.scoreboardFreezeAt !== undefined) {
+          // A new freeze time is a new freeze: it applies even if an earlier one was revealed.
+          c.scoreboardFreezeAt = optionalDate(body.scoreboardFreezeAt, 'freeze time');
+          c.scoreboardRevealedAt = null;
+        }
         if (!c.hasTimeLimit) { c.endTime = null; c.duration = null; }
         assertSchedule(c, { start: body.startTime !== undefined, autoStart: body.autoStart !== undefined });
         const added = invited.filter(code => !state.invitations.some(i => i.universityCode === code));
@@ -363,23 +484,55 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
         return { success: true, invited: added };
       }
       if (method === 'POST' && route === '/challenges') {
-        assertEvent(c.status === 'pending', 'Add challenges before starting the event');
+        assertEvent(c.status !== 'ended', 'Challenges cannot be added after the event ends');
         assertEvent(!c.challenges.some((ch: any) => ch.sourceChallengeId === String(source._id)), 'Challenge already added', 409);
+        const releaseAt = releaseTime(c, body.releaseAt);
         const { _id, solvers, solves, createdAt, updatedAt, __v, ...copy } = source;
-        c.challenges.push({ ...copy, _id: eventId(), sourceChallengeId: String(_id), solves: 0, solvers: [] });
+        c.challenges.push({ ...copy, _id: eventId(), sourceChallengeId: String(_id), solves: 0, solvers: [], ...(releaseAt ? { releaseAt } : {}) });
+        return { success: true };
+      }
+      const release = route.match(/^\/challenges\/([a-f\d]{24})\/release$/i);
+      if (method === 'PATCH' && release) {
+        assertEvent(c.status !== 'ended', 'The event has ended');
+        const challenge = c.challenges.find((ch: any) => String(ch._id) === release[1]);
+        assertEvent(challenge, 'Challenge not found', 404);
+        const releaseAt = releaseTime(c, body.releaseAt);
+        if (releaseAt && releaseAt.getTime() > Date.now() && isReleased(challenge)) {
+          assertEvent(!state.solves.some(s => s.challengeId === release[1]), 'Teams have already solved this challenge, so it cannot be hidden again', 409);
+        }
+        if (releaseAt) challenge.releaseAt = releaseAt; else delete challenge.releaseAt;
         return { success: true };
       }
       const removeChallenge = route.match(/^\/challenges\/([a-f\d]{24})$/i);
       if (method === 'DELETE' && removeChallenge) {
-        assertEvent(c.status === 'pending', 'Remove challenges before starting the event');
+        const challenge = c.challenges.find((ch: any) => String(ch._id) === removeChallenge[1]);
+        // Once the event runs, only a challenge nobody has seen yet can go.
+        assertEvent(c.status === 'pending' || (c.status === 'active' && challenge && !isReleased(challenge)),
+          'Once the event starts, only challenges that have not been released yet can be removed');
         c.challenges = c.challenges.filter((ch: any) => String(ch._id) !== removeChallenge[1]);
+        return { success: true };
+      }
+      if (method === 'POST' && route === '/scoreboard/reveal') {
+        assertEvent(freezeCutoff(c), 'The scoreboard is not frozen right now', 409);
+        c.scoreboardRevealedAt = new Date();
+        return { success: true };
+      }
+      if (route === '/results/publish' && (method === 'POST' || method === 'DELETE')) {
+        if (method === 'POST') {
+          assertEvent(c.status === 'ended', 'Publish results after the event ends');
+          // Publishing is the final reveal, so it lifts a freeze that is still in place.
+          if (freezeCutoff(c)) c.scoreboardRevealedAt = new Date();
+          c.resultsPublishedAt = new Date();
+        } else {
+          c.resultsPublishedAt = null;
+        }
         return { success: true };
       }
       if (method === 'PATCH' && (route === '/status' || route === '/start')) {
         assertEvent(body.status === 'active' || body.status === 'ended', 'Choose start or end');
         assertEvent(c.status !== 'ended', 'Ended events cannot be reopened');
         if (body.status === 'active') {
-          assertEvent(c.status === 'pending' && c.challenges.length > 0, 'Add challenges before starting');
+          assertEvent(c.status === 'pending' && c.challenges.some((ch: any) => isReleased(ch)), 'Add at least one challenge that is released at the start');
           c.startTime = new Date();
           if (c.hasTimeLimit) {
             if (c.duration) c.endTime = new Date(Date.now() + c.duration * 60000);
@@ -395,11 +548,15 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
       // Event records with score history are retained; closing is the reversible admin action.
       throw new EventError(400, 'This operation is not supported for events. Use the event management panel.');
     });
+    if (method === 'POST' && route === '/submit') await recordSubmission(initial, u, body, null);
     const removed = committed.result?.removedUserId;
     if (removed) { try { getIO().in(`user:${removed}`).socketsLeave(`competition:${id}`); getIO().to(`user:${removed}`).emit('eventAccessRevoked', { competitionId: id }); } catch {} }
     notifyEvent(committed.competition);
     if (route === '/invitation') { try { getIO().to(`university:${u.universityCode}`).emit('eventInvitationResponded', { competitionId: id }); } catch {} }
     for (const code of committed.result?.invited || []) { try { getIO().to(`university-admin:${code}`).emit('eventInvitation', { competitionId: id, name: committed.competition.name }); } catch {} }
     return res.json(committed.result);
-  } catch (error) { return fail(res, error); }
+  } catch (error) {
+    if (req.method === 'POST' && req.path.replace(/\/$/, '') === '/submit') await recordSubmission(initial, req.user, req.body, error);
+    return fail(res, error);
+  }
 }

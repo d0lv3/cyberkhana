@@ -1,4 +1,5 @@
 import EventParticipationPanel from '../components/competition/EventParticipationPanel';
+import EventStatusBanners from '../components/competition/EventStatusBanners';
 import { useSocket } from '../src/contexts/SocketContext';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNow, isCompetitionOver, formatTimeRemaining } from '../src/hooks/useCompetitionClock';
@@ -427,6 +428,7 @@ const CompetitionDashboardPage: React.FC = () => {
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8">
 
+        {competition.type === 'event' && <EventStatusBanners event={competition} now={now} onRefresh={() => { void fetchCompetition(); void fetchLeaderboardAndActivity(); }} />}
         {competition.type === 'event' && <EventParticipationPanel event={competition} onChange={async () => { await fetchCompetition(); await fetchLeaderboardAndActivity(); }} />}
         {/* Announcements Panel */}
         <AnimatePresence>

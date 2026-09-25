@@ -73,12 +73,16 @@ export const closeExpiredCompetitions = async (): Promise<number> => {
 
 /**
  * Opens events whose host scheduled an automatic start, as a CTF opens at its
- * published time without anyone at the console. An event with no challenges
- * stays pending: opening an empty board would only start the clock.
+ * published time without anyone at the console. An event with no challenge
+ * released at the start stays pending: opening an empty board would only start
+ * the clock.
  *
  * The update bumps `eventRevision` along with the status guard, so an event
  * mutation racing this transition retries against the started event.
  */
+/** A challenge on the board at the start, rather than one held back for a later wave. */
+const releasedBy = (now: Date) => ({ $or: [{ releaseAt: null }, { releaseAt: { $lte: now } }] });
+
 export const startScheduledEvents = async (): Promise<number> => {
   const now = new Date();
 
@@ -87,7 +91,7 @@ export const startScheduledEvents = async (): Promise<number> => {
     status: 'pending',
     autoStart: true,
     startTime: { $ne: null, $lte: now },
-    'challenges.0': { $exists: true }
+    challenges: { $elemMatch: releasedBy(now) }
   }).select('_id name startTime endTime duration hasTimeLimit eventState.invitations');
 
   let started = 0;
@@ -100,7 +104,7 @@ export const startScheduledEvents = async (): Promise<number> => {
 
     const result = await Competition.updateOne(
       // Re-checked here too: a host could remove the last challenge between the read and this write.
-      { _id: event._id, status: 'pending', autoStart: true, 'challenges.0': { $exists: true } },
+      { _id: event._id, status: 'pending', autoStart: true, challenges: { $elemMatch: releasedBy(now) } },
       { $set: { status: 'active', ...(endTime ? { endTime } : {}) }, $inc: { eventRevision: 1 } }
     );
     if (result.modifiedCount === 0) continue;

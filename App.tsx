@@ -18,6 +18,8 @@ import PublicProfilePage from './pages/PublicProfilePage';
 import AnnouncementsPage from './pages/AnnouncementsPage';
 import TermsPage from './pages/legal/TermsPage';
 import AmbassadorAgreementPage from './pages/legal/AmbassadorAgreementPage';
+import EventResultsPage from './pages/public/EventResultsPage';
+import CertificatePage from './pages/public/CertificatePage';
 import AppLayout from './components/AppLayout';
 import ManagementLayout, { ManagementGate } from './components/ManagementLayout';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
@@ -94,6 +96,9 @@ const App: React.FC = () => {
             <Route path="/register" element={<RegisterPage onRegister={handleLogin} />} />
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/ambassador-agreement" element={<AmbassadorAgreementPage />} />
+            {/* Published results and certificate verification are for anyone with the link. */}
+            <Route path="/results/:id" element={<EventResultsPage />} />
+            <Route path="/certificates/:code" element={<CertificatePage />} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </HashRouter>
@@ -124,6 +129,9 @@ const App: React.FC = () => {
                 render this into, and it must stay reachable while gated. */}
             <Route path="/terms" element={<TermsPage />} />
             <Route path="/ambassador-agreement" element={<AmbassadorAgreementPage />} />
+            {/* Published results and certificate verification are for anyone with the link. */}
+            <Route path="/results/:id" element={<EventResultsPage />} />
+            <Route path="/certificates/:code" element={<CertificatePage />} />
 
             {/* One shell for every role — learner experience for all, plus a
                 role-gated Management area nested in the same layout. */}

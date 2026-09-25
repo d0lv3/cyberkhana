@@ -1,4 +1,4 @@
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'crypto';
 import Competition from '../models/Competition';
 import { calculateDynamicScore } from '../models/Challenge';
 import { IJWTPayload } from '../types';
@@ -18,7 +18,8 @@ export interface EventState {
   teams: EventTeam[];
   solves: EventSolve[];
 }
-export class EventError extends Error { constructor(public status: number, message: string) { super(message); } }
+/** `code` marks outcomes callers act on, such as the submission log telling a wrong flag from a refusal. */
+export class EventError extends Error { constructor(public status: number, message: string, public code?: string) { super(message); } }
 export function assertEvent(condition: unknown, message: string, status = 400): asserts condition {
   if (!condition) throw new EventError(status, message);
 }
@@ -37,6 +38,37 @@ export const unregisterUntil = (c: any, userId?: string) => {
 export const canUnregister = (c: any, userId?: string, now = Date.now()) => {
   const until = unregisterUntil(c, userId);
   return c.status !== 'ended' && !!until && now < Date.parse(until);
+};
+/** A challenge in a later wave stays hidden from players until its release time. */
+export const isReleased = (challenge: any, now = Date.now()) => !challenge.releaseAt || new Date(challenge.releaseAt).getTime() <= now;
+/** The moment players' standings stopped moving, while a freeze is in effect and not yet revealed. */
+export const freezeCutoff = (c: any, now = Date.now()): string | null =>
+  c.scoreboardFreezeAt && !c.scoreboardRevealedAt && new Date(c.scoreboardFreezeAt).getTime() <= now
+    ? new Date(c.scoreboardFreezeAt).toISOString() : null;
+/** The event as it stood at the freeze: later solves, hint purchases and adjustments are left out.
+ * Disqualifications stay current, since they are moderation rather than scoring. Timestamps are
+ * ISO strings, so they compare as text. Hints bought before purchase times were recorded count. */
+export const frozenView = (c: any, cutoff: string) => ({
+  ...c,
+  eventState: {
+    ...c.eventState,
+    solves: c.eventState.solves.filter((s: EventSolve) => s.solvedAt <= cutoff),
+    teams: c.eventState.teams.map((t: EventTeam) => ({ ...t,
+      hints: t.hints.filter(h => !h.purchasedAt || h.purchasedAt <= cutoff),
+      adjustments: t.adjustments.filter(a => a.createdAt <= cutoff) })),
+  },
+});
+/** What a viewer's scoreboard is built from: hosts always see it live, everyone else frozen. */
+export const scoreboardView = (c: any, u?: IJWTPayload) => {
+  const cutoff = eventOwner(c, u) ? null : freezeCutoff(c);
+  return { view: cutoff ? frozenView(c, cutoff) : c, frozenAt: cutoff };
+};
+const normalizeFlag = (s: string) => s.replace(/[\u200B\u200C\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim().normalize('NFKC');
+const digest = (s: string) => createHash('sha256').update(normalizeFlag(s)).digest();
+/** Compares fixed-length digests in constant time, so response timing says nothing about how close a guess was. */
+export const flagMatches = (challenge: any, submitted: string) => {
+  const guess = digest(submitted);
+  return [challenge.flag, ...(challenge.flags || [])].filter(Boolean).some((flag: string) => timingSafeEqual(digest(flag), guess));
 };
 export const eventId = () => randomBytes(12).toString('hex');
 export const inviteCode = () => randomBytes(9).toString('hex').toUpperCase();
@@ -90,19 +122,35 @@ export const eventMetadata = (c: any, u?: IJWTPayload) => ({
   registered: eventRegistered(c, u?.userId),
   unregisterUntil: unregisterUntil(c, u?.userId), canUnregister: canUnregister(c, u?.userId),
   canRegister: u?.role === 'user', registrationOpen: registrationOpen(c), canManage: eventOwner(c, u), challenges: [],
+  scoreboardFreezeAt: c.scoreboardFreezeAt || null, scoreboardRevealedAt: c.scoreboardRevealedAt || null, scoreboardFrozen: !!freezeCutoff(c),
+  resultsPublished: !!c.resultsPublishedAt, certificatesIssued: !!c.certificatesIssuedAt,
   ...(eventOwner(c, u) ? { pendingInvitations: c.eventState.invitations.filter((i: any) => i.status === 'pending').length } : {}),
 });
 
+/** The next wave players are waiting for: when, and how many challenges. Titles stay hidden. */
+const nextRelease = (c: any, now = Date.now()) => {
+  const upcoming = c.challenges.filter((ch: any) => !isReleased(ch, now)).map((ch: any) => new Date(ch.releaseAt).getTime());
+  if (!upcoming.length) return null;
+  const at = Math.min(...upcoming), minute = (t: number) => Math.floor(t / 60000);
+  return { at: new Date(at).toISOString(), count: upcoming.filter((t: number) => minute(t) === minute(at)).length, remaining: upcoming.length };
+};
+
 export const eventDetails = (c: any, u: IJWTPayload) => {
   assertEvent(eventAccess(c, u), 'Register for this event before entering', 403);
-  const owner = eventOwner(c, u), team = eventTeamFor(c, u.userId), ctx = scoringContext(c), solves = ctx.solves;
+  const owner = eventOwner(c, u), team = eventTeamFor(c, u.userId), live = scoringContext(c);
+  // During a freeze, values, solve counts and solvers come from the frozen view; a team's own
+  // score and solved markers stay live so it can keep playing and buying hints.
+  const { view, frozenAt } = scoreboardView(c, u);
+  const ctx = frozenAt ? scoringContext(view) : live, solves = ctx.solves;
   // A disqualified team still sees which challenges it solved; nobody else counts them.
-  const ownSolves = team?.disqualified ? uniqueSolves(c, true).filter(s => s.teamId === team.id) : solves.filter(s => s.teamId === team?.id);
+  const ownSolves = team?.disqualified ? uniqueSolves(c, true).filter(s => s.teamId === team.id) : live.solves.filter(s => s.teamId === team?.id);
   const reveal = owner || eventOpen(c);
   return {
     ...eventMetadata(c, u),
-    team: team ? { ...team, score: teamScore(c, team, ctx), locked: teamLocked(c, team), members: team.members.map(id => c.eventState.registrations.find((r: Registration) => r.userId === id)) } : null,
-    challenges: reveal ? c.challenges.map((ch: any) => {
+    frozenAt,
+    nextRelease: c.status === 'ended' ? null : nextRelease(c),
+    team: team ? { ...team, score: teamScore(c, team, live), locked: teamLocked(c, team), members: team.members.map(id => c.eventState.registrations.find((r: Registration) => r.userId === id)) } : null,
+    challenges: reveal ? c.challenges.filter((ch: any) => owner || isReleased(ch)).map((ch: any) => {
       const { flag, flags, ...safe } = ch.toObject ? ch.toObject() : ch;
       const id = String(ch._id), solved = ownSolves.find(s => s.challengeId === id), solvers = solves.filter(s => s.challengeId === id);
       return { ...safe, ...(owner ? { flag, flags } : {}), points: ctx.values.get(id), currentPoints: ctx.values.get(id),
@@ -114,7 +162,7 @@ export const eventDetails = (c: any, u: IJWTPayload) => {
       };
     }) : [],
     ...(owner ? { registrations: c.eventState.registrations, invitations: c.eventState.invitations,
-      teams: c.eventState.teams.map((t: EventTeam) => ({ ...t, score: teamScore(c, t, ctx), locked: teamLocked(c, t),
+      teams: c.eventState.teams.map((t: EventTeam) => ({ ...t, score: teamScore(c, t, live), locked: teamLocked(c, t),
         solveCount: new Set(c.eventState.solves.filter((s: EventSolve) => s.teamId === t.id).map((s: EventSolve) => s.challengeId)).size })) } : {}),
   };
 };
@@ -136,7 +184,10 @@ const scoreTimeline = (c: any, rows: any[], ctx: ReturnType<typeof scoringContex
   });
 };
 
-export const eventLeaderboard = (c: any, individual = false) => {
+/** Standings. Pass `frozenAt` to score the event as it stood then, and `releasedOnly` for a player's
+ * count of challenges, which must not reveal how many are still to come. */
+export const eventLeaderboard = (live: any, individual = false, { frozenAt = null as string | null, releasedOnly = false } = {}) => {
+  const c = frozenAt ? frozenView(live, frozenAt) : live;
   const ctx = scoringContext(c), solves = ctx.solves, dq = disqualifiedTeams(c);
   // Players on a disqualified team leave the individual board with it, even after withdrawing.
   const dqPlayers = new Set<string>(c.eventState.teams.filter((t: EventTeam) => dq.has(t.id)).flatMap((t: EventTeam) => [...t.members, ...(t.lockedMembers || [])]));
@@ -151,7 +202,8 @@ export const eventLeaderboard = (c: any, individual = false) => {
       lastSolveTime: own[own.length - 1]?.solvedAt || null, memberCount: t.members.length };
   });
   rows.sort((a: any, b: any) => b.points - a.points || (a.lastSolveTime ? Date.parse(a.lastSolveTime) : Infinity) - (b.lastSolveTime ? Date.parse(b.lastSolveTime) : Infinity) || a._id.localeCompare(b._id));
-  return { type: 'event', mode: individual ? 'individual' : 'team', leaderboard: rows, totalChallenges: c.challenges.length,
+  return { type: 'event', mode: individual ? 'individual' : 'team', leaderboard: rows, frozenAt,
+    totalChallenges: releasedOnly ? c.challenges.filter((ch: any) => isReleased(ch)).length : c.challenges.length,
     ...(individual ? {} : { timeline: scoreTimeline(c, rows, ctx) }) };
 };
 

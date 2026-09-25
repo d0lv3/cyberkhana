@@ -41,18 +41,34 @@ An event can open automatically (`autoStart`) at its start time; the scheduler s
 
 A host can disqualify a team with a reason (`POST /teams/:teamId/disqualification`) and reinstate it (`DELETE`), including after the event ends. A disqualified team and its players leave the rankings, the activity feed and the score graph; its solves stop counting toward dynamic decay, and first blood passes to the earliest remaining solve. Its players see the reason, keep their own solve history, and cannot submit flags, buy hints or be joined. Reinstating restores everything, since scores are computed from stored solves.
 
+## Scoreboard freeze
+
+A host sets `scoreboardFreezeAt` in Settings (quick picks: one hour or 30 minutes before the end). From that moment everyone but the hosts gets the event as it stood then: standings, the score graph, the activity feed, challenge solve counts, solvers and dynamic values all come from `frozenView`, which drops later solves, hint purchases and adjustments. A team still sees its own live score and solved markers, so it can keep playing and buying hints, and a correct flag during the freeze returns no points or first-blood flag, since those would reveal how many others solved it. Disqualifications stay current. Hosts see live data in the console; the scoreboard page shows hosts the players' view by default (so a projector never leaks the freeze) with a hosts-only live toggle. `POST /scoreboard/reveal` lifts the freeze and every open scoreboard updates over the socket. Setting a new freeze time freezes again.
+
+## Submission log
+
+Every flag attempt by a registered player is stored in the `EventSubmission` collection with its result: correct, wrong, duplicate, or refused (with the reason, such as a disqualified team). It is a separate collection on purpose: the event document is rewritten on every change under a 12 MB guard, so storing guesses there would let a player spam the form until the event could no longer be written. Wrong answers are kept as typed, truncated to 256 characters; correct ones are not stored, since they are the flag. A wrong answer that matches another challenge's flag is flagged. Only hosts can read the log (`GET /submissions`, filters are whitelisted, cursor-paginated); it is never part of a player response and is always rendered as text. Entries expire after 180 days (TTL index). Logging failures never affect whether a submission counts.
+
+Alongside it: flags are compared as SHA-256 digests with `timingSafeEqual`, and event rate limits are counted per player (50 flags and 120 writes per 10 minutes) with a 3,000-requests-per-address backstop. They used to be per IP, which let one campus network behind a single address exhaust everyone's allowance.
+
+## Release waves
+
+Each event challenge can carry a `releaseAt`. Until then it is invisible to players: absent from the board, the challenge count and the solvers list, and a submission, hint request or solvers request for it answers 404 like a challenge that does not exist. Players see only when the next wave opens and how many challenges it holds (`nextRelease`); the event page refreshes itself at that moment. Release times are whole minutes, so challenges scheduled together open together. Hosts can add challenges during the event (released at once, or scheduled), reschedule or release a wave early, and remove a challenge only while it is unreleased; a released challenge that teams have solved cannot be hidden again. An event must have at least one challenge on the opening board to start, manually or automatically.
+
+## Results page and certificates
+
+After the event ends a host can publish a results page at `/#/results/:id` (`POST /results/publish`, which also lifts a remaining freeze). It needs no account and answers from an allowlist: event name, brief, host and universities, dates, podium, standings with team names, universities, points and solves, the top-eight score graph, and per-challenge statistics with first-blood teams. It never includes player names, flags, invite codes or unreleased challenges. Unpublishing makes it 404 again.
+
+`POST /certificates/issue` creates one `Certificate` per registered player who is not on a disqualified team, with the printed details copied in (name, university, team, placing, points, event, host, dates). It requires an ended, revealed event. Running it again refreshes the details, keeps every code (so shared links keep working), and revokes certificates of players who are no longer eligible. Each has a 128-bit random code; `/#/certificates/:code` is a public verification page that shows the certificate or states that it was revoked, with print-to-PDF. Players find theirs on the event page. The certificate is the "Dossier" design (dark theme only), rendered by `components/certificates/CertificateTemplate.tsx`: an A4-landscape sheet sized in millimetres, gold/silver/bronze styling and foil seal for the podium, green for other placings, and a participant layout with the seal in place of the rank for players without a team. Text is shrunk to fit its box once the fonts load, Arabic names are set right to left, and the QR code (the `qrcode-generator` package) links to the verification page. Printing, or saving as PDF, produces exactly one landscape A4 page holding only the certificate; those print rules are mounted only while a certificate is on screen.
+
 ## Compared with HTB CTF
 
-Now at parity: registration with capacity and deadline, teams of up to four with invite codes and captains, team and player scoreboards, dynamic scoring, first bloods, a top-team score progression graph, event brief and rules, scheduled automatic start, announcements, score adjustments, disqualification, CSV results export and a presentation scoreboard.
+Now at parity: registration with capacity and deadline, teams of up to four with invite codes and captains, team and player scoreboards, dynamic scoring, first bloods, a top-team score progression graph, event brief and rules, scheduled automatic start, release waves, scoreboard freeze and reveal, announcements, score adjustments, disqualification, a host-only submission log, CSV exports, a presentation scoreboard, a public results page and verifiable certificates.
 
-Not implemented yet, in rough order of value:
+Not implemented yet:
 
-- Scoreboard freeze for the final hour.
-- A submission log, including incorrect flags. Wrong submissions are rejected before any write, so flag-guessing or flag-sharing patterns cannot be reviewed; the rate limit is the only guard.
 - Per-team challenge instances (spawnable Docker targets). Full Pwn and web targets are shared hosts today.
-- Releasing challenges in waves during the event. The board is frozen at the start, so late additions are not possible.
 - Captain tools: removing a teammate or handing over the captaincy without the host.
-- Certificates and a public post-event results page.
 
 ## Atomic storage and access
 
@@ -64,7 +80,7 @@ Nonparticipant responses use an explicit metadata allowlist. Student challenge r
 
 ## Validation
 
-`npm --prefix backend run test:events` builds the backend and runs 20 passing Node integration tests against disposable MongoDB data. Coverage includes concurrent capacity claims, concurrent team joins, four-member limits, duplicate teammate submissions, shared hint purchases, invitation acceptance/decline, HTTP/socket access gates, removal/eviction, captain succession, withdrawal after solving, mandatory atomic team selection at registration, exact one-hour withdrawal boundaries, team-history preservation, static/dynamic scores, first blood, tiebreaks, event closure, both explicit-workshop and missing-type legacy flows, disqualification and reinstatement (rankings, decay, first blood, timeline, blocked play), settings edits and invitations, and scheduled automatic starts.
+`npm --prefix backend run test:events` builds the backend and runs 24 passing Node integration tests against disposable MongoDB data. Coverage includes concurrent capacity claims, concurrent team joins, four-member limits, duplicate teammate submissions, shared hint purchases, invitation acceptance/decline, HTTP/socket access gates, removal/eviction, captain succession, withdrawal after solving, mandatory atomic team selection at registration, exact one-hour withdrawal boundaries, team-history preservation, static/dynamic scores, first blood, tiebreaks, event closure, both explicit-workshop and missing-type legacy flows, disqualification and reinstatement (rankings, decay, first blood, timeline, blocked play), settings edits and invitations, scheduled automatic starts, the scoreboard freeze and reveal (player, host and projector views, hidden post-freeze solves), the submission log (results, truncation, cross-challenge flags, host-only access, pagination), release waves (hidden until released, 404 for unreleased challenges, mid-event additions, no re-hiding solved challenges, no empty opening board), and published results and certificates (public allowlists, ended-and-revealed requirements, stable codes, revocation).
 
 The test runner uses `mongodb-memory-server`. To use a locally installed MongoDB binary instead of downloading one on Windows:
 

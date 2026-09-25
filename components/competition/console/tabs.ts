@@ -1,4 +1,4 @@
-export type ConsoleTab = 'overview' | 'scoreboard' | 'teams' | 'students' | 'participants' | 'challenges' | 'announcements' | 'settings';
+export type ConsoleTab = 'overview' | 'scoreboard' | 'teams' | 'students' | 'participants' | 'challenges' | 'submissions' | 'announcements' | 'results' | 'settings';
 
 /** Events are run like a CTF (teams, registration, invitations); workshops stay individual. */
 export const tabsFor = (isEvent: boolean): Array<{ id: ConsoleTab; label: string }> => isEvent
@@ -8,7 +8,9 @@ export const tabsFor = (isEvent: boolean): Array<{ id: ConsoleTab; label: string
       { id: 'teams', label: 'Teams' },
       { id: 'participants', label: 'Participants' },
       { id: 'challenges', label: 'Challenges' },
+      { id: 'submissions', label: 'Submissions' },
       { id: 'announcements', label: 'Announcements' },
+      { id: 'results', label: 'Results' },
       { id: 'settings', label: 'Settings' },
     ]
   : [
