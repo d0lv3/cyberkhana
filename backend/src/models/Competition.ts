@@ -44,6 +44,10 @@ export interface ICompetitionChallenge extends Document {
 
 export interface ICompetition extends Document {
   type?: 'workshop' | 'event';
+  /** Event brief and rules, shown to invited universities before they register. */
+  description?: string;
+  /** Events only: open automatically at startTime instead of waiting for the host. */
+  autoStart?: boolean;
   registrationDeadline?: Date;
   capacity?: number;
   eventRevision?: number;
@@ -163,6 +167,8 @@ const CompetitionChallengeSchema: Schema = new Schema({
 
 const CompetitionSchema: Schema = new Schema({
   type: { type: String, enum: ['workshop', 'event'], default: 'workshop' },
+  description: { type: String, maxlength: 5000 },
+  autoStart: { type: Boolean, default: false },
   registrationDeadline: Date,
   capacity: { type: Number, min: 1, max: 10000 },
   eventRevision: { type: Number, default: 0 },

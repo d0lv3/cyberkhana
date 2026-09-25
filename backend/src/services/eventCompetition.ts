@@ -7,8 +7,9 @@ export interface Registration { userId: string; username: string; universityCode
 export interface EventTeam {
   id: string; name: string; inviteCode: string; members: string[]; captainId: string;
   lockedMembers?: string[];
-  hints: Array<{ challengeId: string; index: number; cost: number; userId: string }>;
+  hints: Array<{ challengeId: string; index: number; cost: number; userId: string; purchasedAt?: string }>;
   adjustments: Array<{ amount: number; reason: string; adminId: string; createdAt: string }>;
+  disqualified?: { reason: string; adminId: string; at: string };
 }
 export interface EventSolve { teamId: string; challengeId: string; userId: string; username: string; solvedAt: string; firstBlood: boolean }
 export interface EventState {
@@ -39,74 +40,119 @@ export const canUnregister = (c: any, userId?: string, now = Date.now()) => {
 };
 export const eventId = () => randomBytes(12).toString('hex');
 export const inviteCode = () => randomBytes(9).toString('hex').toUpperCase();
-export const uniqueSolves = (c: any): EventSolve[] => {
-  const seen = new Set<string>();
+export const disqualifiedTeams = (c: any) =>
+  new Set<string>((c.eventState?.teams || []).filter((t: EventTeam) => t.disqualified).map((t: EventTeam) => t.id));
+/** One counted solve per team and challenge, oldest first. A disqualified team neither ranks
+ * nor drives decay, so its solves drop out and first blood passes to the earliest remaining
+ * solve. Pass `includeDisqualified` only to show a team its own history. */
+export const uniqueSolves = (c: any, includeDisqualified = false): EventSolve[] => {
+  const seen = new Set<string>(), blooded = new Set<string>();
+  const excluded = includeDisqualified ? new Set<string>() : disqualifiedTeams(c);
   return [...c.eventState.solves].sort((a, b) => a.solvedAt.localeCompare(b.solvedAt)).filter(s => {
     const key = `${s.teamId}:${s.challengeId}`;
-    if (seen.has(key)) return false;
+    if (seen.has(key) || excluded.has(s.teamId)) return false;
     seen.add(key); return true;
+  }).map(s => {
+    const firstBlood = !blooded.has(s.challengeId);
+    blooded.add(s.challengeId);
+    return firstBlood === s.firstBlood ? s : { ...s, firstBlood };
   });
 };
-export const eventPoints = (c: any, challenge: any, solves = uniqueSolves(c)) => challenge.scoringMode === 'static'
+const valueFor = (challenge: any, solveCount: number) => challenge.scoringMode === 'static'
   ? challenge.points
-  : calculateDynamicScore(challenge.initialPoints ?? 1000, challenge.minimumPoints ?? 100, challenge.decay ?? 38,
-    solves.filter(s => s.challengeId === String(challenge._id)).length);
-export const solvePoints = (c: any, s: EventSolve, solves = uniqueSolves(c)) => {
-  const challenge = c.challenges.find((ch: any) => String(ch._id) === s.challengeId);
-  return challenge ? eventPoints(c, challenge, solves) + (s.firstBlood ? (challenge.firstBloodBonus ?? 20) : 0) : 0;
+  : calculateDynamicScore(challenge.initialPoints ?? 1000, challenge.minimumPoints ?? 100, challenge.decay ?? 38, solveCount);
+export const eventPoints = (c: any, challenge: any, solves = uniqueSolves(c)) =>
+  valueFor(challenge, solves.filter(s => s.challengeId === String(challenge._id)).length);
+/** Every challenge's current value, computed once. Scoring each solve against the full solve
+ * list made a scoreboard quadratic in the number of solves. */
+export const scoringContext = (c: any, solves = uniqueSolves(c)) => {
+  const counts = new Map<string, number>();
+  for (const s of solves) counts.set(s.challengeId, (counts.get(s.challengeId) || 0) + 1);
+  const challenges = new Map<string, any>(c.challenges.map((ch: any) => [String(ch._id), ch]));
+  const values = new Map<string, number>([...challenges].map(([id, ch]) => [id, valueFor(ch, counts.get(id) || 0)]));
+  const solveValue = (s: EventSolve) => {
+    const challenge = challenges.get(s.challengeId);
+    return challenge ? values.get(s.challengeId)! + (s.firstBlood ? (challenge.firstBloodBonus ?? 20) : 0) : 0;
+  };
+  return { solves, counts, values, solveValue };
 };
-export const teamScore = (c: any, t: EventTeam) => {
-  const solves = uniqueSolves(c);
-  return solves.filter(s => s.teamId === t.id).reduce((n, s) => n + solvePoints(c, s, solves), 0)
+export const solvePoints = (c: any, s: EventSolve, solves = uniqueSolves(c)) => scoringContext(c, solves).solveValue(s);
+export const teamScore = (c: any, t: EventTeam, ctx = scoringContext(c)) =>
+  ctx.solves.filter(s => s.teamId === t.id).reduce((n, s) => n + ctx.solveValue(s), 0)
     - t.hints.reduce((n, h) => n + h.cost, 0) + t.adjustments.reduce((n, a) => n + a.amount, 0);
-};
 export const eventMetadata = (c: any, u?: IJWTPayload) => ({
-  _id: String(c._id), type: 'event', name: c.name, universityCode: c.universityCode,
+  _id: String(c._id), type: 'event', name: c.name, description: c.description || '', universityCode: c.universityCode,
   universityCodes: c.eventState.invitations.filter((i: any) => i.status === 'accepted').map((i: any) => i.universityCode),
-  startTime: c.startTime, endTime: c.endTime, status: c.status, hasTimeLimit: c.hasTimeLimit, duration: c.duration,
+  startTime: c.startTime, endTime: c.endTime, status: c.status, hasTimeLimit: c.hasTimeLimit, duration: c.duration, autoStart: !!c.autoStart,
   requiresSecurityCode: false, registrationDeadline: c.registrationDeadline, capacity: c.capacity,
-  registrationCount: c.eventState.registrations.length, registered: eventRegistered(c, u?.userId),
+  registrationCount: c.eventState.registrations.length, challengeCount: c.challenges.length,
+  teamCount: c.eventState.teams.filter((t: EventTeam) => t.members.length && !t.disqualified).length,
+  registered: eventRegistered(c, u?.userId),
   unregisterUntil: unregisterUntil(c, u?.userId), canUnregister: canUnregister(c, u?.userId),
   canRegister: u?.role === 'user', registrationOpen: registrationOpen(c), canManage: eventOwner(c, u), challenges: [],
+  ...(eventOwner(c, u) ? { pendingInvitations: c.eventState.invitations.filter((i: any) => i.status === 'pending').length } : {}),
 });
 
 export const eventDetails = (c: any, u: IJWTPayload) => {
   assertEvent(eventAccess(c, u), 'Register for this event before entering', 403);
-  const owner = eventOwner(c, u), team = eventTeamFor(c, u.userId), solves = uniqueSolves(c);
+  const owner = eventOwner(c, u), team = eventTeamFor(c, u.userId), ctx = scoringContext(c), solves = ctx.solves;
+  // A disqualified team still sees which challenges it solved; nobody else counts them.
+  const ownSolves = team?.disqualified ? uniqueSolves(c, true).filter(s => s.teamId === team.id) : solves.filter(s => s.teamId === team?.id);
   const reveal = owner || eventOpen(c);
   return {
     ...eventMetadata(c, u),
-    team: team ? { ...team, score: teamScore(c, team), locked: teamLocked(c, team), members: team.members.map(id => c.eventState.registrations.find((r: Registration) => r.userId === id)) } : null,
+    team: team ? { ...team, score: teamScore(c, team, ctx), locked: teamLocked(c, team), members: team.members.map(id => c.eventState.registrations.find((r: Registration) => r.userId === id)) } : null,
     challenges: reveal ? c.challenges.map((ch: any) => {
       const { flag, flags, ...safe } = ch.toObject ? ch.toObject() : ch;
-      const solved = solves.find(s => s.teamId === team?.id && s.challengeId === String(ch._id));
-      return { ...safe, ...(owner ? { flag, flags } : {}), points: eventPoints(c, ch, solves), currentPoints: eventPoints(c, ch, solves),
-        solves: solves.filter(s => s.challengeId === String(ch._id)).length,
-        solvers: solves.filter(s => s.challengeId === String(ch._id)).map(s => ({ username: s.username, teamId: s.teamId, solvedAt: s.solvedAt, isFirstBlood: s.firstBlood })),
+      const id = String(ch._id), solved = ownSolves.find(s => s.challengeId === id), solvers = solves.filter(s => s.challengeId === id);
+      return { ...safe, ...(owner ? { flag, flags } : {}), points: ctx.values.get(id), currentPoints: ctx.values.get(id),
+        solves: solvers.length,
+        solvers: solvers.map(s => ({ username: s.username, teamId: s.teamId, solvedAt: s.solvedAt, isFirstBlood: s.firstBlood })),
         solvedBy: solved?.username, solvedByTeammate: !!solved && solved.userId !== u.userId,
         hints: (ch.hints || []).map((h: any, index: number) => ({ cost: h.cost, isPublished: !!h.isPublished,
-          text: owner || h.isPublished || team?.hints.some(p => p.challengeId === String(ch._id) && p.index === index) ? h.text : 'LOCKED' })),
+          text: owner || h.isPublished || team?.hints.some(p => p.challengeId === id && p.index === index) ? h.text : 'LOCKED' })),
       };
     }) : [],
     ...(owner ? { registrations: c.eventState.registrations, invitations: c.eventState.invitations,
-      teams: c.eventState.teams.map((t: EventTeam) => ({ ...t, score: teamScore(c, t), locked: teamLocked(c, t) })) } : {}),
+      teams: c.eventState.teams.map((t: EventTeam) => ({ ...t, score: teamScore(c, t, ctx), locked: teamLocked(c, t),
+        solveCount: new Set(c.eventState.solves.filter((s: EventSolve) => s.teamId === t.id).map((s: EventSolve) => s.challengeId)).size })) } : {}),
   };
 };
 
+/** Cumulative score steps for the eight leading teams, as on a CTF scoreboard graph (eight is
+ * the chart's colour-safe series limit). Dynamic challenges are plotted at their current
+ * value, so every line ends at the team's score. */
+const scoreTimeline = (c: any, rows: any[], ctx: ReturnType<typeof scoringContext>) => {
+  const start = c.startTime ? new Date(c.startTime).toISOString() : new Date(0).toISOString();
+  return rows.slice(0, 8).map(row => {
+    const team: EventTeam = c.eventState.teams.find((t: EventTeam) => t.id === row._id);
+    const steps = [
+      ...ctx.solves.filter(s => s.teamId === team.id).map(s => ({ at: s.solvedAt, delta: ctx.solveValue(s) })),
+      ...team.hints.map(h => ({ at: h.purchasedAt || start, delta: -h.cost })),
+      ...team.adjustments.map(a => ({ at: a.createdAt, delta: a.amount })),
+    ].sort((a, b) => a.at.localeCompare(b.at));
+    let score = 0;
+    return { _id: team.id, name: team.name, points: steps.map(step => ({ at: step.at, score: score += step.delta })) };
+  });
+};
+
 export const eventLeaderboard = (c: any, individual = false) => {
-  const solves = uniqueSolves(c);
-  const rows = individual ? c.eventState.registrations.map((r: Registration) => {
+  const ctx = scoringContext(c), solves = ctx.solves, dq = disqualifiedTeams(c);
+  // Players on a disqualified team leave the individual board with it, even after withdrawing.
+  const dqPlayers = new Set<string>(c.eventState.teams.filter((t: EventTeam) => dq.has(t.id)).flatMap((t: EventTeam) => [...t.members, ...(t.lockedMembers || [])]));
+  const rows = individual ? c.eventState.registrations.filter((r: Registration) => !dqPlayers.has(r.userId)).map((r: Registration) => {
     const own = solves.filter(s => s.userId === r.userId);
     const costs = c.eventState.teams.flatMap((t: EventTeam) => t.hints).filter((h: any) => h.userId === r.userId).reduce((n: number, h: any) => n + h.cost, 0);
-    return { _id: r.userId, username: r.username, universityCode: r.universityCode, points: own.reduce((n, s) => n + solvePoints(c, s, solves), 0) - costs,
+    return { _id: r.userId, username: r.username, universityCode: r.universityCode, points: own.reduce((n, s) => n + ctx.solveValue(s), 0) - costs,
       solvedChallenges: own.length, lastSolveTime: own[own.length - 1]?.solvedAt || null };
-  }) : c.eventState.teams.filter((t: EventTeam) => t.members.length || solves.some(s => s.teamId === t.id)).map((t: EventTeam) => {
+  }) : c.eventState.teams.filter((t: EventTeam) => !dq.has(t.id) && (t.members.length || solves.some(s => s.teamId === t.id))).map((t: EventTeam) => {
     const own = solves.filter(s => s.teamId === t.id);
-    return { _id: t.id, username: t.name, name: t.name, points: teamScore(c, t), solvedChallenges: own.length,
+    return { _id: t.id, username: t.name, name: t.name, points: teamScore(c, t, ctx), solvedChallenges: own.length,
       lastSolveTime: own[own.length - 1]?.solvedAt || null, memberCount: t.members.length };
   });
   rows.sort((a: any, b: any) => b.points - a.points || (a.lastSolveTime ? Date.parse(a.lastSolveTime) : Infinity) - (b.lastSolveTime ? Date.parse(b.lastSolveTime) : Infinity) || a._id.localeCompare(b._id));
-  return { type: 'event', mode: individual ? 'individual' : 'team', leaderboard: rows, totalChallenges: c.challenges.length };
+  return { type: 'event', mode: individual ? 'individual' : 'team', leaderboard: rows, totalChallenges: c.challenges.length,
+    ...(individual ? {} : { timeline: scoreTimeline(c, rows, ctx) }) };
 };
 
 /** One document owns every event invariant. Retry the whole decision after a competing commit.

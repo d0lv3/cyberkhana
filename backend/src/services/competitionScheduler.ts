@@ -71,13 +71,66 @@ export const closeExpiredCompetitions = async (): Promise<number> => {
   return expired.length;
 };
 
+/**
+ * Opens events whose host scheduled an automatic start, as a CTF opens at its
+ * published time without anyone at the console. An event with no challenges
+ * stays pending: opening an empty board would only start the clock.
+ *
+ * The update bumps `eventRevision` along with the status guard, so an event
+ * mutation racing this transition retries against the started event.
+ */
+export const startScheduledEvents = async (): Promise<number> => {
+  const now = new Date();
+
+  const due = await Competition.find({
+    type: 'event',
+    status: 'pending',
+    autoStart: true,
+    startTime: { $ne: null, $lte: now },
+    'challenges.0': { $exists: true }
+  }).select('_id name startTime endTime duration hasTimeLimit eventState.invitations');
+
+  let started = 0;
+  for (const event of due) {
+    const id = (event._id as any).toString();
+    // A timer event runs its duration from the published start, not from the sweep.
+    const endTime = event.hasTimeLimit !== false && !event.endTime && event.duration
+      ? new Date(new Date(event.startTime).getTime() + event.duration * 60000)
+      : undefined;
+
+    const result = await Competition.updateOne(
+      // Re-checked here too: a host could remove the last challenge between the read and this write.
+      { _id: event._id, status: 'pending', autoStart: true, 'challenges.0': { $exists: true } },
+      { $set: { status: 'active', ...(endTime ? { endTime } : {}) }, $inc: { eventRevision: 1 } }
+    );
+    if (result.modifiedCount === 0) continue;
+    started++;
+
+    logger.info('competition.auto_started', { competitionId: id, name: event.name, startTime: event.startTime });
+
+    try {
+      const codes = (event.eventState?.invitations || []).filter(i => i.status === 'accepted').map(i => i.universityCode);
+      getIO().to(`competition:${id}`).emit('eventChanged', { competitionId: id });
+      SocketEvents.emitCompetitionUpdate(codes, { competitionId: id, type: 'started', message: `Competition "${event.name}" has started` });
+    } catch (error) {
+      logger.error('competition.auto_start.emit_failed', { competitionId: id, error });
+    }
+  }
+
+  return started;
+};
+
 export const startCompetitionScheduler = () => {
   if (timer) return;
 
+  // Start before closing, so an event whose whole window passed while the
+  // server was down still opens and then closes in order.
   const sweep = () => {
-    closeExpiredCompetitions().catch((error) => {
-      logger.error('competition.scheduler.sweep_failed', { error });
-    });
+    startScheduledEvents()
+      .then(() => closeExpiredCompetitions())
+      .catch((error) => {
+        logger.error('competition.scheduler.sweep_failed', { error });
+      });
   };
 
   sweep();

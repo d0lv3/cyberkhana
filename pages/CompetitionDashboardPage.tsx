@@ -654,7 +654,7 @@ const CompetitionDashboardPage: React.FC = () => {
               </div>
               <div className="p-4 space-y-2">
                 {leaderboard.slice(0, 5).map((entry, index) => {
-                  const isCurrentUser = user && entry.username === user.username;
+                  const isCurrentUser = competition.type === 'event' ? !!competition.team && entry._id === competition.team.id : user && entry.username === user.username;
                   return (
                     <div key={entry._id} className={`flex items-center gap-3 p-2.5 rounded-lg transition-colors ${
                       isCurrentUser ? 'bg-brand/8 border border-brand/20' : 'hover:bg-inset'
@@ -729,7 +729,7 @@ const CompetitionDashboardPage: React.FC = () => {
                       <span className="font-medium text-[#e5ecfb]">{activity.challengeTitle}</span>
                     </p>
                     <p className="text-[10px] text-faint mt-1">
-                      {activity.timestamp} · <span className="text-brand">+{activity.points} pts</span>
+                      {new Date(activity.timestamp).toLocaleString()} · <span className="text-brand">+{activity.points} pts</span>
                     </p>
                   </div>
                 )) : (

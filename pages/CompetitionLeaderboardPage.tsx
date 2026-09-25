@@ -7,7 +7,8 @@ import { eventService } from '../services/eventService';
 import { useSocket } from '../src/contexts/SocketContext';
 import UnifiedLeaderboard from '../components/leaderboard/UnifiedLeaderboard';
 import ProfileSlidePanel from '../components/ui/ProfileSlidePanel';
-import Button from '../components/ui/button';
+import { ConsoleButton, Segmented } from '../components/competition/console/ui';
+import ScoreTimeline, { TimelineSeries } from '../components/competition/console/ScoreTimeline';
 
 const CompetitionLeaderboardPage: React.FC = () => {
   const { id = '' } = useParams();
@@ -17,6 +18,7 @@ const CompetitionLeaderboardPage: React.FC = () => {
   const isAdmin = user.role === 'admin' || user.role === 'super-admin';
   const [competition, setCompetition] = useState<any>(null), [rows, setRows] = useState<any[]>([]);
   const [total, setTotal] = useState(0), [mode, setMode] = useState<'team' | 'individual'>('team');
+  const [timeline, setTimeline] = useState<TimelineSeries[]>([]);
   const [loading, setLoading] = useState(true), [error, setError] = useState('');
   const [expanded, setExpanded] = useState(isAdmin && params.get('present') === '1');
   const [selected, setSelected] = useState<any>(null), [rank, setRank] = useState<number>();
@@ -30,7 +32,7 @@ const CompetitionLeaderboardPage: React.FC = () => {
         eventService.leaderboard(id, mode),
       ]);
       if (request !== version.current) return;
-      setCompetition(data); setRows(Array.isArray(result) ? result : result.leaderboard || []);
+      setCompetition(data); setRows(Array.isArray(result) ? result : result.leaderboard || []); setTimeline(result.timeline || []);
       setTotal(result.totalChallenges ?? data.challenges.length); setError('');
     } catch (e: any) {
       if (request === version.current) { setRows([]); setCompetition(null); setError(e.message || 'Could not load leaderboard'); }
@@ -66,12 +68,18 @@ const CompetitionLeaderboardPage: React.FC = () => {
   const teamMode = competition?.type === 'event' && mode === 'team';
   const content = <div className={expanded ? 'fixed inset-0 z-[100] overflow-y-auto bg-canvas p-4 md:p-8' : 'space-y-6'}>
     <div className="flex flex-wrap justify-between gap-3 mb-6">
-      <Button variant="outline" onClick={() => { restore(); navigate(`/competition/${id}`); }}><ArrowLeft size={16} className="mr-2" />Competition</Button>
-      <div className="flex flex-wrap gap-2">
-        {competition?.type === 'event' && (['team', 'individual'] as const).map(value => <Button key={value} variant={mode === value ? 'default' : 'outline'} aria-pressed={mode === value} onClick={() => setMode(value)}>{value === 'team' ? 'Teams' : 'Individuals'}</Button>)}
+      <ConsoleButton icon={<ArrowLeft size={16} />} onClick={() => { restore(); navigate(`/competition/${id}`); }}>Competition</ConsoleButton>
+      <div className="flex flex-wrap items-center gap-2">
+        {competition?.type === 'event' && <Segmented label="Standings" value={mode} onChange={setMode} options={[{ value: 'team', label: 'Teams' }, { value: 'individual', label: 'Individuals' }]} />}
         {isAdmin && <button ref={maximizeButton} autoFocus={expanded} className="flex items-center gap-2 rounded-lg border border-edge bg-panel px-4 py-2 text-fg" onClick={() => { if (expanded) restore(); else { setExpanded(true); void document.documentElement.requestFullscreen?.().catch(() => {}); } }}>{expanded ? <Minimize size={16} /> : <Maximize size={16} />}{expanded ? 'Exit fullscreen' : 'Maximize leaderboard'}</button>}
       </div>
     </div>
+    {teamMode && timeline.some(series => series.points.length) && (
+      <section className="mb-6 rounded-xl border border-edge bg-panel p-4" aria-label="Score progression">
+        <h2 className="mb-3 text-sm font-semibold text-fg">Score progression · top {Math.min(timeline.length, 8)} teams</h2>
+        <ScoreTimeline series={timeline} start={competition.startTime} end={competition.status === 'ended' ? competition.endTime : undefined} />
+      </section>
+    )}
     <UnifiedLeaderboard title={`${competition?.name || 'Competition'} leaderboard`} subtitle={`${rows.length} ${teamMode ? 'teams' : 'players'} in this competition`} entryLabel={teamMode ? 'Team' : 'Player'} preserveOrder={competition?.type === 'event'}
       entries={rows.map(row => ({ id: row._id, username: row.username, player: row.displayName || row.fullName || row.username,
         playerTag: teamMode ? `${row.memberCount} members` : row.universityName || row.universityCode, points: row.points, flagsPwned: row.solvedChallenges,

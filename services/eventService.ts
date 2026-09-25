@@ -16,4 +16,8 @@ export const eventService = {
   addParticipant: (id: string, userId: string) => apiService.post(`/competitions/${id}/registrations`, { userId }),
   removeParticipant: (id: string, userId: string) => apiService.delete(`/competitions/${id}/registrations/${userId}`),
   adjust: (id: string, teamId: string, amount: number, reason: string) => apiService.post(`/competitions/${id}/teams/${teamId}/adjustments`, { amount, reason }),
+  disqualify: (id: string, teamId: string, reason: string) => apiService.post(`/competitions/${id}/teams/${teamId}/disqualification`, { reason }),
+  reinstate: (id: string, teamId: string) => apiService.delete(`/competitions/${id}/teams/${teamId}/disqualification`),
+  /** Partial update: name, description, capacity, schedule, and `invite` / `revoke` university codes. */
+  updateSettings: (id: string, settings: Record<string, unknown>) => apiService.patch(`/competitions/${id}/settings`, settings),
 };

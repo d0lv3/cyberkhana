@@ -8,7 +8,7 @@ import User from '../models/User';
 import rateLimit from 'express-rate-limit';
 import { getIO } from '../services/socketService';
 import { assertEvent, EventError, EventState, EventTeam, Registration, eventAccess, eventDetails, eventId, eventLeaderboard, eventMetadata,
-  eventOpen, eventOwner, eventPoints, eventRegistered, eventTeamFor, eventVisible, inviteCode, leaveEventTeam, mutateEvent, registrationOpen, canUnregister, teamLocked, teamScore, solvePoints, uniqueSolves } from '../services/eventCompetition';
+  eventOpen, eventOwner, eventPoints, eventRegistered, eventTeamFor, eventVisible, inviteCode, leaveEventTeam, mutateEvent, registrationOpen, canUnregister, teamLocked, teamScore, scoringContext, uniqueSolves } from '../services/eventCompetition';
 
 const fail = (res: Response, error: any) => {
   if (!(error instanceof EventError)) console.error('Event competition failed:', error);
@@ -20,6 +20,30 @@ const text = (value: unknown, label: string, max = 120) => {
   assertEvent(typeof value === 'string' && value.trim().length > 0 && value.trim().length <= max, `${label} must contain 1–${max} characters`);
   return value.trim();
 };
+const brief = (value: unknown) => {
+  assertEvent(value == null || (typeof value === 'string' && value.trim().length <= 5000), 'Description must be at most 5,000 characters');
+  return typeof value === 'string' ? value.trim() : '';
+};
+const optionalDate = (value: unknown, label: string) => {
+  if (value == null || value === '') return null;
+  const date = new Date(value as string);
+  assertEvent(Number.isFinite(date.getTime()), `Invalid ${label}`);
+  return date;
+};
+/** Schedule rules shared by creation and settings edits. `changed` limits the future-start
+ * check to a request that sets the start, so an overdue event can still have its brief edited. */
+function assertSchedule(c: any, changed: { start?: boolean; autoStart?: boolean } = { start: true, autoStart: true }) {
+  const time = (value: any) => value ? new Date(value).getTime() : null;
+  const start = time(c.startTime), end = time(c.endTime), deadline = time(c.registrationDeadline);
+  assertEvent(deadline != null, 'Registration deadline is required');
+  assertEvent(end == null || (end > deadline && (start == null || end > start)), 'End time must follow registration and start time');
+  if (c.autoStart && c.status === 'pending') {
+    assertEvent(start != null, 'Set a start time to open the event automatically');
+    assertEvent(!(changed.start || changed.autoStart) || start > Date.now(), 'The automatic start time must be in the future');
+    assertEvent(!c.hasTimeLimit || end != null || c.duration, 'Set an end time or duration for a timed event');
+  }
+  if (c.status === 'active' && c.hasTimeLimit && end != null) assertEvent(end > Date.now(), 'End time must be in the future. Use End event to close it now.');
+}
 
 export function notifyEvent(c: any) {
   try {
@@ -40,19 +64,19 @@ export const createEventCompetition = async (req: AuthRequest, res: Response) =>
     const codes = [...new Set([owner, ...body.universityCodes.map((code: unknown) => text(code, 'University code', 50).toUpperCase())])] as string[];
     const found = await University.countDocuments({ code: { $in: codes } });
     assertEvent(found === codes.length, 'One or more universities do not exist');
-    const deadline = new Date(body.registrationDeadline), start = body.startTime ? new Date(body.startTime) : undefined;
-    const end = body.endTime ? new Date(body.endTime) : undefined;
-    assertEvent(Number.isFinite(deadline.getTime()) && deadline.getTime() > Date.now(), 'Registration deadline must be in the future');
-    assertEvent(!start || Number.isFinite(start.getTime()), 'Invalid start time');
-    assertEvent(!end || (Number.isFinite(end.getTime()) && end.getTime() > deadline.getTime() && (!start || end > start)), 'End time must follow registration and start time');
+    const deadline = optionalDate(body.registrationDeadline, 'registration deadline');
+    assertEvent(deadline && deadline.getTime() > Date.now(), 'Registration deadline must be in the future');
     const capacity = Number(body.capacity);
     assertEvent(Number.isInteger(capacity) && capacity > 0 && capacity <= 10000, 'Capacity must be between 1 and 10,000 participants');
     const duration = body.duration == null ? undefined : Number(body.duration);
     assertEvent(duration == null || (Number.isInteger(duration) && duration > 0 && duration <= 525600), 'Invalid event duration');
     const eventState: EventState = { registrations: [], teams: [], solves: [], invitations: codes.map(universityCode => ({ universityCode, status: universityCode === owner ? 'accepted' : 'pending' })) };
-    const c = await Competition.create({ name: text(body.name, 'Name'), type: 'event', universityCode: owner, universityCodes: codes,
-      requiresSecurityCode: false, registrationDeadline: deadline, capacity, startTime: start, endTime: end, hasTimeLimit: body.hasTimeLimit !== false,
-      duration, status: 'pending', eventRevision: 0, eventState, challenges: [] });
+    const fields = { name: text(body.name, 'Name'), description: brief(body.description), type: 'event', universityCode: owner, universityCodes: codes,
+      requiresSecurityCode: false, registrationDeadline: deadline, capacity, startTime: optionalDate(body.startTime, 'start time') ?? undefined,
+      endTime: optionalDate(body.endTime, 'end time') ?? undefined, hasTimeLimit: body.hasTimeLimit !== false, autoStart: body.autoStart === true,
+      duration, status: 'pending', eventRevision: 0, eventState, challenges: [] };
+    assertSchedule(fields);
+    const c = await Competition.create(fields);
     try { for (const code of codes.filter(code => code !== owner)) getIO().to(`university-admin:${code}`).emit('eventInvitation', { competitionId: String(c._id), name: c.name }); } catch { /* invitations remain available over HTTP */ }
     return res.status(201).json(eventMetadata(c, req.user));
   } catch (error) { return fail(res, error); }
@@ -61,7 +85,8 @@ export const createEventCompetition = async (req: AuthRequest, res: Response) =>
 export const getEventInvitations = async (req: AuthRequest, res: Response) => {
   try {
     const competitions = await Competition.find({ type: 'event', 'eventState.invitations': { $elemMatch: { universityCode: req.user!.universityCode, status: 'pending' } } }).lean();
-    return res.json(competitions.map(c => ({ _id: String(c._id), name: c.name, universityCode: c.universityCode, registrationDeadline: c.registrationDeadline })));
+    return res.json(competitions.map(c => ({ _id: String(c._id), name: c.name, description: c.description || '', universityCode: c.universityCode,
+      registrationDeadline: c.registrationDeadline, startTime: c.startTime, endTime: c.endTime, capacity: c.capacity })));
   } catch (error) { return fail(res, error); }
 };
 
@@ -106,13 +131,17 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
         const requested = typeof req.query.userId === 'string' ? req.query.userId : u.userId;
         assertEvent(eventOwner(initial, u) || requested === u.userId, 'Access denied', 403);
         const team = eventTeamFor(initial, requested);
-        return res.json(uniqueSolves(initial).filter(s => s.teamId === team?.id).map(s => s.challengeId));
+        return res.json(uniqueSolves(initial, true).filter(s => s.teamId === team?.id).map(s => s.challengeId));
       }
-      if (route === '/activity') return res.json(uniqueSolves(initial).slice(-30).reverse().map(s => ({ type: s.firstBlood ? 'first_blood' : 'solve', timestamp: s.solvedAt,
-        userId: s.userId, challengeId: s.challengeId, teamId: s.teamId, points: solvePoints(initial, s),
+      if (route === '/activity') {
+        const ctx = scoringContext(initial);
+        const teamName = (teamId: string) => initial.eventState.teams.find((t: EventTeam) => t.id === teamId)?.name;
+        return res.json(ctx.solves.slice(-30).reverse().map(s => ({ type: s.firstBlood ? 'first_blood' : 'solve', timestamp: s.solvedAt,
+        userId: s.userId, challengeId: s.challengeId, teamId: s.teamId, teamName: teamName(s.teamId), points: ctx.solveValue(s),
         category: initial.challenges.find((ch: any) => String(ch._id) === s.challengeId)?.category,
         username: s.username, challengeTitle: initial.challenges.find((ch: any) => String(ch._id) === s.challengeId)?.title,
         data: { username: s.username, challengeId: s.challengeId, teamId: s.teamId } })));
+      }
       const solvers = route.match(/^\/challenges\/([a-f\d]{24})\/solvers$/i);
       if (solvers) return res.json(uniqueSolves(initial).filter(s => s.challengeId === solvers[1]).map(s => ({ username: s.username, teamId: s.teamId, solvedAt: s.solvedAt, isFirstBlood: s.firstBlood })));
       throw new EventError(404, 'Event endpoint not found');
@@ -126,6 +155,13 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
       assertEvent(isValidObjectId(body.challengeId), 'Invalid challenge');
       source = await Challenge.findById(body.challengeId).lean();
       assertEvent(source && !source.fromCompetition && (u.role === 'super-admin' || source.universityCode === initial.universityCode), 'Challenge not available', 403);
+    }
+    let invited: string[] = [];
+    if (method === 'PATCH' && route === '/settings' && body.invite !== undefined) {
+      assertEvent(eventOwner(initial, u), 'Only the host can manage this event', 403);
+      assertEvent(Array.isArray(body.invite) && body.invite.length <= 200, 'Select universities to invite');
+      invited = [...new Set(body.invite.map((code: unknown) => text(code, 'University code', 50).toUpperCase()))] as string[];
+      assertEvent(await University.countDocuments({ code: { $in: invited } }) === invited.length, 'One or more universities do not exist');
     }
     let registrationUser: any;
     const regRoute = route.match(/^\/registrations(?:\/([a-f\d]{24}))?$/i);
@@ -166,6 +202,7 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
             const code = text(body.inviteCode, 'Invite code', 30).toUpperCase();
             const team = state.teams.find(t => t.inviteCode === code && t.members.length > 0);
             assertEvent(team, 'Invalid invite code', 404);
+            assertEvent(!team.disqualified, 'This team has been disqualified', 409);
             assertEvent(team.members.length < 4, 'Team is full', 409);
             assertEvent(!teamLocked(c, team), 'Team roster is locked', 409);
             team.members.push(userId);
@@ -199,6 +236,7 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
           const code = text(body.inviteCode, 'Invite code', 30).toUpperCase();
           const team = state.teams.find(t => t.inviteCode === code && t.members.length > 0);
           assertEvent(team, 'Invalid invite code', 404);
+          assertEvent(!team.disqualified, 'This team has been disqualified', 409);
           assertEvent(team.members.length < 4, 'Team is full', 409);
           assertEvent(!teamLocked(c, team), 'Team roster is locked after its first solve, hint or adjustment', 409);
           team.members.push(u.userId);
@@ -210,13 +248,15 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
         assertEvent(eventOpen(c), 'Competition is not active');
         const team = eventTeamFor(c, u.userId);
         assertEvent(u.role === 'user' && team, 'Join a team before submitting flags', 403);
+        assertEvent(!team.disqualified, 'Your team has been disqualified from this event', 403);
         const challenge = c.challenges.find((ch: any) => String(ch._id) === body.challengeId);
         assertEvent(challenge, 'Challenge not found', 404);
         assertEvent(!state.solves.some(s => s.teamId === team.id && s.challengeId === body.challengeId), 'Your team already solved this challenge', 409);
         const submitted = text(body.flag, 'Flag', 4096);
         const normalize = (s: string) => s.replace(/[\u200B\u200C\u200D\uFEFF]/g, '').replace(/\s+/g, ' ').trim().normalize('NFKC');
         assertEvent([challenge.flag, ...(challenge.flags || [])].filter(Boolean).some(f => normalize(f) === normalize(submitted)), 'Incorrect flag');
-        const firstBlood = !state.solves.some(s => s.challengeId === body.challengeId);
+        // Counted against ranked teams only, matching how the scoreboard awards it.
+        const firstBlood = !uniqueSolves(c).some(s => s.challengeId === body.challengeId);
         team.lockedMembers ||= [...team.members];
         state.solves.push({ teamId: team.id, challengeId: body.challengeId, userId: u.userId, username: u.username, solvedAt: new Date().toISOString(), firstBlood });
         challenge.solves = uniqueSolves(c).filter(s => s.challengeId === body.challengeId).length;
@@ -232,11 +272,12 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
         assertEvent(eventOpen(c), 'Competition is not active');
         const team = eventTeamFor(c, u.userId);
         assertEvent(team && u.role === 'user', 'Join a team to unlock hints', 403);
+        assertEvent(!team.disqualified, 'Your team has been disqualified from this event', 403);
         if (hint.isPublished || team.hints.some(h => h.challengeId === hintRoute[1] && h.index === body.hintIndex)) return { success: true, hint: hint.text, teamPoints: teamScore(c, team) };
         const cost = hint.cost ?? 0;
         assertEvent(Number.isFinite(cost) && cost >= 0 && teamScore(c, team) >= cost, 'Not enough team points');
         team.lockedMembers ||= [...team.members];
-        team.hints.push({ challengeId: hintRoute[1], index: body.hintIndex, cost, userId: u.userId });
+        team.hints.push({ challengeId: hintRoute[1], index: body.hintIndex, cost, userId: u.userId, purchasedAt: new Date().toISOString() });
         return { success: true, hint: hint.text, teamPoints: teamScore(c, team) };
       }
       assertEvent(owner, 'Only the host can manage this event', 403);
@@ -250,6 +291,7 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
           assertEvent(team.members.includes(target), 'Participant is not on this team');
           leaveEventTeam(c, target, true);
         } else {
+          assertEvent(!team.disqualified, 'Reinstate the team before adding members', 409);
           assertEvent(!eventTeamFor(c, target), 'Remove the participant from their current team first', 409);
           assertEvent(team.members.length < 4, 'Team is full', 409);
           assertEvent(!state.teams.some(t => t.id !== team.id && t.lockedMembers?.includes(target)), 'Participant is locked to their original team', 409);
@@ -267,6 +309,58 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
         team.lockedMembers ||= [...team.members];
         team.adjustments.push({ amount: body.amount, reason: text(body.reason, 'Reason', 500), adminId: u.userId, createdAt: new Date().toISOString() });
         return { success: true };
+      }
+      const disqualification = route.match(/^\/teams\/([a-f\d]{24})\/disqualification$/i);
+      if (disqualification && (method === 'POST' || method === 'DELETE')) {
+        const team = state.teams.find(t => t.id === disqualification[1]);
+        assertEvent(team, 'Team not found', 404);
+        if (method === 'POST') {
+          assertEvent(!team.disqualified, 'Team is already disqualified', 409);
+          team.disqualified = { reason: text(body.reason, 'Reason', 500), adminId: u.userId, at: new Date().toISOString() };
+        } else {
+          assertEvent(team.disqualified, 'Team is not disqualified', 409);
+          delete team.disqualified;
+        }
+        return { success: true };
+      }
+      if (method === 'PATCH' && route === '/settings') {
+        assertEvent(c.status !== 'ended', 'Ended events cannot be edited');
+        const pending = c.status === 'pending';
+        const beforeStart = (field: string) => assertEvent(pending, `The ${field} can only change before the event starts`);
+        if (body.name !== undefined) c.name = text(body.name, 'Name');
+        if (body.description !== undefined) c.description = brief(body.description);
+        if (body.capacity !== undefined) {
+          const capacity = Number(body.capacity);
+          assertEvent(Number.isInteger(capacity) && capacity > 0 && capacity <= 10000, 'Capacity must be between 1 and 10,000 participants');
+          assertEvent(capacity >= state.registrations.length, `Capacity cannot be lower than the ${state.registrations.length} registered participants`, 409);
+          c.capacity = capacity;
+        }
+        if (body.registrationDeadline !== undefined) c.registrationDeadline = optionalDate(body.registrationDeadline, 'registration deadline');
+        if (body.hasTimeLimit !== undefined) { beforeStart('time limit'); c.hasTimeLimit = body.hasTimeLimit !== false; }
+        if (body.startTime !== undefined) { beforeStart('start time'); c.startTime = optionalDate(body.startTime, 'start time'); }
+        if (body.duration !== undefined) {
+          beforeStart('duration');
+          const duration = body.duration == null ? null : Number(body.duration);
+          assertEvent(duration == null || (Number.isInteger(duration) && duration > 0 && duration <= 525600), 'Invalid event duration');
+          c.duration = duration;
+        }
+        if (body.autoStart !== undefined) { beforeStart('start mode'); c.autoStart = body.autoStart === true; }
+        if (body.endTime !== undefined) c.endTime = optionalDate(body.endTime, 'end time');
+        if (!c.hasTimeLimit) { c.endTime = null; c.duration = null; }
+        assertSchedule(c, { start: body.startTime !== undefined, autoStart: body.autoStart !== undefined });
+        const added = invited.filter(code => !state.invitations.some(i => i.universityCode === code));
+        state.invitations.push(...added.map(universityCode => ({ universityCode, status: 'pending' as const })));
+        if (body.revoke !== undefined) {
+          assertEvent(Array.isArray(body.revoke), 'Select invitations to withdraw');
+          for (const code of body.revoke) {
+            const invitation = state.invitations.find(i => i.universityCode === code);
+            assertEvent(invitation, 'Invitation not found', 404);
+            assertEvent(invitation.status !== 'accepted', 'Accepted universities cannot be removed; their students may already be registered', 409);
+          }
+          state.invitations = state.invitations.filter(i => !body.revoke.includes(i.universityCode));
+        }
+        c.universityCodes = state.invitations.map(i => i.universityCode);
+        return { success: true, invited: added };
       }
       if (method === 'POST' && route === '/challenges') {
         assertEvent(c.status === 'pending', 'Add challenges before starting the event');
@@ -291,6 +385,9 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
             if (c.duration) c.endTime = new Date(Date.now() + c.duration * 60000);
             assertEvent(c.endTime && new Date(c.endTime).getTime() > Date.now(), 'Set an end time or duration in the future');
           }
+        } else if (!c.endTime || new Date(c.endTime).getTime() > Date.now()) {
+          // Ending early records when play actually stopped, so results and the score graph end there.
+          c.endTime = new Date();
         }
         c.status = body.status;
         return { success: true };
@@ -302,6 +399,7 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
     if (removed) { try { getIO().in(`user:${removed}`).socketsLeave(`competition:${id}`); getIO().to(`user:${removed}`).emit('eventAccessRevoked', { competitionId: id }); } catch {} }
     notifyEvent(committed.competition);
     if (route === '/invitation') { try { getIO().to(`university:${u.universityCode}`).emit('eventInvitationResponded', { competitionId: id }); } catch {} }
+    for (const code of committed.result?.invited || []) { try { getIO().to(`university-admin:${code}`).emit('eventInvitation', { competitionId: id, name: committed.competition.name }); } catch {} }
     return res.json(committed.result);
   } catch (error) { return fail(res, error); }
 }

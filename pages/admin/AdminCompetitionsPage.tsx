@@ -1,973 +1,230 @@
-import EventParticipationPanel from '../../components/competition/EventParticipationPanel';
-import { eventService } from '../../services/eventService';
-import EventInvitations from '../../components/competition/EventInvitations';
-import { ChallengeCategory } from '../../types';
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Copy, Flag, GraduationCap, KeyRound, Mail, Plus, Search, Target, Ticket, Trash2, Trophy, Users } from 'lucide-react';
 import { competitionService } from '../../services/competitionService';
-import { challengeService } from '../../services/challengeService';
 import { universityService } from '../../services/universityService';
-import Card from '../../components/ui/card';
-import Button from '../../components/ui/button';
-import Input from '../../components/ui/input';
-import Textarea from '../../components/ui/textarea';
-import Modal from '../../components/ui/Modal';
+import { useSocket } from '../../src/contexts/SocketContext';
 import { useConfirmation } from '../../src/contexts/ConfirmationContext';
 import { useToast } from '../../src/hooks/useToast';
+import { useNow } from '../../src/hooks/useCompetitionClock';
+import EventInvitations from '../../components/competition/EventInvitations';
+import CreateCompetitionModal from '../../components/competition/CreateCompetitionModal';
+import { Chip, ConsoleButton, EmptyState, LifecycleState, Segmented, StatusPill, TypeBadge, formatDateTime, formatSpan, inputClass, lifecycleOf } from '../../components/competition/console/ui';
 
-interface Competition {
-  type?: 'workshop' | 'event';
-  canManage?: boolean;
-  registrationCount?: number;
-  capacity?: number;
-  _id: string;
-  name: string;
-  securityCode?: string;
-  requiresSecurityCode?: boolean;
-  hasTimeLimit?: boolean;
-  universityCode: string;
-  universityCodes?: string[];
-  startTime: string;
-  endTime?: string;
-  status: 'pending' | 'active' | 'ended';
-  challenges: any[];
-  duration?: number;
-  createdAt: string;
-}
+type StateFilter = 'all' | LifecycleState;
+type TypeFilter = 'all' | 'event' | 'workshop';
 
-interface University {
-  _id: string;
-  name: string;
-  code: string;
-}
+const ORDER: Record<LifecycleState, number> = { live: 0, upcoming: 1, ended: 2 };
 
-/**
- * Math.random() is not unguessable, and this is the only gate on a private
- * competition. crypto.getRandomValues is, and costs nothing here.
- */
-const generateSecurityCode = (length = 8) => {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no look-alikes: I, O, 0, 1
-  const bytes = new Uint8Array(length);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+/** One line on where a competition stands in time. */
+const scheduleLine = (c: any, state: LifecycleState, now: number) => {
+  if (state === 'ended') return c.endTime || c.updatedAt ? `Ended ${formatDateTime(c.endTime || c.updatedAt)}` : 'Ended';
+  if (state === 'live') return c.hasTimeLimit !== false && c.endTime ? `Ends in ${formatSpan(Date.parse(c.endTime) - now)}` : 'Running · no time limit';
+  if (c.autoStart && c.startTime) return Date.parse(c.startTime) > now ? `Opens in ${formatSpan(Date.parse(c.startTime) - now)}` : 'Opens once it has a challenge';
+  return 'Not started · you start it from the console';
+};
+
+const CompetitionRow: React.FC<{ c: any; now: number; universityName: (code: string) => string; onDelete: (c: any) => void }> = ({ c, now, universityName, onDelete }) => {
+  const [copied, setCopied] = useState(false);
+  const state = lifecycleOf(c, now);
+  const isEvent = c.type === 'event';
+  const href = `/admin/competitions/${c._id}/monitor`;
+  const challengeCount = isEvent ? c.challengeCount ?? 0 : c.challenges?.length ?? 0;
+  const codes: string[] = c.universityCodes?.length ? c.universityCodes : [c.universityCode];
+
+  return (
+    <article className="group relative flex flex-col gap-4 rounded-xl border border-edge bg-panel p-4 transition-colors hover:border-edge-light sm:flex-row sm:items-center sm:p-5">
+      <span className={`hidden h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl border sm:flex ${
+        isEvent ? 'border-violet/30 bg-violet/10 text-violet' : 'border-info/30 bg-info/10 text-info'
+      }`}>
+        {isEvent ? <Flag size={19} /> : <GraduationCap size={19} />}
+      </span>
+
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <TypeBadge type={c.type} />
+          <StatusPill state={state} />
+          {isEvent && c.pendingInvitations > 0 && <Chip tone="warn"><Mail size={11} /> {c.pendingInvitations} invitation{c.pendingInvitations === 1 ? '' : 's'} pending</Chip>}
+          {isEvent && state === 'upcoming' && challengeCount === 0 && <Chip tone="bad"><Target size={11} /> No challenges</Chip>}
+        </div>
+        {/* The whole card opens the console; the link stretches over it. */}
+        <h2 className="truncate text-lg font-bold text-fg">
+          <Link to={href} className="after:absolute after:inset-0 after:rounded-xl focus:outline-none focus-visible:after:ring-2 focus-visible:after:ring-brand/50 group-hover:text-brand-neon">
+            {c.name}
+          </Link>
+        </h2>
+        <p className="mt-0.5 text-sm text-muted">{scheduleLine(c, state, now)}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-faint">
+          {isEvent ? (
+            <>
+              <span className="inline-flex items-center gap-1.5"><Ticket size={13} /> {c.registrationCount}/{c.capacity} players</span>
+              <span className="inline-flex items-center gap-1.5"><Users size={13} /> {c.teamCount ?? 0} team{c.teamCount === 1 ? '' : 's'}</span>
+            </>
+          ) : (
+            <span className="inline-flex items-center gap-1.5"><Users size={13} /> {codes.map(universityName).join(' + ')}</span>
+          )}
+          <span className="inline-flex items-center gap-1.5"><Target size={13} /> {challengeCount} challenge{challengeCount === 1 ? '' : 's'}</span>
+          {isEvent && codes.length > 1 && <span>{codes.length} universities</span>}
+          {isEvent && state !== 'ended' && (
+            <span className={c.registrationOpen ? 'text-brand' : ''}>Registration {c.registrationOpen ? `open until ${formatDateTime(c.registrationDeadline)}` : 'closed'}</span>
+          )}
+        </div>
+      </div>
+
+      <div className="relative z-10 flex flex-shrink-0 items-center gap-2">
+        {!isEvent && c.requiresSecurityCode !== false && c.securityCode && (
+          <button
+            type="button"
+            onClick={async () => { try { await navigator.clipboard.writeText(c.securityCode); setCopied(true); setTimeout(() => setCopied(false), 1500); } catch { /* still visible to copy by hand */ } }}
+            title="Copy security code"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-edge bg-inset px-2.5 py-1.5 font-mono text-xs tracking-wider text-fg-soft transition-colors hover:border-edge-light touch:min-h-tap"
+          >
+            {copied ? <Copy size={12} className="text-brand" /> : <KeyRound size={12} className="text-muted" />}
+            {copied ? 'Copied' : c.securityCode}
+          </button>
+        )}
+        {!isEvent && (
+          <ConsoleButton tone="ghost" size="sm" aria-label={`Delete ${c.name}`} icon={<Trash2 size={15} />} onClick={() => onDelete(c)} />
+        )}
+        <span className="hidden items-center gap-1 text-sm font-semibold text-muted transition-colors group-hover:text-brand-neon sm:inline-flex">
+          Console <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </div>
+    </article>
+  );
 };
 
 const AdminCompetitionsPage: React.FC = () => {
   const navigate = useNavigate();
-  const storedUser = localStorage.getItem('user');
-  const currentUser = storedUser ? JSON.parse(storedUser) : null;
-  const [competitions, setCompetitions] = useState<Competition[]>([]);
-  const [challenges, setChallenges] = useState<any[]>([]);
-  const [universities, setUniversities] = useState<University[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isChallengeModalOpen, setIsChallengeModalOpen] = useState(false);
-  const [isHintModalOpen, setIsHintModalOpen] = useState(false);
-  const [editingCompetition, setEditingCompetition] = useState<Competition | null>(null);
-  const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null);
-  const [selectedChallenge, setSelectedChallenge] = useState<any>(null);
-  const [selectedChallenges, setSelectedChallenges] = useState<Set<string>>(new Set());
-  const [challengeCategoryFilter, setChallengeCategoryFilter] = useState('');
-  const [challengeSearchTerm, setChallengeSearchTerm] = useState('');
-  const [timeMode, setTimeMode] = useState<'datetime' | 'timer'>('datetime');
-  const [competitionType, setCompetitionType] = useState<'workshop' | 'event'>('workshop');
-  const [registrationDeadline, setRegistrationDeadline] = useState('');
-  const [capacity, setCapacity] = useState(100);
-  const [invitedUniversities, setInvitedUniversities] = useState<string[]>([]);
-  const [formData, setFormData] = useState({
-    name: '',
-    securityCode: '',
-    requiresSecurityCode: true,
-    primaryUniversityCode: currentUser?.universityCode || '',
-    secondaryUniversityCode: '',
-    hasTimeLimit: true,
-    startTime: '',
-    endTime: '',
-    duration: 120, // default 2 hours in minutes
-  });
+  const currentUser = useMemo(() => { try { return JSON.parse(localStorage.getItem('user') || 'null'); } catch { return null; } }, []);
   const { confirm } = useConfirmation();
   const { toast, ToastContainer } = useToast();
+  const { socket } = useSocket();
+  const now = useNow(30_000);
+  const [competitions, setCompetitions] = useState<any[]>([]);
+  const [universities, setUniversities] = useState<Array<{ _id?: string; code: string; name: string }>>([]);
+  const [loading, setLoading] = useState(true), [error, setError] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useState(''), [stateFilter, setStateFilter] = useState<StateFilter>('all'), [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
 
-  useEffect(() => {
-    fetchCompetitions();
-    fetchChallenges();
-    fetchUniversities();
-  }, []);
-
-  const fetchCompetitions = async () => {
+  const load = useCallback(async () => {
     try {
-      setLoading(true);
       const data = await competitionService.getCompetitions();
-      setCompetitions(await Promise.all(data.filter((c: any) => c.type !== 'event' || c.canManage).map((c: any) => c.type === 'event' ? eventService.details(c._id) : c)));
+      // Events show up here for their host only; invited universities see them on the Competitions page.
+      setCompetitions(data.filter((c: any) => c.type !== 'event' || c.canManage));
       setError('');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (e: any) {
+      setError(e.message || 'Could not load competitions');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchChallenges = async () => {
+  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { universityService.getUniversities().then(setUniversities).catch(() => setUniversities([])); }, []);
+  useEffect(() => {
+    const refresh = () => { void load(); };
+    const events = ['eventRegistrationChanged', 'eventInvitationResponded', 'competitionUpdate'];
+    for (const name of events) socket?.on(name, refresh);
+    return () => { for (const name of events) socket?.off(name, refresh); };
+  }, [socket, load]);
+
+  const universityName = (code: string) => universities.find(u => u.code === code)?.name || code;
+  const withState = competitions.map(c => ({ c, state: lifecycleOf(c, now) }));
+  const counts = { all: withState.length, live: 0, upcoming: 0, ended: 0 } as Record<StateFilter, number>;
+  for (const { state } of withState) counts[state] += 1;
+  const visible = withState
+    .filter(({ c, state }) => (stateFilter === 'all' || state === stateFilter)
+      && (typeFilter === 'all' || (typeFilter === 'event') === (c.type === 'event'))
+      && c.name.toLowerCase().includes(search.trim().toLowerCase()))
+    .sort((a, b) => ORDER[a.state] - ORDER[b.state]
+      || (a.state === 'ended'
+        ? Date.parse(b.c.endTime || b.c.updatedAt || 0) - Date.parse(a.c.endTime || a.c.updatedAt || 0)
+        : Date.parse(b.c.createdAt || b.c.startTime || 0) - Date.parse(a.c.createdAt || a.c.startTime || 0)));
+
+  const remove = async (c: any) => {
+    if (!await confirm(`Delete "${c.name}"? Every player's progress in it is lost. This cannot be undone.`, {
+      type: 'danger', title: 'Delete workshop', confirmText: 'Delete', isDestructive: true,
+    })) return;
     try {
-      const data = await challengeService.getAllChallenges();
-      setChallenges(data);
-    } catch (err: any) {
-      console.error('Error fetching challenges:', err);
+      await competitionService.deleteCompetition(c._id);
+      toast('success', 'Workshop deleted');
+      await load();
+    } catch (e: any) {
+      toast('error', e.message || 'Could not delete the workshop');
     }
   };
-
-  const fetchUniversities = async () => {
-    try {
-      const data = await universityService.getUniversities();
-      setUniversities(data);
-    } catch (err: any) {
-      console.error('Error fetching universities:', err);
-    }
-  };
-
-  // `datetime-local` speaks local time. toISOString() is UTC, so feeding one to
-  // the other silently shifted times by the zone offset (three hours here).
-  const toLocalInputValue = (value: string | Date) => {
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-      + `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  };
-
-  const getCompetitionUniversityCodes = (competition: Competition) => {
-    const codes = competition.universityCodes?.length
-      ? competition.universityCodes
-      : [competition.universityCode];
-
-    return Array.from(new Set(codes.filter(Boolean)));
-  };
-
-  const getUniversityName = (code: string) =>
-    universities.find((university) => university.code === code)?.name || code;
-
-  const formatCompetitionUniversities = (competition: Competition) =>
-    getCompetitionUniversityCodes(competition).map(getUniversityName).join(' + ');
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (editingCompetition) {
-        toast('info', 'Competition updates are limited. Please delete and recreate for major changes.');
-      } else {
-        const primaryUniversityCode = (
-          currentUser?.role === 'super-admin'
-            ? formData.primaryUniversityCode
-            : currentUser?.universityCode || formData.primaryUniversityCode
-        )
-          .trim()
-          .toUpperCase();
-
-        const secondaryUniversityCode = formData.secondaryUniversityCode.trim().toUpperCase();
-        const universityCodes = Array.from(
-          new Set([primaryUniversityCode, ...(competitionType === 'event' ? invitedUniversities : [secondaryUniversityCode])].filter(Boolean))
-        );
-
-        if (universityCodes.length === 0) {
-          setError('Please choose at least one university');
-          toast('error', 'Select a university before creating the competition');
-          return;
-        }
-
-        let startTimeISO: string;
-        let endTimeISO: string | undefined;
-        let timerDuration = 0;
-
-        if (!formData.hasTimeLimit) {
-          // No time limit - just set start time, no end time
-          startTimeISO = new Date().toISOString(); // Will be updated when started
-          endTimeISO = undefined;
-        } else if (timeMode === 'timer') {
-          // Timer mode - the clock starts when the admin presses Start, not now.
-          // Stamping an absolute endTime here is what made these competitions end
-          // early: the window was measured from creation, so any delay before
-          // starting came straight off the players' time.
-          startTimeISO = new Date().toISOString(); // replaced on start
-          endTimeISO = undefined;                  // set on start, from duration
-          timerDuration = formData.duration;
-        } else {
-          // DateTime mode
-          startTimeISO = new Date(formData.startTime).toISOString();
-          endTimeISO = new Date(formData.endTime).toISOString();
-        }
-
-        await competitionService.createCompetition({
-          type: competitionType,
-          ...(competitionType === 'event' ? { registrationDeadline: new Date(registrationDeadline).toISOString(), capacity } : {}),
-          name: formData.name,
-          securityCode: formData.requiresSecurityCode ? formData.securityCode : undefined,
-          requiresSecurityCode: formData.requiresSecurityCode,
-          universityCode: universityCodes[0],
-          universityCodes,
-          hasTimeLimit: formData.hasTimeLimit,
-          startTime: startTimeISO,
-          endTime: endTimeISO,
-          duration: competitionType === 'event' ? timerDuration || undefined : timerDuration,
-        });
-        toast('success', 'Competition created successfully');
-      }
-      await fetchCompetitions();
-      closeModal();
-    } catch (err: any) {
-      setError(err.message);
-      toast('error', 'Failed to create competition');
-    }
-  };
-
-  const handleStatusChange = async (id: string, status: string) => {
-    try {
-      await competitionService.updateCompetitionStatus(id, status);
-      await fetchCompetitions();
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
-  const handleStartTimerCompetition = async (competition: Competition) => {
-    const hours = Math.floor(competition.duration! / 60);
-    const minutes = competition.duration! % 60;
-    const durationText = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-
-    const confirmed = await confirm(`Start this competition now?\n\nDuration: ${durationText}\nEnd Time: ${new Date(Date.now() + competition.duration! * 60000).toLocaleString()}\n\nThis action cannot be undone.`, {
-      type: 'danger',
-      title: 'Start Competition',
-      confirmText: 'Start',
-      isDestructive: false
-    });
-    if (!confirmed) return;
-
-    try {
-      const now = new Date();
-      const end = new Date(now.getTime() + competition.duration * 60000);
-
-      await competitionService.updateCompetitionStartTime(competition._id, {
-        startTime: now.toISOString(),
-        endTime: end.toISOString(),
-        status: 'active'
-      });
-
-      await fetchCompetitions();
-      toast('success', 'Competition started successfully');
-    } catch (err: any) {
-      setError(err.message);
-      toast('error', 'Failed to start competition');
-    }
-  };
-
-  const handleAddChallenge = async (competitionId: string, challengeId: string) => {
-    try {
-      await competitionService.addChallengeToCompetition(competitionId, challengeId);
-      await fetchCompetitions();
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
-  const openChallengeSelection = (competition: Competition) => {
-    setSelectedCompetition(competition);
-    setSelectedChallenges(new Set());
-    setIsChallengeModalOpen(true);
-  };
-
-  const toggleChallengeSelection = (challengeId: string) => {
-    const newSelected = new Set(selectedChallenges);
-    if (newSelected.has(challengeId)) {
-      newSelected.delete(challengeId);
-    } else {
-      newSelected.add(challengeId);
-    }
-    setSelectedChallenges(newSelected);
-  };
-
-  const openHintModal = (competition: Competition, challenge: any) => {
-    setSelectedCompetition(competition);
-    setSelectedChallenge(challenge);
-    setIsHintModalOpen(true);
-  };
-
-  const handlePublishHint = async (hintIndex: number) => {
-    if (!selectedCompetition || !selectedChallenge) return;
-
-    try {
-      await competitionService.publishCompetitionHint(
-        selectedCompetition._id,
-        selectedChallenge._id,
-        hintIndex
-      );
-      await fetchCompetitions();
-      setIsHintModalOpen(false);
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
-  const handleAddSelectedChallenges = async () => {
-    if (!selectedCompetition || selectedChallenges.size === 0) return;
-
-    try {
-      for (const challengeId of selectedChallenges) {
-        await competitionService.addChallengeToCompetition(selectedCompetition._id, challengeId);
-      }
-      await fetchCompetitions();
-      setIsChallengeModalOpen(false);
-      setSelectedCompetition(null);
-      setSelectedChallenges(new Set());
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
-  const handleDeleteCompetition = async (competition: Competition) => {
-    const confirmed = await confirm(`Are you sure you want to delete the competition "${competition.name}"?\n\nThis action cannot be undone and all participant progress will be lost.`, {
-      type: 'danger',
-      title: 'Delete Competition',
-      confirmText: 'Delete',
-      isDestructive: true
-    });
-    if (!confirmed) return;
-
-    try {
-      await competitionService.deleteCompetition(competition._id);
-      await fetchCompetitions();
-      toast('success', 'Competition deleted successfully');
-    } catch (err: any) {
-      setError(err.message);
-      toast('error', 'Failed to delete competition');
-    }
-  };
-
-  const openModal = (competition?: Competition) => {
-    setCompetitionType('workshop'); setInvitedUniversities([]); setRegistrationDeadline(''); setCapacity(100);
-    if (competition) {
-      setEditingCompetition(competition);
-      setTimeMode('datetime');
-      const universityCodes = getCompetitionUniversityCodes(competition);
-      setFormData({
-        name: competition.name,
-        securityCode: competition.securityCode || '',
-        requiresSecurityCode: competition.requiresSecurityCode !== false,
-        primaryUniversityCode: universityCodes[0] || currentUser?.universityCode || '',
-        secondaryUniversityCode: universityCodes.find((code) => code !== universityCodes[0]) || '',
-        hasTimeLimit: competition.hasTimeLimit !== false,
-        startTime: toLocalInputValue(competition.startTime),
-        endTime: competition.endTime ? toLocalInputValue(competition.endTime) : '',
-        duration: 120,
-      });
-    } else {
-      setEditingCompetition(null);
-      setTimeMode('datetime');
-      setFormData({
-        name: '',
-        securityCode: generateSecurityCode(),
-        requiresSecurityCode: true,
-        primaryUniversityCode: currentUser?.universityCode || '',
-        secondaryUniversityCode: '',
-        hasTimeLimit: true,
-        startTime: '',
-        endTime: '',
-        duration: 120,
-      });
-    }
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setEditingCompetition(null);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'text-emerald-400';
-      case 'pending': return 'text-yellow-400';
-      case 'ended': return 'text-red-400';
-      default: return 'text-zinc-400';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="text-zinc-400">Loading...</div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-100">Manage Competitions</h1>
-        <Button onClick={() => openModal()}>Create Competition</Button>
+    <div className="space-y-6">
+      <ToastContainer />
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-fg sm:text-3xl">Competitions</h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted">
+            Run CTF events for teams across universities, or quick workshops for your own students. Open a competition to manage it live.
+          </p>
+        </div>
+        <ConsoleButton tone="primary" icon={<Plus size={16} />} onClick={() => setCreating(true)} className="self-start sm:self-auto">New competition</ConsoleButton>
+      </header>
+
+      <EventInvitations onChange={load} />
+
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+        <div className="relative w-full lg:w-72">
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-faint" />
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search competitions" aria-label="Search competitions" className={`${inputClass} pl-9`} />
+        </div>
+        <div className="scroll-x flex gap-2 lg:ml-auto">
+          <Segmented<StateFilter> label="Status" value={stateFilter} onChange={setStateFilter} options={[
+            { value: 'all', label: 'All', count: counts.all },
+            { value: 'live', label: 'Live', count: counts.live },
+            { value: 'upcoming', label: 'Not started', count: counts.upcoming },
+            { value: 'ended', label: 'Ended', count: counts.ended },
+          ]} />
+          <Segmented<TypeFilter> label="Format" value={typeFilter} onChange={setTypeFilter} options={[
+            { value: 'all', label: 'All formats' },
+            { value: 'event', label: 'CTF events' },
+            { value: 'workshop', label: 'Workshops' },
+          ]} />
+        </div>
       </div>
 
-      {error && (
-        <div className="bg-red-500/20 border border-red-500 text-red-200 px-4 py-3 rounded mb-4">
-          {error}
+      {error && <p role="alert" className="rounded-lg border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">{error}</p>}
+
+      {loading ? (
+        <div className="space-y-3" aria-busy="true">
+          {[0, 1, 2].map(i => <div key={i} className="h-28 animate-pulse rounded-xl border border-edge bg-panel" />)}
+        </div>
+      ) : visible.length ? (
+        <div className="space-y-3">
+          {visible.map(({ c }) => <CompetitionRow key={c._id} c={c} now={now} universityName={universityName} onDelete={remove} />)}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-edge bg-panel">
+          <EmptyState icon={<Trophy size={20} />} title={competitions.length ? 'Nothing matches these filters' : 'No competitions yet'}>
+            {competitions.length ? 'Clear the search or choose another status.' : (
+              <>
+                <p>Create a CTF event for teams, or a workshop for a class.</p>
+                <ConsoleButton tone="primary" icon={<Plus size={15} />} className="mt-4" onClick={() => setCreating(true)}>New competition</ConsoleButton>
+              </>
+            )}
+          </EmptyState>
         </div>
       )}
 
-      <EventInvitations onChange={fetchCompetitions} />
-      <div className="grid gap-4 mt-4">
-        {competitions.map((competition) => (
-          <Card key={competition._id} className="p-4 sm:p-6">
-            {/* Stacked until lg: the action cluster on its own is wider than a
-                phone, so side-by-side could only ever overflow. */}
-            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
-              <div className="min-w-0">
-                <h3 className="text-lg sm:text-xl font-bold text-zinc-100 mb-2 break-words">{competition.name}</h3>
-                <div className="flex gap-x-4 gap-y-1 text-sm text-zinc-500 flex-wrap">
-                  {competition.type === 'event' ? <span className="text-brand">Event · {competition.registrationCount}/{competition.capacity} registered</span> : competition.requiresSecurityCode !== false ? (
-                    <span>Security Code: <span className="text-emerald-400 font-mono">{competition.securityCode}</span></span>
-                  ) : (
-                    <span className="text-yellow-400">Open (No Code Required)</span>
-                  )}
-                  <span>Universities: <span className="text-zinc-300">{formatCompetitionUniversities(competition)}</span></span>
-                  <span>Status: <span className={getStatusColor(competition.status)}>{competition.status.charAt(0).toUpperCase() + competition.status.slice(1)}</span></span>
-                  <span>Challenges: {competition.challenges.length}</span>
-                  {competition.duration && (
-                    <span>Duration: <span className="text-zinc-300">{competition.duration} min</span></span>
-                  )}
-                </div>
-                <div className="text-sm text-zinc-500 mt-1">
-                  <span>Start: {new Date(competition.startTime).toLocaleString()}</span>
-                  <span className="mx-2">|</span>
-                  {competition.hasTimeLimit !== false ? (
-                    <span>End: {competition.endTime ? new Date(competition.endTime).toLocaleString() : 'Manual'}</span>
-                  ) : (
-                    <span className="text-yellow-400">No Time Limit</span>
-                  )}
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => navigate(`/admin/competitions/${competition._id}/monitor`)}
-                >
-                  Monitoring
-                </Button>
-                {competition.status === 'pending' && competition.duration && (
-                  <Button
-                    onClick={() => handleStartTimerCompetition(competition)}
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                  >
-                    Start Competition
-                  </Button>
-                )}
-                {competition.status === 'pending' && !competition.duration && (
-                  <Button onClick={() => handleStatusChange(competition._id, 'active')}>Start</Button>
-                )}
-                {competition.status === 'active' && (
-                  <Button variant="secondary" onClick={() => handleStatusChange(competition._id, 'ended')}>End</Button>
-                )}
-                {competition.type !== 'event' && <Button
-                  variant="destructive"
-                  onClick={() => handleDeleteCompetition(competition)}
-                >
-                  Delete
-                </Button>}
-              </div>
-            </div>
-
-            {competition.type === 'event' && <details className="mb-4"><summary className="cursor-pointer font-semibold text-fg">Registration and teams</summary><div className="mt-4"><EventParticipationPanel event={competition} onChange={fetchCompetitions} /></div></details>}
-            <div className="border-t border-zinc-700 pt-4">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="text-lg font-semibold text-zinc-200">Challenges</h4>
-                <Button disabled={competition.type === 'event' && competition.status !== 'pending'} onClick={() => openChallengeSelection(competition)}>
-                  Add Challenges
-                </Button>
-              </div>
-              <div className="grid gap-2">
-                {competition.challenges.map((challenge: any) => {
-                  // Calculate dynamic points if not already calculated
-                  const displayPoints = challenge.currentPoints ||
-                    (challenge.initialPoints && challenge.minimumPoints && challenge.decay
-                      ? Math.ceil(
-                          ((challenge.minimumPoints - challenge.initialPoints) / (challenge.decay * challenge.decay)) *
-                          ((challenge.solves || 0) * (challenge.solves || 0)) +
-                          challenge.initialPoints
-                        )
-                      : challenge.points);
-
-                  return (
-                    <div key={challenge._id} className="bg-zinc-800/50 p-3 rounded">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="flex-1">
-                          <div className="text-zinc-200 font-medium">{challenge.title}</div>
-                          <div className="text-sm text-zinc-500">{challenge.category} • {displayPoints} pts • {challenge.solves} solves</div>
-                        </div>
-                        {challenge.hints && challenge.hints.length > 0 && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => openHintModal(competition, challenge)}
-                          >
-                            Hints ({challenge.hints.filter((h: any) => h.isPublished).length}/{challenge.hints.length})
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                {competition.challenges.length === 0 && (
-                  <div className="text-zinc-500 text-center py-4">No challenges added yet</div>
-                )}
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      <Modal isOpen={isModalOpen} onClose={closeModal} className="max-w-4xl">
-        <div className="bg-zinc-900 p-8 rounded-lg max-h-[90vh] overflow-y-auto">
-          <h2 className="text-3xl font-bold text-zinc-100 mb-6">
-            {editingCompetition ? 'Edit Competition' : 'Create Competition'}
-          </h2>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <label className="block text-zinc-200">Competition type
-              <select className="mt-2 w-full rounded border border-zinc-700 bg-zinc-800 p-3" value={competitionType} onChange={e => { const type = e.target.value as 'workshop' | 'event'; setCompetitionType(type); if (type === 'event') setFormData({ ...formData, requiresSecurityCode: false }); }}>
-                <option value="workshop">Workshop — individual participation</option><option value="event">Event — registration and teams</option>
-              </select>
-            </label>
-            {competitionType === 'event' && <div className="space-y-4 rounded-xl border border-indigo-400/30 bg-indigo-500/5 p-4">
-              <p className="text-sm text-indigo-200">Students register first and compete in teams of up to four. Invited universities must accept before their students can register.</p>
-              <label className="block text-zinc-200">Registration deadline<input required type="datetime-local" className="mt-2 w-full rounded border border-zinc-700 bg-zinc-800 p-3" value={registrationDeadline} onChange={e => setRegistrationDeadline(e.target.value)} /></label>
-              <label className="block text-zinc-200">Participant capacity<input required type="number" min="1" max="10000" className="mt-2 w-full rounded border border-zinc-700 bg-zinc-800 p-3" value={capacity} onChange={e => setCapacity(Number(e.target.value))} /></label>
-              <fieldset><legend className="text-zinc-200 mb-2">Invite universities</legend><div className="max-h-48 overflow-y-auto space-y-2">{universities.filter(university => university.code !== (currentUser?.role === 'super-admin' ? formData.primaryUniversityCode : currentUser?.universityCode)).map(university => <label key={university.code} className="flex gap-2 text-sm text-zinc-300"><input type="checkbox" checked={invitedUniversities.includes(university.code)} onChange={e => setInvitedUniversities(prev => e.target.checked ? [...prev, university.code] : prev.filter(code => code !== university.code))} />{university.name}</label>)}</div></fieldset>
-            </div>}
-            <div>
-              <label className="block text-zinc-200 mb-2">Competition Name</label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-zinc-200 mb-2">Participating Universities</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {currentUser?.role === 'super-admin' ? (
-                  <div>
-                    <label className="block text-sm text-zinc-400 mb-2">Primary University</label>
-                    <select
-                      value={formData.primaryUniversityCode}
-                      onChange={(e) => setFormData({ ...formData, primaryUniversityCode: e.target.value, secondaryUniversityCode: e.target.value === formData.secondaryUniversityCode ? '' : formData.secondaryUniversityCode })}
-                      className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      required
-                    >
-                      <option value="">Select primary university...</option>
-                      {universities.map((university) => (
-                        <option key={university._id} value={university.code}>
-                          {university.name} ({university.code})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  <div>
-                    <label className="block text-sm text-zinc-400 mb-2">Primary University</label>
-                    <div className="rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-200">
-                      {getUniversityName(currentUser?.universityCode || formData.primaryUniversityCode)}
-                      <span className="ml-2 text-zinc-500 text-sm">
-                        ({currentUser?.universityCode || formData.primaryUniversityCode || 'N/A'})
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-sm text-zinc-400 mb-2">{competitionType === 'event' ? 'Universities selected above' : 'Partner University (Optional)'}</label>
-                  <select
-                    value={formData.secondaryUniversityCode}
-                    onChange={(e) => setFormData({ ...formData, secondaryUniversityCode: e.target.value })}
-                    className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    disabled={competitionType === 'event' || (!formData.primaryUniversityCode && currentUser?.role === 'super-admin')}
-                  >
-                    <option value="">No partner university</option>
-                    {universities
-                      .filter((university) => university.code !== (currentUser?.role === 'super-admin' ? formData.primaryUniversityCode : currentUser?.universityCode))
-                      .map((university) => (
-                        <option key={university._id} value={university.code}>
-                          {university.name} ({university.code})
-                        </option>
-                      ))}
-                  </select>
-                  <p className="text-xs text-zinc-500 mt-1">
-                    Leave this empty for a single-university competition.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-zinc-200">Security Code</label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-sm text-zinc-400">Require code to join</span>
-                  <div 
-                    className={`relative w-10 h-5 rounded-full transition-colors ${
-                      formData.requiresSecurityCode ? 'bg-emerald-500' : 'bg-zinc-600'
-                    }`}
-                    disabled={competitionType === 'event'} onClick={() => setFormData({ ...formData, requiresSecurityCode: !formData.requiresSecurityCode })}
-                  >
-                    <div 
-                      className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-                        formData.requiresSecurityCode ? 'translate-x-5' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </div>
-                </label>
-              </div>
-              {formData.requiresSecurityCode && (
-                <>
-                  <Input
-                    value={formData.securityCode}
-                    onChange={(e) => setFormData({ ...formData, securityCode: e.target.value.toUpperCase() })}
-                    required={formData.requiresSecurityCode}
-                  />
-                  <p className="text-xs text-zinc-500 mt-1">Share this code with participants to join</p>
-                </>
-              )}
-              {!formData.requiresSecurityCode && (
-                <p className="text-xs text-zinc-400 mt-1 p-2 bg-zinc-800 rounded">Competition will be open to all users without a code</p>
-              )}
-            </div>
-
-            {/* Time Mode Selection */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className="block text-zinc-200">Time Configuration</label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <span className="text-sm text-zinc-400">Has time limit</span>
-                  <div 
-                    className={`relative w-10 h-5 rounded-full transition-colors ${
-                      formData.hasTimeLimit ? 'bg-emerald-500' : 'bg-zinc-600'
-                    }`}
-                    onClick={() => setFormData({ ...formData, hasTimeLimit: !formData.hasTimeLimit })}
-                  >
-                    <div 
-                      className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${
-                        formData.hasTimeLimit ? 'translate-x-5' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </div>
-                </label>
-              </div>
-              
-              {!formData.hasTimeLimit && (
-                <div className="p-4 bg-zinc-800 rounded-lg border border-zinc-700 mb-4">
-                  <div className="text-zinc-300 font-semibold mb-1">No Time Limit</div>
-                  <div className="text-sm text-zinc-400">Competition will run until you manually end it.</div>
-                </div>
-              )}
-              
-              {formData.hasTimeLimit && (
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  <button
-                    type="button"
-                    onClick={() => setTimeMode('datetime')}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      timeMode === 'datetime'
-                        ? 'border-emerald-500 bg-emerald-500/10'
-                        : 'border-zinc-700 hover:border-zinc-600'
-                    }`}
-                  >
-                    <div className="text-left">
-                      <div className="text-zinc-200 font-semibold mb-1">Date & Time</div>
-                      <div className="text-zinc-400 text-sm">Set specific start and end times</div>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTimeMode('timer')}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    timeMode === 'timer'
-                      ? 'border-emerald-500 bg-emerald-500/10'
-                      : 'border-zinc-700 hover:border-zinc-600'
-                  }`}
-                >
-                  <div className="text-left">
-                    <div className="text-zinc-200 font-semibold mb-1">Timer</div>
-                    <div className="text-zinc-400 text-sm">Start now with duration</div>
-                  </div>
-                </button>
-              </div>
-              )}
-            </div>
-
-            {/* DateTime Mode Fields */}
-            {formData.hasTimeLimit && timeMode === 'datetime' && (
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-zinc-200 mb-2">Start Time</label>
-                  <Input
-                    type="datetime-local"
-                    value={formData.startTime}
-                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-zinc-200 mb-2">End Time</label>
-                  <Input
-                    type="datetime-local"
-                    value={formData.endTime}
-                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Timer Mode Fields */}
-            {formData.hasTimeLimit && timeMode === 'timer' && (
-              <div className="p-4 bg-zinc-800 rounded-lg border border-zinc-700">
-                <div className="text-zinc-300 mb-3">
-                  <div className="font-semibold mb-1">Competition will be created in pending state</div>
-                  <div className="text-sm text-zinc-400">Set the duration below. You can start it later with a button:</div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-zinc-200 mb-2">Duration (minutes)</label>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="1440"
-                      value={formData.duration}
-                      onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
-                      required
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <div className="text-zinc-400 text-sm">
-                      <div>End Time: {new Date(Date.now() + formData.duration * 60000).toLocaleTimeString()}</div>
-                      <div className="text-xs text-zinc-500">
-                        ({formData.duration < 60 ? `${formData.duration} min` : `${Math.floor(formData.duration / 60)}h ${formData.duration % 60}m`})
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="flex gap-2 pt-4">
-              <Button type="submit" className="flex-1">
-                {editingCompetition ? 'Update' : 'Create'} Competition
-              </Button>
-              <Button type="button" variant="secondary" onClick={closeModal}>
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </div>
-      </Modal>
-
-      {/* Challenge Selection Modal */}
-      <Modal
-        isOpen={isChallengeModalOpen}
-        onClose={() => {
-          setIsChallengeModalOpen(false);
-          setChallengeCategoryFilter('');
-          setChallengeSearchTerm('');
+      <CreateCompetitionModal
+        isOpen={creating}
+        onClose={() => setCreating(false)}
+        universities={universities}
+        currentUser={currentUser}
+        onCreated={created => {
+          setCreating(false);
+          // Straight to the board: a new competition's first job is getting challenges.
+          if (created?._id) navigate(`/admin/competitions/${created._id}/monitor?tab=challenges`);
+          else void load();
         }}
-        className="max-w-[95vw] w-[95vw] p-0"
-      >
-        <div className="bg-zinc-900 p-8 rounded-lg max-h-[90vh] overflow-y-auto">
-          <h2 className="text-3xl font-bold text-zinc-100 mb-6">
-            Select Challenges for {selectedCompetition?.name}
-          </h2>
-
-          {/* Filter Bar */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <input
-              type="text"
-              placeholder="Search challenges..."
-              value={challengeSearchTerm}
-              onChange={(e) => setChallengeSearchTerm(e.target.value)}
-              className="flex-1 px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-zinc-200 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-            <select
-              value={challengeCategoryFilter}
-              onChange={(e) => setChallengeCategoryFilter(e.target.value)}
-              className="px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-zinc-200 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            >
-              <option value="">All Categories</option>
-              {Object.values(ChallengeCategory).map(category => (
-                <option key={category} value={category}>{category === ChallengeCategory.MISC ? 'Misc' : category}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            {challenges
-              .filter(c => {
-                const matchesCategory = !challengeCategoryFilter || c.category === challengeCategoryFilter;
-                const matchesSearch = !challengeSearchTerm || c.title.toLowerCase().includes(challengeSearchTerm.toLowerCase());
-                return matchesCategory && matchesSearch;
-              })
-              .map((challenge) => {
-              const isSelected = selectedChallenges.has(challenge._id);
-              const isAlreadyAdded = selectedCompetition?.challenges.some((c: any) => c._id === challenge._id);
-
-              return (
-                <div
-                  key={challenge._id}
-                  onClick={() => !isAlreadyAdded && toggleChallengeSelection(challenge._id)}
-                  className={`p-5 rounded-lg border transition-all cursor-pointer select-none h-full flex flex-col ${
-                    isSelected
-                      ? 'border-emerald-500 bg-emerald-500/10'
-                      : isAlreadyAdded
-                      ? 'border-zinc-600 bg-zinc-800/50 opacity-50 cursor-not-allowed'
-                      : 'border-zinc-700 hover:border-zinc-600 hover:bg-zinc-800/30'
-                  }`}
-                >
-                  <div className="flex items-start gap-3 mb-3">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      disabled={isAlreadyAdded}
-                      onChange={() => toggleChallengeSelection(challenge._id)}
-                      className="w-5 h-5 text-emerald-500 rounded focus:ring-emerald-500 mt-1"
-                    />
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <h3 className="text-lg font-bold text-zinc-100">{challenge.title}</h3>
-                      </div>
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-400">
-                          {(challenge as any).currentPoints || challenge.points} pts
-                        </span>
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-zinc-700 text-zinc-300">
-                          {challenge.category}
-                        </span>
-                        {!challenge.isPublished && (
-                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-500/20 text-yellow-400">
-                            Unpublished
-                          </span>
-                        )}
-                        {isAlreadyAdded && (
-                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-500/20 text-red-400">
-                            Already Added
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-zinc-400 text-sm mb-4 flex-grow">
-                    {challenge.description.length > 150
-                      ? `${challenge.description.substring(0, 150)}...`
-                      : challenge.description}
-                  </p>
-                  <div className="flex gap-4 text-xs text-zinc-500 border-t border-zinc-700 pt-3">
-                    <span>By: {challenge.author}</span>
-                    <span>•</span>
-                    <span>{challenge.solves} solves</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="flex justify-between items-center sticky bottom-0 bg-zinc-900 pt-4 border-t border-zinc-700">
-            <div className="text-zinc-400">
-              {selectedChallenges.size} challenge{selectedChallenges.size !== 1 ? 's' : ''} selected
-            </div>
-            <div className="flex gap-2">
-              <Button variant="secondary" onClick={() => setIsChallengeModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleAddSelectedChallenges} disabled={selectedChallenges.size === 0}>
-                Add {selectedChallenges.size} Challenge{selectedChallenges.size !== 1 ? 's' : ''}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Hint Management Modal */}
-      <Modal
-        isOpen={isHintModalOpen}
-        onClose={() => setIsHintModalOpen(false)}
-        className="max-w-3xl"
-      >
-        <div className="bg-zinc-900 p-8 rounded-lg max-h-[90vh] overflow-y-auto">
-          <h2 className="text-3xl font-bold text-zinc-100 mb-2">
-            Manage Hints
-          </h2>
-          <p className="text-zinc-400 mb-6">
-            {selectedChallenge?.title}
-          </p>
-
-          {selectedChallenge?.hints && selectedChallenge.hints.length > 0 ? (
-            <div className="space-y-4">
-              {selectedChallenge.hints.map((hint: any, index: number) => (
-                <div
-                  key={index}
-                  className={`p-4 rounded-lg border ${
-                    hint.isPublished
-                      ? 'border-emerald-500/30 bg-emerald-500/5'
-                      : 'border-zinc-700 bg-zinc-800/50'
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-zinc-300 font-semibold">Hint #{index + 1}</span>
-                        {hint.isPublished ? (
-                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-400">
-                            Published
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-zinc-700 text-zinc-300">
-                            Unpublished
-                          </span>
-                        )}
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-500/20 text-blue-400">
-                          {hint.cost} points
-                        </span>
-                      </div>
-                      <p className="text-zinc-400 text-sm">
-                        {hint.text.length > 200
-                          ? `${hint.text.substring(0, 200)}...`
-                          : hint.text}
-                      </p>
-                    </div>
-                    {!hint.isPublished && (
-                      <Button
-                        size="sm"
-                        onClick={() => handlePublishHint(index)}
-                        className="ml-4"
-                      >
-                        Publish
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-zinc-500 text-center py-8">
-              No hints available for this challenge
-            </div>
-          )}
-
-          <div className="flex justify-end mt-6 pt-4 border-t border-zinc-700">
-            <Button onClick={() => setIsHintModalOpen(false)}>
-              Close
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      <ToastContainer />
+      />
     </div>
   );
 };

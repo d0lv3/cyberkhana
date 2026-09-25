@@ -19,6 +19,7 @@ const { initializeSocket } = require('../dist/services/socketService');
 const { joinCompetitionRoom } = require('../dist/services/competitionRooms');
 const { io: clientIO } = require('socket.io-client');
 const { eventLeaderboard, eventAccess, mutateEvent, canUnregister } = require('../dist/services/eventCompetition');
+const { startScheduledEvents } = require('../dist/services/competitionScheduler');
 let mongo, http, io, base, students, admin, invitedAdmin, outsiders, challenges;
 const token = u => jwt.sign({ userId: String(u._id), username: u.username, role: u.role, universityCode: u.universityCode }, process.env.JWT_SECRET);
 async function request(user, method, route, body, expected = 200) {
@@ -283,4 +284,92 @@ test('legacy missing-type and explicit workshop competitions keep existing behav
     assert.ok((await request(students[23], 'GET', `/competitions/${id}/leaderboard`)).data.leaderboard.some(u => u.username === students[23].username));
   }
   await request(admin, 'POST', '/competitions', { name: 'Too many workshop universities', universityCodes: ['A', 'B', 'C'] }, 400);
+});
+
+test('disqualified teams leave the scoreboard, return first blood and decay, and cannot play', async () => {
+  const id = await createEvent(10, ['A']);
+  for (const challenge of challenges) await request(admin, 'POST', `/competitions/${id}/challenges`, { challengeId: String(challenge._id) });
+  await request(students[0], 'POST', `/competitions/${id}/register`, { teamAction: 'create', name: 'Flag sharers' });
+  await request(students[1], 'POST', `/competitions/${id}/register`, { teamAction: 'create', name: 'Honest' });
+  await request(admin, 'PATCH', `/competitions/${id}/status`, { status: 'active' });
+  const [staticId, dynamicId] = (await request(admin, 'GET', `/competitions/${id}/event`)).data.challenges.map(c => c._id);
+  for (const user of [students[0], students[1]]) {
+    await request(user, 'POST', `/competitions/${id}/submit`, { challengeId: staticId, flag: 'FLAG{team}' });
+    await request(user, 'POST', `/competitions/${id}/submit`, { challengeId: dynamicId, flag: 'FLAG{dynamic}' });
+  }
+  const teams = (await request(admin, 'GET', `/competitions/${id}/event`)).data.teams;
+  const cheaters = teams.find(t => t.name === 'Flag sharers'), honest = teams.find(t => t.name === 'Honest');
+  const points = async () => Object.fromEntries((await request(students[1], 'GET', `/competitions/${id}/leaderboard`)).data.leaderboard.map(r => [r.name, r.points]));
+  assert.deepEqual(await points(), { 'Flag sharers': 720, Honest: 700 });
+
+  await request(students[1], 'POST', `/competitions/${id}/teams/${cheaters.id}/disqualification`, { reason: 'Shared flags' }, 403);
+  await request(admin, 'POST', `/competitions/${id}/teams/${cheaters.id}/disqualification`, {}, 400);
+  await request(admin, 'POST', `/competitions/${id}/teams/${cheaters.id}/disqualification`, { reason: 'Shared flags' });
+  await request(admin, 'POST', `/competitions/${id}/teams/${cheaters.id}/disqualification`, { reason: 'Again' }, 409);
+  // First blood and the undecayed dynamic value both pass to the honest team.
+  assert.deepEqual(await points(), { Honest: 1020 });
+  const board = (await request(students[1], 'GET', `/competitions/${id}/leaderboard`)).data;
+  assert.equal(board.timeline.length, 1);
+  assert.equal(board.timeline[0].points.at(-1).score, 1020);
+  const individual = (await request(students[1], 'GET', `/competitions/${id}/leaderboard?mode=individual`)).data.leaderboard;
+  assert.deepEqual(individual.map(r => r._id), [String(students[1]._id)]);
+  assert.equal((await request(students[1], 'GET', `/competitions/${id}/activity`)).data.every(a => a.teamId === honest.id), true);
+  const own = (await request(students[0], 'GET', `/competitions/${id}/event`)).data;
+  assert.equal(own.team.disqualified.reason, 'Shared flags');
+  assert.equal((await request(students[0], 'GET', `/competitions/${id}/solved-challenges`)).data.length, 2);
+  await request(students[0], 'POST', `/competitions/${id}/challenges/${staticId}/buy-hint`, { hintIndex: 0 }, 403);
+  await request(students[2], 'POST', `/competitions/${id}/register`, { teamAction: 'join', inviteCode: cheaters.inviteCode }, 409);
+  await request(admin, 'POST', `/competitions/${id}/registrations`, { userId: String(students[2]._id) });
+  await request(admin, 'POST', `/competitions/${id}/teams/${cheaters.id}/members`, { userId: String(students[2]._id) }, 409);
+
+  await request(admin, 'DELETE', `/competitions/${id}/teams/${cheaters.id}/disqualification`);
+  await request(admin, 'DELETE', `/competitions/${id}/teams/${cheaters.id}/disqualification`, undefined, 409);
+  assert.deepEqual(await points(), { 'Flag sharers': 720, Honest: 700 });
+});
+
+test('hosts edit event settings and invitations without breaking registration invariants', async () => {
+  const id = await createEvent(5, ['A']);
+  const route = `/competitions/${id}/settings`;
+  await request(students[0], 'POST', `/competitions/${id}/register`, { teamAction: 'create', name: 'Settings one' });
+  await request(students[1], 'POST', `/competitions/${id}/register`, { teamAction: 'create', name: 'Settings two' });
+  await request(students[0], 'PATCH', route, { name: 'Hijacked' }, 403);
+  await request(invitedAdmin, 'PATCH', route, { name: 'Hijacked' }, 403);
+  await request(admin, 'PATCH', route, { capacity: 1 }, 409);
+  await request(admin, 'PATCH', route, { invite: ['ZZZ'] }, 400);
+  await request(admin, 'PATCH', route, { name: 'Renamed event', description: 'No flag sharing.', capacity: 2, invite: ['B', 'C'] });
+  const card = (await request(students[0], 'GET', `/competitions/${id}/registration`)).data;
+  assert.equal(card.name, 'Renamed event'); assert.equal(card.description, 'No flag sharing.'); assert.equal(card.capacity, 2);
+  const invitation = (await request(invitedAdmin, 'GET', '/competitions/invitations')).data.find(i => i._id === id);
+  assert.equal(invitation.description, 'No flag sharing.');
+  await request(admin, 'PATCH', route, { revoke: ['A'] }, 409);
+  await request(admin, 'PATCH', route, { revoke: ['C'] });
+  assert.deepEqual((await Competition.findById(id).lean()).eventState.invitations.map(i => i.universityCode), ['A', 'B']);
+  await request(admin, 'PATCH', route, { hasTimeLimit: true, endTime: new Date(Date.now() + 3600000).toISOString() }, 400);
+  await request(admin, 'PATCH', route, { autoStart: true }, 400);
+  await request(admin, 'PATCH', route, { autoStart: true, startTime: new Date(Date.now() - 60000).toISOString() }, 400);
+  await request(admin, 'PATCH', route, { autoStart: true, startTime: new Date(Date.now() + 2 * 86400000).toISOString() });
+  assert.equal((await request(admin, 'GET', `/competitions/${id}/event`)).data.autoStart, true);
+  await request(admin, 'PATCH', `/competitions/${id}/status`, { status: 'ended' });
+  assert.ok(Math.abs((await Competition.findById(id).lean()).endTime.getTime() - Date.now()) < 60000, 'ending an event records when it stopped');
+  await request(admin, 'PATCH', route, { name: 'After the end' }, 400);
+});
+
+test('scheduled events open automatically once they have challenges', async () => {
+  const at = offset => new Date(Date.now() + offset).toISOString();
+  const event = { type: 'event', name: 'Scheduled', universityCodes: ['A'], universityCode: 'A', capacity: 5, registrationDeadline: at(86400000), autoStart: true };
+  await request(admin, 'POST', '/competitions', { ...event, startTime: at(-60000), endTime: at(3 * 86400000) }, 400);
+  await request(admin, 'POST', '/competitions', { ...event, startTime: at(3600000) }, 400);
+  const windowed = (await request(admin, 'POST', '/competitions', { ...event, startTime: at(3600000), endTime: at(3 * 86400000) }, 201)).data;
+  const timed = (await request(admin, 'POST', '/competitions', { ...event, startTime: at(3600000), duration: 90 }, 201)).data;
+  assert.equal(windowed.autoStart, true);
+  const start = new Date(Date.now() - 1000);
+  for (const { _id } of [windowed, timed]) await mutateEvent(_id, c => { c.startTime = start; });
+  assert.equal(await startScheduledEvents(), 0);
+  for (const { _id } of [windowed, timed]) await request(admin, 'POST', `/competitions/${_id}/challenges`, { challengeId: String(challenges[0]._id) });
+  assert.equal(await startScheduledEvents(), 2);
+  assert.equal(await startScheduledEvents(), 0);
+  const [opened, timer] = await Promise.all([windowed, timed].map(({ _id }) => Competition.findById(_id).lean()));
+  assert.equal(opened.status, 'active'); assert.equal(timer.status, 'active');
+  assert.equal(timer.endTime.getTime(), start.getTime() + 90 * 60000);
+  assert.equal((await request(admin, 'GET', `/competitions/${timed._id}/event`)).data.challenges.length, 1);
 });

@@ -12,11 +12,18 @@ Implemented on 2026-09-23 alongside the existing workshop system. Competitions w
 - Host controls for invitations, challenge snapshots, starting/ending, participant registration, team membership, publishing hints and score adjustments.
 - Socket updates for registration counts, invitations, rosters, activity and scoring. Removing registration evicts the participant from the event room and clears the event UI.
 
-## Shared competition screens
+## Competition console (redesigned 2026-09-25)
 
-Events use the existing workshop management cards, challenge picker, hint controls, monitoring dashboard, challenge dashboard and podium leaderboard. Registration/team controls are an embedded shared panel. Legacy `/events/:id` links redirect to `/competition/:id`. Monitoring uses team totals and team progress for events, and event standings preserve the server's earliest-last-solve order. Team entries do not open individual profiles.
+`/admin/competitions` is a filterable list (status, format, search) whose rows open the competition console at `/admin/competitions/:id/monitor`. Creating a competition starts with a format choice (CTF event or workshop) and lands on the new console's Challenges tab.
 
-Admins can maximize either competition type's leaderboard from the monitoring screen or the leaderboard itself. Presentation mode fills the viewport, hides the app navigation and supports Escape or Exit fullscreen. The leaderboard button also requests native browser fullscreen where supported. Live refresh and the team/individual toggle continue to work while maximized.
+The console has a header with lifecycle actions (Start / End, confirmed), a schedule strip, four live stat tiles and tabs:
+
+- **Events:** Overview (launch checklist while pending, score progression graph, live activity, top teams, category progress, first bloods), Scoreboard (team/player standings, CSV export), Teams (rosters, invite codes, score adjustments, disqualification), Participants (registrations, host additions, university invitations), Challenges (board, bank picker, hint publishing), Announcements and Settings.
+- **Workshops:** Overview, Leaderboard, Students, Challenges and Announcements.
+
+The console renders inside the app layout on the page canvas; the old monitoring page painted its own `canvas-alt` background, which left a visible seam beside the sidebar. It live-updates from socket events (debounced, pausable). The event dashboard shows hosts a link to the console instead of management forms, and players a team card with the event brief. Legacy `/events/:id` links redirect to `/competition/:id`. Team entries do not open individual profiles.
+
+Admins can maximize either competition type's leaderboard from the console or the leaderboard itself. Presentation mode fills the viewport, hides the app navigation and supports Escape or Exit fullscreen. The leaderboard button also requests native browser fullscreen where supported. Live refresh and the team/individual toggle continue to work while maximized.
 
 ## Rules and scope
 
@@ -30,6 +37,23 @@ Event scores are separate from personal platform/workshop points. A unique solve
 
 Challenges are copied from the host's challenge bank before starting. Event snapshots use fresh IDs and cannot be integrated back into the ordinary challenge bank. Registered students see challenge content only while the event is active; rankings remain available afterward. Ended events cannot reopen or be deleted through the workshop endpoints. Source challenges retain their existing visibility in the challenge bank, so keep source challenges unpublished when their content should be event-exclusive.
 
+An event can open automatically (`autoStart`) at its start time; the scheduler sweep starts it only once it has at least one challenge, and a duration-based event then runs from the published start. Ending an event manually records the end time. Hosts edit an unfinished event through `PATCH /competitions/:id/settings`: name, description (the brief shown to invited universities, up to 5,000 characters), registration deadline, capacity (never below current registrations), and — before the start — start mode, start time, time limit and duration; a running event's end time can be extended or shortened. The same endpoint invites further universities and withdraws invitations that were not accepted.
+
+A host can disqualify a team with a reason (`POST /teams/:teamId/disqualification`) and reinstate it (`DELETE`), including after the event ends. A disqualified team and its players leave the rankings, the activity feed and the score graph; its solves stop counting toward dynamic decay, and first blood passes to the earliest remaining solve. Its players see the reason, keep their own solve history, and cannot submit flags, buy hints or be joined. Reinstating restores everything, since scores are computed from stored solves.
+
+## Compared with HTB CTF
+
+Now at parity: registration with capacity and deadline, teams of up to four with invite codes and captains, team and player scoreboards, dynamic scoring, first bloods, a top-team score progression graph, event brief and rules, scheduled automatic start, announcements, score adjustments, disqualification, CSV results export and a presentation scoreboard.
+
+Not implemented yet, in rough order of value:
+
+- Scoreboard freeze for the final hour.
+- A submission log, including incorrect flags. Wrong submissions are rejected before any write, so flag-guessing or flag-sharing patterns cannot be reviewed; the rate limit is the only guard.
+- Per-team challenge instances (spawnable Docker targets). Full Pwn and web targets are shared hosts today.
+- Releasing challenges in waves during the event. The board is frozen at the start, so late additions are not possible.
+- Captain tools: removing a teammate or handing over the captaincy without the host.
+- Certificates and a public post-event results page.
+
 ## Atomic storage and access
 
 An embedded `eventState` owns invitations, registrations, teams, solves, purchased hints and score adjustments. Conditional `findOneAndUpdate` writes compare both `eventRevision` and status, retrying the complete operation on contention. This enforces capacity, membership, team-size, solve and hint invariants without requiring a MongoDB replica set. The scheduler's status changes also invalidate a racing mutation.
@@ -40,7 +64,7 @@ Nonparticipant responses use an explicit metadata allowlist. Student challenge r
 
 ## Validation
 
-`npm --prefix backend run test:events` builds the backend and runs 17 passing Node integration tests against disposable MongoDB data. Coverage includes concurrent capacity claims, concurrent team joins, four-member limits, duplicate teammate submissions, shared hint purchases, invitation acceptance/decline, HTTP/socket access gates, removal/eviction, captain succession, withdrawal after solving, mandatory atomic team selection at registration, exact one-hour withdrawal boundaries, team-history preservation, static/dynamic scores, first blood, tiebreaks, event closure and both explicit-workshop and missing-type legacy flows.
+`npm --prefix backend run test:events` builds the backend and runs 20 passing Node integration tests against disposable MongoDB data. Coverage includes concurrent capacity claims, concurrent team joins, four-member limits, duplicate teammate submissions, shared hint purchases, invitation acceptance/decline, HTTP/socket access gates, removal/eviction, captain succession, withdrawal after solving, mandatory atomic team selection at registration, exact one-hour withdrawal boundaries, team-history preservation, static/dynamic scores, first blood, tiebreaks, event closure, both explicit-workshop and missing-type legacy flows, disqualification and reinstatement (rankings, decay, first blood, timeline, blocked play), settings edits and invitations, and scheduled automatic starts.
 
 The test runner uses `mongodb-memory-server`. To use a locally installed MongoDB binary instead of downloading one on Windows:
 

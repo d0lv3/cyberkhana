@@ -1,844 +1,313 @@
-import EventParticipationPanel from '../../components/competition/EventParticipationPanel';
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, Flag, Monitor, Pause, Play, RefreshCw, Square, Trophy, Users, Ticket, Target } from 'lucide-react';
 import { competitionService } from '../../services/competitionService';
-import { userService } from '../../services/userService';
-import Card from '../../components/ui/card';
-import Button from '../../components/ui/button';
+import { universityService } from '../../services/universityService';
 import { useSocket } from '../../src/contexts/SocketContext';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  ArrowLeft, Trophy, Users, Clock, Activity, Target, TrendingUp,
-  CheckCircle2, RefreshCw, Zap, Timer, Flame, Eye, BarChart3,
-  MousePointer, Medal, Award, Search, ChevronLeft, ChevronRight, Crown, Shield, X
-} from 'lucide-react';
+import { useConfirmation } from '../../src/contexts/ConfirmationContext';
+import { useToast } from '../../src/hooks/useToast';
+import { useNow } from '../../src/hooks/useCompetitionClock';
+import { ConsoleButton, StatTile, StatusPill, TypeBadge, formatAgo, formatDateTime, formatSpan, lifecycleOf } from '../../components/competition/console/ui';
+import { ConsoleTab, tabsFor } from '../../components/competition/console/tabs';
+import type { TimelineSeries } from '../../components/competition/console/ScoreTimeline';
+import OverviewTab from '../../components/competition/console/OverviewTab';
+import ScoreboardTab from '../../components/competition/console/ScoreboardTab';
+import TeamsTab from '../../components/competition/console/TeamsTab';
+import ParticipantsTab from '../../components/competition/console/ParticipantsTab';
+import ChallengesTab from '../../components/competition/console/ChallengesTab';
+import AnnouncementsTab from '../../components/competition/console/AnnouncementsTab';
+import SettingsTab from '../../components/competition/console/SettingsTab';
+import StudentsTab from '../../components/competition/console/StudentsTab';
 
-interface Competition {
-  type?: string;
-  canManage?: boolean;
-  registrationCount?: number;
-  _id: string;
-  name: string;
-  status: string;
-  startTime: string;
-  endTime: string;
-  universityCodes?: string[];
-  challenges: any[];
-}
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.1 } }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
-};
-
-const rankIcon = (rank: number) => {
-  if (rank === 1) return <Crown className="w-5 h-5 text-brand-neon" />;
-  if (rank === 2) return <Medal className="w-5 h-5 text-[#cbd5e1]" />;
-  if (rank === 3) return <Medal className="w-5 h-5 text-[#d6a55a]" />;
-  return <span className="text-sm font-black text-muted">{rank}</span>;
+/** Where the schedule stands, as one line and (while running) a progress bar through the window. */
+const Timeline: React.FC<{ c: any; now: number }> = ({ c, now }) => {
+  const state = lifecycleOf(c, now);
+  const start = c.startTime ? Date.parse(c.startTime) : null;
+  const end = c.hasTimeLimit !== false && c.endTime ? Date.parse(c.endTime) : null;
+  let headline: string, detail: string, progress: number | null = null;
+  if (state === 'ended') {
+    headline = 'Finished';
+    detail = c.endTime ? `Closed ${formatDateTime(c.endTime)}${start ? ` · ran ${formatSpan(Date.parse(c.endTime) - start)}` : ''}` : 'Ended by the host';
+  } else if (state === 'live') {
+    headline = end ? `${formatSpan(end - now)} left` : `Running for ${formatSpan(now - (start ?? now))}`;
+    detail = end ? `Started ${formatDateTime(c.startTime)} · closes ${formatDateTime(c.endTime)}` : 'No time limit — it runs until you end it';
+    if (start && end) progress = ((now - start) / (end - start)) * 100;
+  } else if (c.autoStart && start) {
+    headline = start > now ? `Opens in ${formatSpan(start - now)}` : 'Start time has passed';
+    detail = start > now
+      ? `Opens automatically ${formatDateTime(c.startTime)}${end ? ` · closes ${formatDateTime(c.endTime)}` : c.duration ? ` · runs ${formatSpan(c.duration * 60000)}` : ''}`
+      : 'It opens automatically as soon as the board has a challenge';
+  } else {
+    headline = 'Waiting for you to start';
+    detail = end ? `Closes ${formatDateTime(c.endTime)}` : c.duration ? `Runs ${formatSpan(c.duration * 60000)} from the moment you press Start` : 'Runs until you end it';
+  }
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-edge bg-panel px-4 py-3 sm:flex-row sm:items-center">
+      <div className={`min-w-0 ${progress !== null ? 'sm:w-96' : 'flex-1'}`}>
+        <p className="font-bold tabular-nums text-fg">{headline}</p>
+        <p className="text-xs text-muted">{detail}</p>
+      </div>
+      {progress !== null && (
+        <div className="flex flex-1 items-center gap-3">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-inset" role="progressbar" aria-label="Time elapsed" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
+            <div className="h-full rounded-full bg-brand-neon" style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
+          </div>
+          <span className="text-xs tabular-nums text-faint">{Math.round(Math.min(100, Math.max(0, progress)))}%</span>
+        </div>
+      )}
+      {c.type === 'event' && state !== 'ended' && (
+        <p className="text-xs text-faint sm:ml-auto sm:text-right">
+          Registration {c.registrationOpen ? `closes ${formatDateTime(c.registrationDeadline)}` : 'closed'}
+        </p>
+      )}
+    </div>
+  );
 };
 
 const CompetitionMonitoringPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id = '' } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [competition, setCompetition] = useState<Competition | null>(null);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [activities, setActivities] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
-  const [isLive, setIsLive] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const [selectedChallenge, setSelectedChallenge] = useState<any>(null);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
-  const [activeTab, setActiveTab] = useState<'leaderboard' | 'students' | 'activity'>('leaderboard');
-  const [expandedStudent, setExpandedStudent] = useState<string | null>(null);
-  
-  const [stats, setStats] = useState({
-    averageSolveTime: 0,
-    challengeCompletionRate: 0,
-    totalParticipants: 0,
-    activeParticipants: 0,
-    categoryStats: [] as any[],
-    hourlyActivity: [] as any[]
-  });
-  
+  const [params, setParams] = useSearchParams();
+  const { confirm } = useConfirmation();
+  const { toast, ToastContainer } = useToast();
   const { socket, isConnected, joinCompetition, leaveCompetition } = useSocket();
+  const now = useNow();
 
-  useEffect(() => {
-    if (id) {
-      fetchCompetitionData();
-      if (isConnected && id) {
-        joinCompetition(id);
-      }
-    }
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (id) leaveCompetition(id);
-    };
-  }, [id, isConnected, joinCompetition, leaveCompetition]);
+  const [competition, setCompetition] = useState<any>(null);
+  const [rows, setRows] = useState<any[]>([]);
+  const [timeline, setTimeline] = useState<TimelineSeries[]>([]);
+  const [activities, setActivities] = useState<any[]>([]);
+  const [universities, setUniversities] = useState<Array<{ code: string; name: string }>>([]);
+  const [loading, setLoading] = useState(true), [error, setError] = useState('');
+  const [refreshing, setRefreshing] = useState(false), [updatedAt, setUpdatedAt] = useState(Date.now());
+  const [live, setLive] = useState(true);
+  const [teamFocus, setTeamFocus] = useState('');
+  const version = useRef(0), liveRef = useRef(live);
+  liveRef.current = live;
 
-  useEffect(() => {
-    if (!socket || !isConnected) return;
+  const isEvent = competition?.type === 'event';
+  const tabs = tabsFor(isEvent);
+  const requested = params.get('tab') as ConsoleTab | null;
+  const tab: ConsoleTab = tabs.some(t => t.id === requested) ? requested! : 'overview';
+  const openTab = (next: ConsoleTab) => setParams(prev => { const p = new URLSearchParams(prev); p.set('tab', next); return p; }, { replace: true });
 
-    // Named handlers so cleanup can remove exactly these. `socket.off('event')`
-    // with no handler tears down every listener for that event, including the
-    // live activity feed's own.
-    const onActivity = (activity: any) => {
-      setActivities(prev => [activity, ...prev].slice(0, 50));
-      setLastUpdate(new Date());
-    };
-
-    const onFlagSubmitted = () => {
-      if (id) {
-        competitionService.getCompetitionLeaderboard(id).then((response) => {
-          const leaderboardData = Array.isArray(response) ? response : response.leaderboard || [];
-          setLeaderboard(leaderboardData);
-          setLastUpdate(new Date());
-        });
-      }
-    };
-
-    const onCompetitionUpdate = (data: any) => {
-      if (data.competitionId === id) fetchCompetitionData(true);
-    };
-
-    socket.on('competitionActivity', onActivity);
-    socket.on('flagSubmitted', onFlagSubmitted);
-    socket.on('competitionUpdate', onCompetitionUpdate);
-    socket.on('eventChanged', onCompetitionUpdate);
-
-    return () => {
-      socket.off('competitionActivity', onActivity);
-      socket.off('flagSubmitted', onFlagSubmitted);
-      socket.off('competitionUpdate', onCompetitionUpdate);
-      socket.off('eventChanged', onCompetitionUpdate);
-    };
-  }, [socket, isConnected, id]);
-
-  const fetchCompetitionData = async (isRefresh = false) => {
+  const load = useCallback(async (quiet = false) => {
+    const request = ++version.current;
+    if (quiet) setRefreshing(true);
     try {
-      if (isRefresh) setRefreshing(true);
-      else setLoading(true);
-
-      const competitionData = await competitionService.getCompetitionById(id!);
-      if (competitionData.type === 'event' && !competitionData.canManage) throw new Error('Only the host can monitor this event');
+      const data = await competitionService.getCompetitionById(id);
+      if (data.type === 'event' && !data.canManage) throw new Error('Only the host university can manage this event.');
+      const [board, activity] = await Promise.all([
+        competitionService.getCompetitionLeaderboard(id),
+        competitionService.getCompetitionActivity(id),
+      ]);
+      if (request !== version.current) return;
+      setCompetition(data);
+      setRows(Array.isArray(board) ? board : board.leaderboard || []);
+      setTimeline(board.timeline || []);
+      setActivities(Array.isArray(activity) ? activity : []);
       setError('');
-      setCompetition(competitionData);
-
-      const leaderboardResponse = await competitionService.getCompetitionLeaderboard(id!);
-      const leaderboardData = Array.isArray(leaderboardResponse) 
-        ? leaderboardResponse 
-        : leaderboardResponse.leaderboard || [];
-      setLeaderboard(leaderboardData);
-
-      const activityData = await competitionService.getCompetitionActivity(id!);
-      setActivities(activityData);
-
-      calculateStats(competitionData, leaderboardData, activityData);
-      setLastUpdate(new Date());
-    } catch (err: any) {
-      setCompetition(null); setLeaderboard([]); setActivities([]); setError(err.message || 'Could not load competition');
+      setUpdatedAt(Date.now());
+    } catch (e: any) {
+      if (request === version.current) setError(e.message || 'Could not load this competition.');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (request === version.current) { setLoading(false); setRefreshing(false); }
     }
-  };
+  }, [id]);
 
-  const calculateStats = (competition: any, leaderboard: any[], activities: any[]) => {
-    const totalChallenges = competition?.challenges?.length || 0;
-    const totalSolves = competition?.challenges?.reduce((sum: number, c: any) => sum + (c.solves || 0), 0) || 0;
-    const uniqueParticipants = leaderboard.length;
+  useEffect(() => { void load(); return () => { ++version.current; }; }, [load]);
+  useEffect(() => { universityService.getUniversities().then(setUniversities).catch(() => setUniversities([])); }, []);
 
-    const challengeCompletionRate = totalChallenges > 0 && uniqueParticipants > 0
-      ? Math.min(100, (totalSolves / (uniqueParticipants * totalChallenges)) * 100).toFixed(1)
-      : 0;
+  // Realtime: every relevant socket event collapses into one quiet reload, skipped while paused.
+  useEffect(() => {
+    if (!id) return;
+    if (isConnected) joinCompetition(id);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const schedule = (data?: any) => {
+      if (!liveRef.current || (data?.competitionId && data.competitionId !== id)) return;
+      clearTimeout(timer);
+      timer = setTimeout(() => void load(true), 400);
+    };
+    const events = ['competitionActivity', 'flagSubmitted', 'competitionUpdate', 'eventChanged', 'eventRegistrationChanged'];
+    for (const name of events) socket?.on(name, schedule);
+    return () => {
+      clearTimeout(timer);
+      for (const name of events) socket?.off(name, schedule);
+      leaveCompetition(id);
+    };
+  }, [id, socket, isConnected, joinCompetition, leaveCompetition, load]);
 
-    // `solves` here means "challenges in this category that have been solved",
-    // not the raw solve count â€” see the bar that renders it.
-    const categoryMap = new Map();
-    competition?.challenges?.forEach((challenge: any) => {
-      const category = challenge.category;
-      if (!categoryMap.has(category)) {
-        categoryMap.set(category, { name: category, solves: 0, total: 0 });
-      }
-      const stat = categoryMap.get(category);
-      if ((challenge.solves || 0) > 0) stat.solves += 1;
-      stat.total += 1;
-    });
-    const categoryStats = Array.from(categoryMap.values());
-
-    const now = new Date();
-    const hourlyActivity = [];
-    for (let i = 23; i >= 0; i--) {
-      const hourStart = new Date(now.getTime() - i * 60 * 60 * 1000);
-      const hourEnd = new Date(now.getTime() - (i - 1) * 60 * 60 * 1000);
-      const hourActivities = activities.filter((a: any) => {
-        const activityTime = new Date(a.timestamp || a.solvedAt);
-        return activityTime >= hourStart && activityTime < hourEnd;
-      });
-      hourlyActivity.push({
-        hour: hourStart.getHours(),
-        count: hourActivities.length
-      });
+  /** Runs a management action, reports it, and reloads whatever it changed. */
+  const run = useCallback(async (action: () => Promise<unknown>, success: string) => {
+    try {
+      await action();
+      toast('success', success);
+      return true;
+    } catch (e: any) {
+      toast('error', e.message || 'That did not work. Try again.');
+      return false;
+    } finally {
+      await load(true);
     }
+  }, [load, toast]);
 
-    setStats({
-      averageSolveTime: 0, 
-      challengeCompletionRate: Number(challengeCompletionRate),
-      totalParticipants: uniqueParticipants,
-      activeParticipants: leaderboard.filter((l: any) => l.solvedChallenges > 0).length,
-      categoryStats,
-      hourlyActivity
-    });
-  };
-
-  const formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) return `${diffInSeconds}s ago`;
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  };
-
-  const filteredLeaderboard = useMemo(() => leaderboard.filter((user: any) => {
-    const nameToCheck = user.fullName || user.displayName || user.username;
-    return nameToCheck?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           user.username?.toLowerCase().includes(searchTerm.toLowerCase());
-  }), [leaderboard, searchTerm]);
-
-  const paginatedLeaderboard = filteredLeaderboard.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const totalPages = Math.ceil(filteredLeaderboard.length / itemsPerPage);
-  const isSharedCompetition = (competition?.universityCodes?.length || 0) > 1;
-
-  const handleViewUser = (user: any) => {
-    setSelectedUser(competition?.type === 'event' ? leaderboard.find(row => row._id === (user.teamId || user._id)) || user : user);
-  };
-
-  const handleViewChallenge = (challenge: any) => {
-    setSelectedChallenge(competition?.challenges.find(c => c._id === (challenge.challengeId || challenge._id)) || challenge);
-  };
+  const rankOf = useMemo(() => new Map<string, number>(rows.map((row, index) => [String(row._id), index + 1])), [rows]);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-canvas-alt flex flex-col items-center justify-center">
-        <div className="animate-spin w-12 h-12 border-4 border-[#33405c] border-t-brand-neon rounded-full mb-4"></div>
-        <p className="text-muted font-mono tracking-widest text-sm">Loading dashboard...</p>
+      <div className="space-y-4" aria-busy="true" aria-label="Loading competition">
+        <div className="h-5 w-32 animate-pulse rounded bg-panel" />
+        <div className="h-10 w-2/3 animate-pulse rounded-lg bg-panel" />
+        <div className="h-16 animate-pulse rounded-xl border border-edge bg-panel" />
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {[0, 1, 2, 3].map(i => <div key={i} className="h-28 animate-pulse rounded-xl border border-edge bg-panel" />)}
+        </div>
       </div>
     );
   }
 
+  if (!competition) {
+    return (
+      <div className="mx-auto max-w-md py-16 text-center">
+        <p role="alert" className="mb-6 rounded-xl border border-danger/30 bg-danger/10 px-5 py-4 text-sm text-danger">{error || 'Competition not found.'}</p>
+        <Link to="/admin/competitions" className="inline-flex items-center gap-2 text-sm font-semibold text-muted hover:text-fg"><ArrowLeft size={16} /> Back to competitions</Link>
+      </div>
+    );
+  }
+
+  const c = competition;
+  const state = lifecycleOf(c, now);
+  const totalSolves = c.challenges.reduce((n: number, ch: any) => n + (ch.solves || 0), 0);
+  const cracked = c.challenges.filter((ch: any) => (ch.solves || 0) > 0).length;
+  // Nobody leads a board where nobody has scored.
+  const leader = rows[0] && (rows[0].points !== 0 || rows[0].solvedChallenges > 0) ? rows[0] : undefined;
+  const universityCount = isEvent ? c.invitations?.filter((i: any) => i.status === 'accepted').length : (c.universityCodes?.length || 1);
+  const hostName = universities.find(u => u.code === c.universityCode)?.name || c.universityCode;
+
+  const start = async () => {
+    const plan = c.hasTimeLimit === false ? 'It runs until you end it.'
+      : c.endTime ? `It closes ${formatDateTime(c.endTime)}.`
+      : c.duration ? `It runs for ${formatSpan(c.duration * 60000)} from now.` : '';
+    if (!await confirm(`Start "${c.name}" now? ${isEvent ? 'Registered teams' : 'Players'} see the challenges and can submit flags immediately. ${plan}`, {
+      type: 'warning', title: isEvent ? 'Start event' : 'Start competition', confirmText: 'Start now',
+    })) return;
+    await run(() => {
+      // Workshops store the timer as a duration and stamp the window when started.
+      if (!isEvent && c.duration) {
+        const startTime = new Date();
+        return competitionService.updateCompetitionStartTime(c._id, {
+          startTime: startTime.toISOString(), endTime: new Date(startTime.getTime() + c.duration * 60000).toISOString(), status: 'active',
+        });
+      }
+      return competitionService.updateCompetitionStatus(c._id, 'active');
+    }, isEvent ? 'Event started' : 'Competition started');
+  };
+
+  const end = async () => {
+    if (!await confirm(`End "${c.name}" now? Submissions close immediately and the standings become final.${isEvent ? ' Ended events cannot be reopened.' : ''}`, {
+      type: 'danger', title: isEvent ? 'End event' : 'End competition', confirmText: 'End now', isDestructive: true,
+    })) return;
+    await run(() => competitionService.updateCompetitionStatus(c._id, 'ended'), isEvent ? 'Event ended' : 'Competition ended');
+  };
+
   return (
-    <div className="min-h-screen bg-canvas-alt text-fg-soft font-sans selection:bg-brand-neon/30 selection:text-brand-neon overflow-x-hidden">
-      <div className="container mx-auto px-4 py-8">
-        
-        {/* Top Header */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8 flex flex-col xl:flex-row xl:items-end justify-between gap-6">
-          <div>
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/admin/competitions')}
-              className="group text-muted hover:text-fg hover:bg-surface pl-0 mb-4 transition-all duration-300"
-              leftIcon={<ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />}
-            >
-              Back
-            </Button>
+    <div className="space-y-6">
+      <ToastContainer />
+      <Link to="/admin/competitions" className="group inline-flex items-center gap-1.5 text-sm font-semibold text-muted transition-colors hover:text-fg">
+        <ArrowLeft size={15} className="transition-transform group-hover:-translate-x-0.5" /> Competitions
+      </Link>
 
-            <div className="flex items-center gap-3 mb-2">
-              <div className="inline-flex items-center rounded border border-edge-soft bg-surface px-3 py-1 text-xs font-mono text-brand-neon">
-                MONITORING DASHBOARD
-              </div>
-              <div className={`flex items-center gap-2 px-3 py-1 border rounded-[4px] text-xs font-mono font-bold transition-all duration-300 ${
-                isLive ? 'border-brand-neon/50 bg-brand-neon/10 text-brand-neon' : 'border-amber/50 bg-amber/10 text-amber'
-              }`}>
-                <div className={`w-2 h-2 rounded-full ${isLive ? 'bg-brand-neon animate-pulse' : 'bg-amber'}`}></div>
-                {isLive ? 'Live' : 'Paused'}
-              </div>
-              {refreshing && <RefreshCw className="w-4 h-4 text-brand-neon animate-spin" />}
-            </div>
-            
-            <h1 className="text-4xl md:text-5xl font-black text-fg tracking-tight">
-              {competition?.name}
-            </h1>
-            <p className="text-dim mt-2 font-mono flex items-center gap-2 text-sm">
-              <Clock className="w-4 h-4" /> Ends: {competition?.endTime ? new Date(competition.endTime).toLocaleString() : 'No time limit'}
-            </p>
+      <header className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div className="min-w-0">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <TypeBadge type={c.type} />
+            <StatusPill state={state} />
+            <span className="text-xs text-faint">
+              Hosted by {hostName}{universityCount > 1 ? ` · ${universityCount} universities` : ''}
+            </span>
           </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <Button variant="outline" onClick={() => navigate(`/competition/${id}/leaderboard?present=1`)}>Maximize leaderboard</Button>
-            <div className="text-xs text-faint font-mono mr-4">
-              Last updated: <span className="text-muted">{formatTimeAgo(lastUpdate)}</span>
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setIsLive(!isLive)}
-              className={`border-edge-soft bg-surface hover:bg-[#1f2a40] ${isLive ? 'text-amber' : 'text-brand-neon'}`}
-            >
-              {isLive ? 'Pause' : 'Resume'}
-            </Button>
-            <Button
-              variant="default"
-              onClick={() => fetchCompetitionData(true)}
-              disabled={refreshing}
-              className="bg-brand-neon text-canvas-alt hover:bg-[#b0f52b] font-black"
-              leftIcon={<RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />}
-            >
-              Refresh
-            </Button>
-          </div>
-        </motion.div>
-
-        {error && <p role="alert" className="mb-6 text-red-400">{error}</p>}
-        {competition?.type === 'event' && competition.canManage && <details className="mb-6 rounded-xl border border-edge bg-panel p-4"><summary className="cursor-pointer text-fg font-bold">Registration and team management Â· {competition.registrationCount} participants</summary><div className="mt-4"><EventParticipationPanel event={competition} onChange={() => fetchCompetitionData(true)} /></div></details>}
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-surface-alt border border-edge-soft p-5 rounded-xl">
-            <div className="flex items-center gap-2 mb-2">
-              <Target className="w-5 h-5 text-brand" />
-              <span className="text-xs text-dim">Challenges Solved</span>
-            </div>
-            <p className="text-2xl font-black text-fg">
-              {competition?.challenges.filter((c: any) => (c.solves || 0) > 0).length}
-              <span className="text-sm text-faint font-normal ml-1">/ {competition?.challenges.length || 0}</span>
-            </p>
-          </div>
-          <div className="bg-surface-alt border border-edge-soft p-5 rounded-xl">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-5 h-5 text-info" />
-              <span className="text-xs text-dim">{competition?.type === 'event' ? 'Active Teams' : 'Participants'}</span>
-            </div>
-            <p className="text-2xl font-black text-fg">
-              {stats.activeParticipants}
-              <span className="text-sm text-faint font-normal ml-1">/ {stats.totalParticipants}</span>
-            </p>
-          </div>
-          <div className="bg-surface-alt border border-edge-soft p-5 rounded-xl">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="w-5 h-5 text-amber" />
-              <span className="text-xs text-dim">Completion Rate</span>
-            </div>
-            <p className="text-2xl font-black text-fg">{stats.challengeCompletionRate}%</p>
-          </div>
-          <div className="bg-surface-alt border border-edge-soft p-5 rounded-xl">
-            <div className="flex items-center gap-2 mb-2">
-              <Activity className="w-5 h-5 text-[#6f56d9]" />
-              <span className="text-xs text-dim">Total Solves</span>
-            </div>
-            <p className="text-2xl font-black text-fg">
-              {competition?.challenges.reduce((sum, c) => sum + (c.solves || 0), 0) || 0}
-            </p>
-          </div>
+          <h1 className="break-words text-2xl font-black tracking-tight text-fg sm:text-3xl">{c.name}</h1>
         </div>
-
-        {/* Tabs */}
-        <div className="flex gap-1 mb-6 border-b border-edge">
-          {(['leaderboard', 'students', 'activity'] as const).map(tab => (
-            <button
-              key={tab}
-              onClick={() => { setActiveTab(tab); setCurrentPage(1); }}
-              className={`px-5 py-3 text-sm font-bold capitalize transition-colors border-b-2 -mb-px ${
-                activeTab === tab
-                  ? 'border-brand text-brand'
-                  : 'border-transparent text-dim hover:text-fg-soft'
-              }`}
-            >
-              {tab === 'leaderboard' ? 'Leaderboard' : tab === 'students' ? (competition?.type === 'event' ? 'Team Progress' : 'Student Progress') : 'Live Activity'}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => { setLive(v => !v); if (!live) void load(true); }}
+            aria-pressed={live}
+            title={live ? 'Pause live updates' : 'Resume live updates'}
+            className="inline-flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-muted transition-colors hover:bg-surface-hover hover:text-fg touch:min-h-tap"
+          >
+            <span className={`h-2 w-2 rounded-full ${live ? 'animate-pulse bg-brand-neon' : 'bg-amber'}`} />
+            {live ? 'Live' : 'Paused'}
+            <span className="font-normal text-faint">· {formatAgo(new Date(updatedAt), now)}</span>
+          </button>
+          <ConsoleButton tone="ghost" aria-label="Refresh" icon={<RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />} onClick={() => void load(true)} disabled={refreshing} />
+          <ConsoleButton icon={<Monitor size={15} />} onClick={() => navigate(`/competition/${id}/leaderboard?present=1`)}>Present scoreboard</ConsoleButton>
+          {c.status === 'pending' && (
+            <ConsoleButton tone="primary" icon={<Play size={15} />} onClick={start} disabled={!c.challenges.length} title={c.challenges.length ? undefined : 'Add a challenge first'}>
+              {isEvent ? 'Start event' : 'Start'}
+            </ConsoleButton>
+          )}
+          {c.status === 'active' && (
+            <ConsoleButton tone="danger" icon={<Square size={14} />} onClick={end}>{isEvent ? 'End event' : 'End'}</ConsoleButton>
+          )}
         </div>
+      </header>
 
-        {/* Tab Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-6 mb-8">
-          <div>
-            {/* Leaderboard Tab */}
-            {activeTab === 'leaderboard' && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-                  <h2 className="text-xl font-bold text-fg flex items-center gap-2">
-                    <Trophy className="w-5 h-5 text-amber" /> Rankings
-                  </h2>
-                  <div className="relative w-full md:w-64">
-                    <Search className="w-4 h-4 text-dim absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      value={searchTerm}
-                      onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                      placeholder="Search participants..."
-                      className="w-full bg-surface-alt border border-edge-soft rounded px-9 py-2 text-sm text-[#e2e8f6] placeholder:text-faint focus:outline-none focus:border-brand"
-                    />
-                  </div>
-                </div>
+      {!live && (
+        <p className="flex items-center gap-2 rounded-lg border border-amber/25 bg-amber/5 px-3 py-2 text-xs text-amber">
+          <Pause size={13} /> Live updates are paused. The numbers below are from {formatAgo(new Date(updatedAt), now)}.
+        </p>
+      )}
 
-                <div className="rounded-xl border border-edge bg-surface-alt overflow-x-auto">
-                  <table className="w-full min-w-[600px] text-sm">
-                    <thead className="border-b border-edge bg-[#151c29]">
-                      <tr>
-                        <th scope="col" className="text-left px-5 py-3 text-xs text-dim">Rank</th>
-                        <th scope="col" className="text-left px-5 py-3 text-xs text-dim">Participant</th>
-                        <th scope="col" className="text-left px-5 py-3 text-xs text-dim">Score</th>
-                        <th scope="col" className="text-left px-5 py-3 text-xs text-dim">Challenges Solved</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedLeaderboard.map((user, index) => {
-                        const globalRank = (currentPage - 1) * itemsPerPage + index + 1;
-                        return (
-                          <tr
-                            key={user._id}
-                            onClick={() => handleViewUser(user)}
-                            className="border-b border-edge-soft/50 hover:bg-[#1f2a40] transition-colors cursor-pointer group"
-                          >
-                            <td className="px-5 py-4">
-                              <div className="text-fg font-black w-8">
-                                {globalRank <= 3 ? rankIcon(globalRank) : <span className="text-dim">#{globalRank}</span>}
-                              </div>
-                            </td>
-                            <td className="px-5 py-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded border border-edge bg-surface flex items-center justify-center text-xs font-black text-fg">
-                                  {user.username?.charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-[#e5ecfb] group-hover:text-brand transition-colors">{user.username}</p>
-                                  {isSharedCompetition && (user.universityName || user.universityCode) && (
-                                    <p className="mt-1">
-                                      <span className="inline-flex items-center rounded-full border border-[#33405c] bg-canvas-alt px-2 py-0.5 text-[10px] font-semibold text-muted">
-                                        {user.universityName || user.universityCode}
-                                      </span>
-                                    </p>
-                                  )}
-                                  {user.fullName && user.fullName !== user.username && <p className="text-[11px] text-faint">{user.fullName}</p>}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-5 py-4 text-amber font-bold text-base">{user.points}</td>
-                            <td className="px-5 py-4 text-[#dce5f9]">
-                              {user.solvedChallenges} <span className="text-faint text-xs">/ {competition?.challenges.length}</span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                      {paginatedLeaderboard.length === 0 && (
-                        <tr><td colSpan={4} className="px-5 py-8 text-center text-faint">No participants found</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                  {totalPages > 1 && (
-                    <div className="p-4 flex justify-between items-center bg-[#151c29]">
-                      <span className="text-xs text-dim">Page {currentPage} / {totalPages}</span>
-                      <div className="flex gap-2">
-                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-canvas-alt hover:bg-surface" disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)}>
-                          <ChevronLeft className="w-4 h-4"/>
-                        </Button>
-                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-canvas-alt hover:bg-surface" disabled={currentPage === totalPages} onClick={() => setCurrentPage(c => c + 1)}>
-                          <ChevronRight className="w-4 h-4"/>
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
+      <Timeline c={c} now={now} />
 
-            {/* Student Progress Tab */}
-            {activeTab === 'students' && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
-                  <h2 className="text-xl font-bold text-fg flex items-center gap-2">
-                    <Users className="w-5 h-5 text-info" /> {competition?.type === 'event' ? 'Team Progress' : 'Student Progress'}
-                  </h2>
-                  <div className="relative w-full md:w-64">
-                    <Search className="w-4 h-4 text-dim absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      value={searchTerm}
-                      onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                      placeholder={competition?.type === 'event' ? 'Search teams...' : 'Search students...'}
-                      className="w-full bg-surface-alt border border-edge-soft rounded px-9 py-2 text-sm text-[#e2e8f6] placeholder:text-faint focus:outline-none focus:border-info"
-                    />
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-edge bg-surface-alt overflow-hidden">
-                  {paginatedLeaderboard.map((user, index) => {
-                    const globalRank = (currentPage - 1) * itemsPerPage + index + 1;
-                    const isExpanded = expandedStudent === user._id;
-                    const totalChallenges = competition?.challenges.length || 0;
-                    const progressPct = totalChallenges > 0 ? Math.round(((user.solvedChallenges || 0) / totalChallenges) * 100) : 0;
-
-                    // Find activities for this student
-                    const studentActivities = activities.filter((a: any) => competition?.type === 'event' ? a.data?.teamId === user._id : a.userId === user._id || a.username === user.username);
-                    const lastActive = studentActivities.length > 0
-                      ? formatTimeAgo(new Date(studentActivities[0].solvedAt || studentActivities[0].timestamp))
-                      : 'Never';
-
-                    return (
-                      <div key={user._id} className="border-b border-edge-soft/50 last:border-b-0">
-                        <div
-                          onClick={() => setExpandedStudent(isExpanded ? null : user._id)}
-                          className="flex items-center gap-4 p-4 hover:bg-[#1f2a40] cursor-pointer transition-colors"
-                        >
-                          <div className="w-8 text-center font-black text-dim">
-                            {globalRank <= 3 ? rankIcon(globalRank) : <span>#{globalRank}</span>}
-                          </div>
-                          <div className="w-8 h-8 rounded-full bg-inset border border-edge flex items-center justify-center flex-shrink-0">
-                            <span className="text-sm font-black text-brand">{user.username?.charAt(0).toUpperCase()}</span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-[#e5ecfb] truncate">{user.username}</p>
-                            {isSharedCompetition && (user.universityName || user.universityCode) && (
-                              <p className="mt-1">
-                                <span className="inline-flex items-center rounded-full border border-[#33405c] bg-canvas-alt px-2 py-0.5 text-[10px] font-semibold text-muted">
-                                  {user.universityName || user.universityCode}
-                                </span>
-                              </p>
-                            )}
-                            {user.fullName && user.fullName !== user.username && <p className="text-[11px] text-faint">{user.fullName}</p>}
-                          </div>
-                          <div className="hidden sm:flex items-center gap-6 text-sm">
-                            <div className="text-right">
-                              <p className="font-bold text-amber">{user.points} pts</p>
-                            </div>
-                            <div className="w-32">
-                              <div className="flex justify-between text-xs mb-1">
-                                <span className="text-dim">{user.solvedChallenges || 0}/{totalChallenges}</span>
-                                <span className="text-brand">{progressPct}%</span>
-                              </div>
-                              <div className="h-1.5 bg-canvas-alt rounded-full border border-edge overflow-hidden">
-                                <div className="h-full bg-brand rounded-full transition-all" style={{ width: `${progressPct}%` }} />
-                              </div>
-                            </div>
-                            <div className="text-xs text-faint w-20 text-right">{lastActive}</div>
-                          </div>
-                          <ChevronRight className={`w-4 h-4 text-faint transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                        </div>
-
-                        {/* Expanded: per-student solve history */}
-                        <AnimatePresence>
-                          {isExpanded && (
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              className="overflow-hidden bg-canvas-alt"
-                            >
-                              <div className="p-4 border-t border-edge">
-                                {/* Summary row */}
-                                <div className="grid grid-cols-3 gap-4 mb-4">
-                                  <div className="bg-surface-alt border border-edge-soft rounded-lg p-3 text-center">
-                                    <p className="text-xl font-black text-amber">{user.points}</p>
-                                    <p className="text-[10px] text-dim">Score</p>
-                                  </div>
-                                  <div className="bg-surface-alt border border-edge-soft rounded-lg p-3 text-center">
-                                    <p className="text-xl font-black text-brand">{user.solvedChallenges || 0}</p>
-                                    <p className="text-[10px] text-dim">Solved</p>
-                                  </div>
-                                  <div className="bg-surface-alt border border-edge-soft rounded-lg p-3 text-center">
-                                    <p className="text-xl font-black text-info">#{globalRank}</p>
-                                    <p className="text-[10px] text-dim">Rank</p>
-                                  </div>
-                                </div>
-
-                                {/* Solve history */}
-                                <p className="text-xs text-dim mb-2">Solve History</p>
-                                {studentActivities.length > 0 ? (
-                                  <div className="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
-                                    {studentActivities.map((act: any, i: number) => (
-                                      <div key={i} className="flex items-center justify-between p-2.5 rounded bg-surface-alt border border-edge-soft text-sm">
-                                        <div className="flex items-center gap-2">
-                                          <CheckCircle2 className="w-4 h-4 text-brand flex-shrink-0" />
-                                          <span className="text-[#e5ecfb] font-medium">{act.challengeTitle}</span>
-                                          <span className="text-[10px] text-faint bg-canvas-alt px-1.5 py-0.5 rounded border border-edge">{act.category}</span>
-                                        </div>
-                                        <div className="flex items-center gap-3 flex-shrink-0">
-                                          <span className="text-brand font-bold text-xs">+{act.points} pts</span>
-                                          <span className="text-[10px] text-faint">{formatTimeAgo(new Date(act.solvedAt || act.timestamp))}</span>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="text-sm text-faint py-4 text-center">No solves recorded yet</p>
-                                )}
-
-                                <div className="mt-3 flex justify-end">
-                                  <Button
-                                    variant="outline"
-                                    onClick={() => navigate(`/profile/${user._id}`)}
-                                    className="border-edge-soft text-muted hover:text-fg hover:bg-surface text-xs"
-                                  >
-                                    View Full Profile
-                                  </Button>
-                                </div>
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-                    );
-                  })}
-                  {paginatedLeaderboard.length === 0 && (
-                    <div className="p-8 text-center text-faint">No participants found</div>
-                  )}
-                  {totalPages > 1 && (
-                    <div className="p-4 flex justify-between items-center bg-[#151c29] border-t border-edge">
-                      <span className="text-xs text-dim">Page {currentPage} / {totalPages}</span>
-                      <div className="flex gap-2">
-                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-canvas-alt hover:bg-surface" disabled={currentPage === 1} onClick={() => setCurrentPage(c => c - 1)}>
-                          <ChevronLeft className="w-4 h-4"/>
-                        </Button>
-                        <Button variant="outline" className="border-edge-soft text-muted h-8 w-8 p-0 bg-canvas-alt hover:bg-surface" disabled={currentPage === totalPages} onClick={() => setCurrentPage(c => c + 1)}>
-                          <ChevronRight className="w-4 h-4"/>
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-
-            {/* Live Activity Tab */}
-            {activeTab === 'activity' && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                <h2 className="text-xl font-bold text-fg flex items-center gap-2 mb-4">
-                  <Activity className="w-5 h-5 text-brand-neon" /> Live Activity
-                </h2>
-                <div className="rounded-xl border border-edge bg-surface-alt overflow-hidden">
-                  <div className="max-h-[600px] overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                    {activities.length > 0 ? activities.slice(0, 30).map((activity, index) => {
-                      const timeAgo = formatTimeAgo(new Date(activity.solvedAt || activity.timestamp));
-                      return (
-                        <div
-                          key={`${activity.challengeId}-${activity.userId}-${activity.solvedAt}-${index}`}
-                          className="flex items-center justify-between p-3 rounded bg-[#1f2a40] border border-edge-soft hover:border-brand/40 transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="text-brand bg-brand/10 p-2 rounded">
-                              <CheckCircle2 className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <div className="text-sm">
-                                <span onClick={() => handleViewUser(activity)} className="font-bold text-fg hover:text-brand cursor-pointer mr-2">{activity.username}</span>
-                                <span className="text-dim mr-2">solved</span>
-                                <span onClick={() => handleViewChallenge(activity)} className="font-semibold text-amber hover:underline cursor-pointer">{activity.challengeTitle}</span>
-                              </div>
-                              <div className="text-xs text-dim mt-1 flex items-center gap-3">
-                                <span className="text-faint">{activity.category}</span>
-                                <span className="text-brand font-bold">+{activity.points} pts</span>
-                              </div>
-                            </div>
-                          </div>
-                          <span className="text-xs text-faint flex-shrink-0">{timeAgo}</span>
-                        </div>
-                      );
-                    }) : (
-                      <div className="py-12 flex flex-col items-center justify-center opacity-50">
-                        <Activity className="w-8 h-8 text-faint mb-2" />
-                        <p className="text-sm text-muted">No recent activity</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </div>
-
-          {/* Side Panel */}
-          <div className="space-y-6">
-            {/* Categories */}
-            <div className="rounded-xl border border-edge bg-surface-alt overflow-hidden">
-              <div className="p-4 border-b border-edge bg-[#151c29]">
-                <span className="text-sm font-bold text-[#dce5f9]">Categories</span>
-              </div>
-              <div className="p-5 space-y-5">
-                {stats.categoryStats.length > 0 ? stats.categoryStats.map((c, i) => {
-                  const pct = c.total > 0 ? (c.solves / c.total) * 100 : 0;
-                  const colors = ['bg-brand', 'bg-amber', 'bg-info', 'bg-[#6f56d9]', 'bg-[#e5b970]'];
-                  const color = colors[i % colors.length];
-                  return (
-                    <div key={c.name}>
-                      <div className="flex justify-between text-xs mb-2">
-                        <span className="text-[#e5ecfb] font-bold">{c.name}</span>
-                        <span className="text-dim">{c.solves}/{c.total} <span className={color.replace('bg-', 'text-')}>{pct.toFixed(0)}%</span></span>
-                      </div>
-                      <div className="h-1.5 w-full bg-canvas-alt rounded-full overflow-hidden border border-edge">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className={`h-full ${color} rounded-full`} />
-                      </div>
-                    </div>
-                  )
-                }) : (
-                  <p className="text-faint text-sm text-center py-4">No data</p>
-                )}
-              </div>
-            </div>
-
-            {/* Top Performers */}
-            <div className="rounded-xl border border-edge bg-surface-alt overflow-hidden">
-              <div className="p-4 border-b border-edge bg-[#151c29]">
-                <span className="text-sm font-bold text-[#dce5f9]">Top Performers</span>
-              </div>
-              <div className="p-4 space-y-2">
-                {leaderboard.slice(0,5).map((user, i) => {
-                  const rank = i + 1;
-                  return (
-                    <div key={user._id} onClick={() => handleViewUser(user)} className="flex items-center gap-3 p-2.5 rounded cursor-pointer hover:bg-[#1f2a40] transition-colors">
-                      <div className="w-7 h-7 flex-shrink-0 rounded bg-canvas-alt border border-edge-soft flex items-center justify-center">
-                        {rankIcon(rank)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-fg truncate">{user.username}</p>
-                        {isSharedCompetition && (user.universityName || user.universityCode) && (
-                          <p className="mt-1">
-                            <span className="inline-flex items-center rounded-full border border-[#33405c] bg-canvas-alt px-2 py-0.5 text-[10px] font-semibold text-muted">
-                              {user.universityName || user.universityCode}
-                            </span>
-                          </p>
-                        )}
-                      </div>
-                      <p className="text-brand font-bold text-sm">{user.points} <span className="text-[10px] text-faint">pts</span></p>
-                    </div>
-                  )
-                })}
-                {leaderboard.length === 0 && (
-                  <p className="text-faint text-sm text-center py-4">No participants yet</p>
-                )}
-              </div>
-            </div>
-
-            {/* Challenge Overview */}
-            <div className="rounded-xl border border-edge bg-surface-alt overflow-hidden">
-              <div className="p-4 border-b border-edge bg-[#151c29]">
-                <span className="text-sm font-bold text-[#dce5f9]">Challenges</span>
-              </div>
-              <div className="p-4 space-y-2 max-h-80 overflow-y-auto custom-scrollbar">
-                {competition?.challenges.map((challenge: any) => {
-                  const isPwned = (challenge.solves || 0) > 0;
-                  return (
-                    <div key={challenge._id} onClick={() => handleViewChallenge(challenge)} className="flex items-center justify-between p-2.5 rounded cursor-pointer hover:bg-[#1f2a40] transition-colors">
-                      <div className="flex items-center gap-2 min-w-0">
-                        {isPwned ? <CheckCircle2 className="w-4 h-4 text-brand flex-shrink-0" /> : <Target className="w-4 h-4 text-faint flex-shrink-0" />}
-                        <span className="text-sm text-[#e5ecfb] truncate">{challenge.title}</span>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className="text-xs text-faint">{challenge.solves || 0} solves</span>
-                        <span className="text-xs font-bold text-brand">{challenge.currentPoints || challenge.points} pts</span>
-                      </div>
-                    </div>
-                  );
-                })}
-                {(!competition?.challenges || competition.challenges.length === 0) && (
-                  <p className="text-faint text-sm text-center py-4">No challenges</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {isEvent ? (
+          <>
+            <StatTile label="Teams" value={rows.length} detail={`${c.registrationCount} players registered`} icon={<Users size={15} />} accent="#60a5fa" />
+            <StatTile label="Seats" value={<>{c.registrationCount}<span className="text-sm font-semibold text-faint"> / {c.capacity}</span></>}
+              detail={c.registrationOpen ? 'Registration open' : 'Registration closed'} icon={<Ticket size={15} />} accent="#a855f7"
+              progress={(c.registrationCount / c.capacity) * 100} />
+          </>
+        ) : (
+          <>
+            <StatTile label="Players" value={rows.length} detail={`${rows.filter(r => r.solvedChallenges > 0).length} have scored`} icon={<Users size={15} />} accent="#60a5fa" />
+            <StatTile label="Challenges" value={c.challenges.length} detail={`${c.challenges.reduce((n: number, ch: any) => n + (ch.hints?.length || 0), 0)} hints available`} icon={<Target size={15} />} accent="#a855f7" />
+          </>
+        )}
+        <StatTile label="Flags captured" value={totalSolves} detail={`${cracked} of ${c.challenges.length} challenges cracked`} icon={<Flag size={15} />} accent="#00a859"
+          progress={c.challenges.length ? (cracked / c.challenges.length) * 100 : 0} />
+        <StatTile label="Leading" value={<span className="block truncate text-xl">{leader ? leader.name || leader.username : '—'}</span>}
+          detail={leader ? `${leader.points.toLocaleString()} pts · ${leader.solvedChallenges} solved` : 'No scores yet'} icon={<Trophy size={15} />} accent="#9fef00" />
       </div>
 
-      {/* Modals */}
-      <AnimatePresence>
-        {selectedUser && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-[#0d131f]/80 backdrop-blur-sm flex items-center justify-center p-4">
-             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-surface-alt border border-[#3a4864] rounded-xl max-w-lg w-full p-6 shadow-2xl">
-                <div className="flex justify-between items-center mb-6">
-                   <h3 className="font-black text-2xl text-fg flex items-center gap-2">
-                     <span className="text-brand-neon">&gt;</span> {competition?.type === 'event' ? 'Team' : 'Profile'}: {selectedUser.username}
-                   </h3>
-                   <Button variant="ghost" onClick={() => setSelectedUser(null)} className="text-dim hover:text-white p-1 hover:bg-edge-soft"><X className="w-5 h-5"/></Button>
-                </div>
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
-                     <p className="text-3xl font-black text-amber mb-1">{selectedUser.points}</p>
-                     <p className="text-[10px] font-mono text-dim">Score</p>
-                  </div>
-                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
-                     <p className="text-3xl font-black text-brand-neon mb-1">{selectedUser.solvedChallenges || 0}</p>
-                     <p className="text-[10px] font-mono text-dim">Solved</p>
-                  </div>
-                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
-                     <p className="text-3xl font-black text-info mb-1">{leaderboard.findIndex((l: any) => l._id === selectedUser._id) + 1 || '-'}</p>
-                     <p className="text-[10px] font-mono text-dim">Rank</p>
-                  </div>
-                </div>
-                <div className="flex gap-3 mt-8">
-                  <Button disabled={competition?.type === 'event'} variant="default" className="flex-1 bg-brand-neon text-canvas-alt font-black hover:bg-[#b0f52b]" onClick={() => navigate(`/profile/${selectedUser._id}`)}>
-                    FULL PROFILE
-                  </Button>
-                  <Button variant="outline" className="flex-1 border-[#3a4864] text-[#dce5f9] hover:bg-edge" onClick={() => setSelectedUser(null)}>
-                    CLOSE
-                  </Button>
-                </div>
-             </motion.div>
-          </motion.div>
-        )}
-        
-        {selectedChallenge && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-[#0d131f]/80 backdrop-blur-sm flex items-center justify-center p-4">
-             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-surface-alt border border-[#3a4864] rounded-xl max-w-2xl w-full p-6 shadow-2xl">
-                <div className="flex justify-between items-start mb-6">
-                   <div>
-                     <h3 className="font-black text-2xl text-fg mb-2">{selectedChallenge.title}</h3>
-                     <span className="text-brand-neon font-mono text-xs border border-brand-neon/30 px-2 py-0.5 rounded bg-brand-neon/10">{selectedChallenge.category}</span>
-                   </div>
-                   <Button variant="ghost" onClick={() => setSelectedChallenge(null)} className="text-dim hover:text-white p-1 hover:bg-edge-soft"><X className="w-5 h-5"/></Button>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
-                     <p className="text-xl font-black text-amber mb-1">{selectedChallenge.currentPoints || selectedChallenge.points}</p>
-                     <p className="text-[10px] font-mono text-dim">Reward</p>
-                  </div>
-                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
-                     <p className="text-xl font-black text-brand-neon mb-1">{selectedChallenge.solves || 0}</p>
-                     <p className="text-[10px] font-mono text-dim">Solves</p>
-                  </div>
-                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
-                     <p className="text-xl font-black text-info mb-1">{selectedChallenge.difficulty || 'N/A'}</p>
-                     <p className="text-[10px] font-mono text-dim">Rating</p>
-                  </div>
-                  <div className="bg-canvas-alt p-4 rounded-xl text-center border border-edge-soft">
-                     <p className={`text-xl font-black mb-1 ${(selectedChallenge.solves || 0) > 0 ? 'text-amber' : 'text-dim'}`}>
-                       {(selectedChallenge.solves || 0) > 0 ? 'YES' : 'NO'}
-                     </p>
-                     <p className="text-[10px] font-mono text-dim">Solved</p>
-                  </div>
-                </div>
+      <nav aria-label="Console sections" className="scroll-x -mb-px flex gap-1 border-b border-edge">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => openTab(t.id)}
+            aria-current={tab === t.id ? 'page' : undefined}
+            className={`-mb-px whitespace-nowrap border-b-2 px-4 py-2.5 text-sm font-semibold transition-colors touch:min-h-tap ${
+              tab === t.id ? 'border-brand-neon text-fg' : 'border-transparent text-muted hover:text-fg-soft'
+            }`}
+          >
+            {t.label}
+            {t.id === 'teams' && isEvent && <span className="ml-1.5 text-xs font-normal text-faint">{c.teams?.length || 0}</span>}
+            {t.id === 'participants' && isEvent && <span className="ml-1.5 text-xs font-normal text-faint">{c.registrationCount}</span>}
+            {t.id === 'challenges' && <span className="ml-1.5 text-xs font-normal text-faint">{c.challenges.length}</span>}
+          </button>
+        ))}
+      </nav>
 
-                {selectedChallenge.description && (
-                  <div className="mb-8 bg-canvas-alt border border-edge-soft rounded-xl p-4">
-                    <p className="text-xs font-mono text-faint mb-3 pb-2 border-b border-edge-soft">Description</p>
-                    <p className="text-[#dce5f9] text-sm leading-relaxed whitespace-pre-wrap font-mono">
-                      {selectedChallenge.description}
-                    </p>
-                  </div>
-                )}
-                
-                <div className="flex gap-3">
-                  <Button variant="default" className="flex-1 bg-amber text-canvas-alt font-black hover:bg-[#ffb041]" onClick={() => navigate(`/competition/${id}/challenge/${selectedChallenge._id}`)}>
-                    View Challenge
-                  </Button>
-                  <Button variant="outline" className="flex-1 border-[#3a4864] text-[#dce5f9] hover:bg-edge" onClick={() => setSelectedChallenge(null)}>
-                    CANCEL
-                  </Button>
-                </div>
-             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {tab === 'overview' && <OverviewTab competition={c} isEvent={isEvent} rows={rows} timeline={timeline} activities={activities} now={now} onOpenTab={openTab} />}
+      {tab === 'scoreboard' && <ScoreboardTab competition={c} isEvent={isEvent} teamRows={rows} onOpenTeam={isEvent ? name => { setTeamFocus(name); openTab('teams'); } : undefined} />}
+      {tab === 'teams' && isEvent && <TeamsTab competition={c} rankOf={rankOf} focus={teamFocus} run={run} confirm={confirm} />}
+      {tab === 'participants' && isEvent && <ParticipantsTab competition={c} universities={universities} now={now} run={run} confirm={confirm} />}
+      {tab === 'students' && !isEvent && <StudentsTab competition={c} rows={rows} now={now} onProfile={userId => navigate(`/profile/${userId}`)} />}
+      {tab === 'challenges' && <ChallengesTab competition={c} isEvent={isEvent} run={run} confirm={confirm} onView={challengeId => navigate(`/competition/${id}/challenge/${challengeId}`)} />}
+      {tab === 'announcements' && <AnnouncementsTab competition={c} isEvent={isEvent} now={now} run={run} confirm={confirm} />}
+      {tab === 'settings' && isEvent && <SettingsTab competition={c} run={run} />}
     </div>
   );
 };
