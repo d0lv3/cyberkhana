@@ -14,7 +14,7 @@
   --ck-sym: url('/assets/brand/certificate/symbol.png');
   --ck-wm: url('/assets/brand/certificate/wordmark.png');
   width: 297mm; height: 210mm; position: relative; overflow: hidden; flex: none;
-  background: var(--bg); color: var(--text); font-family: 'Montserrat', sans-serif;
+  background: var(--bg); color: var(--text); font-family: 'Poppins', sans-serif;
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .cert * { box-sizing: border-box; }
@@ -31,7 +31,7 @@
 .cert .sym { left: 15mm; top: 15.41mm; width: 16mm; height: 15.173mm; background-image: var(--ck-sym); }
 .cert .wm { left: 240.93mm; top: 14mm; width: 40.07mm; height: 7mm; background-image: var(--ck-wm); }
 
-.cert .k { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 6.5pt; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); line-height: 1.3; }
+.cert .k { font-family: 'Poppins', sans-serif; font-size: 6.5pt; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); line-height: 1.3; }
 
 /* ---- panel (x 0–90 mm) ---- */
 .cert .p-label { left: 14mm; top: 40mm; }
@@ -44,11 +44,11 @@
 .cert .seal { position: relative; width: 38mm; height: 38mm; }
 .cert .seal svg { display: block; width: 100%; height: 100%; }
 .cert .seal-mark { position: absolute; left: 36%; top: 36.13%; width: 28%; height: 26.55%; background: var(--ck-sym) no-repeat; background-size: 100% 100%; }
-.cert .qr { left: 14mm; top: 152mm; width: 32mm; height: 32mm; padding: 3mm; background: #fff; border-radius: 1.2mm; }
-.cert .qr svg { display: block; width: 26mm; height: 26mm; }
-.cert .code { left: 50mm; top: 152mm; width: 30mm; height: 32mm; display: flex; flex-direction: column; justify-content: flex-end; }
+.cert .qr { left: 14mm; top: 162mm; width: 22mm; height: 22mm; padding: 2mm; background: #fff; border-radius: 1mm; }
+.cert .qr svg { display: block; width: 18mm; height: 18mm; }
+.cert .code { left: 40mm; top: 162mm; width: 36mm; height: 22mm; display: flex; flex-direction: column; justify-content: flex-end; }
 .cert .code .k { margin-bottom: 1.2mm; }
-.cert .code-groups { font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 7.5pt; line-height: 1.5; letter-spacing: .06em; color: var(--text2); white-space: pre; }
+.cert .code-groups { font-family: 'Poppins', sans-serif; font-weight: 500; font-size: 7.5pt; line-height: 1.5; letter-spacing: .08em; font-variant-numeric: tabular-nums; color: var(--text2); white-space: pre; }
 
 /* participant (no rank): the seal takes the rank's place, larger */
 .cert[data-tier="participant"] .rankbox,
@@ -59,26 +59,23 @@
 
 /* ---- main column (x 106–281 mm, 175 mm wide) ---- */
 .cert .main { left: 106mm; width: 175mm; }
-.cert .meta { top: 15.6mm; width: 120mm; }
-.cert .title { top: 33.5mm; display: flex; align-items: center; gap: 3mm; font-weight: 600; font-size: 11pt; letter-spacing: .3em; text-transform: uppercase; color: var(--green); line-height: 1.2; }
-.cert .title i { width: 2.6mm; height: 2.6mm; background: var(--place); flex: none; }
-.cert .awarded { top: 44mm; }
-.cert .namebox { top: 49mm; height: 34mm; align-items: center; }
+.cert .title { top: 28mm; font-weight: 600; font-size: 15pt; letter-spacing: .22em; text-transform: uppercase; color: var(--green); line-height: 1.2; }
+.cert .awarded { top: 42mm; font-size: 9.5pt; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); line-height: 1.3; }
+.cert .namebox { top: 48mm; height: 34mm; align-items: center; }
 .cert .name { font-family: 'Poppins', 'IBM Plex Sans Arabic', sans-serif; font-weight: 600; line-height: 1.08; letter-spacing: -.01em; color: var(--text); text-align: left; overflow-wrap: anywhere; unicode-bidi: plaintext; }
 .cert .name[dir="rtl"] { font-family: 'IBM Plex Sans Arabic', 'Poppins', sans-serif; font-weight: 700; line-height: 1.3; letter-spacing: 0; }
-.cert .whobox { top: 85mm; height: 7mm; align-items: center; }
+.cert .whobox { top: 84mm; height: 7mm; align-items: center; }
 .cert .who { font-weight: 500; color: var(--text2); white-space: nowrap; unicode-bidi: plaintext; }
-.cert .who .u { font-family: 'JetBrains Mono', monospace; font-size: .88em; color: var(--lime); margin-right: 3mm; }
-.cert .rule { top: 96.9mm; height: .25mm; background: linear-gradient(90deg, var(--green) 0 12mm, var(--line) 12mm); }
-.cert .copy { top: 102.5mm; font-size: 10pt; color: var(--muted); line-height: 1.3; }
-.cert .eventbox { top: 108.5mm; height: 21mm; align-items: flex-start; }
+.cert .who .u { font-size: .92em; color: var(--lime); margin-right: 3mm; }
+.cert .rule { top: 95mm; height: .25mm; background: linear-gradient(90deg, var(--green) 0 12mm, var(--line) 12mm); }
+.cert .copy { top: 100.5mm; font-size: 10pt; color: var(--muted); line-height: 1.3; }
+.cert .eventbox { top: 106.5mm; height: 21mm; align-items: flex-start; }
 .cert .event { font-family: 'Poppins', sans-serif; font-weight: 600; line-height: 1.2; color: var(--text); overflow-wrap: anywhere; unicode-bidi: plaintext; }
-.cert .fields { top: 136mm; display: grid; grid-template-columns: 70mm 97mm; column-gap: 8mm; row-gap: 5mm; }
-.cert .fields .vbox { display: flex; overflow: hidden; height: 6.4mm; margin-top: 1.2mm; align-items: center; }
-.cert .fields .v { font-family: 'Poppins', sans-serif; font-weight: 600; color: var(--text); white-space: nowrap; }
-.cert .fields .v.m { font-family: 'Montserrat', sans-serif; font-weight: 500; color: var(--text2); }
-.cert .urlline { top: 180.5mm; display: flex; gap: 3mm; align-items: baseline; }
-.cert .urlline [data-field] { font-family: 'JetBrains Mono', monospace; font-size: 7.5pt; color: var(--text2); letter-spacing: .02em; }
+.cert .fields { bottom: 22mm; display: grid; grid-template-columns: 70mm 49mm 40mm; column-gap: 8mm; row-gap: 4.5mm; }
+.cert .fields .cell { border-top: .25mm solid var(--line); padding-top: 2.4mm; min-width: 0; }
+.cert .fields .vbox { display: flex; overflow: hidden; height: 6.6mm; margin-top: 1mm; align-items: center; }
+.cert .fields .v { font-weight: 600; color: var(--text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cert .fields .v.m { font-weight: 500; color: var(--text2); }
 
 /* On screen the sheet is scaled to its container; printing uses it at real size. */
 .cert-scaler { position: relative; margin: 0 auto; }

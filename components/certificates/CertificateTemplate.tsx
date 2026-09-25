@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import qrcode from 'qrcode-generator';
 import './certificate.css';
 import { CERT_BACKGROUND_SVG, CERT_DEFS_SVG, CERT_SEAL_SVG } from './certificateArt';
@@ -72,8 +72,6 @@ const fitOne = (el: HTMLElement) => {
 };
 const fitAll = (root: HTMLElement) => root.querySelectorAll<HTMLElement>('[data-fit]').forEach(fitOne);
 
-// The only face the app does not already load; fetched when a certificate is shown.
-const MONO_FONT = 'https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap';
 
 /* Active only while a certificate is mounted: one landscape A4 page holding the certificate
    alone, at full size, dark background included. */
@@ -86,30 +84,26 @@ const PRINT_STYLES = `
   .cert-scaler > .cert { position: fixed !important; left: 0 !important; top: 0 !important; transform: none !important; box-shadow: none !important; }
 }`;
 
+const Cell: React.FC<{ label: string; value: string; muted?: boolean }> = ({ label, value, muted }) => (
+  <div className="cell">
+    <div className="k">{label}</div>
+    <div className="vbox"><div className={`v${muted ? ' m' : ''}`} data-fit={muted ? '10,8,8' : '12,8,8'}>{value}</div></div>
+  </div>
+);
+
 const CertificateTemplate: React.FC<{ certificate: CertificateData; verifyUrl: string }> = ({ certificate: c, verifyUrl }) => {
   const wrapRef = useRef<HTMLDivElement>(null), certRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1), [natural, setNatural] = useState({ width: 0, height: 0 });
 
   const tier = c.rank && c.rank <= 3 ? String(c.rank) : c.rank ? 'ranked' : 'participant';
-  const podium = tier === '1' || tier === '2' || tier === '3';
   const code = c.code.toUpperCase();
   const groups = code.match(/.{1,4}/g) || [];
   const codeLines = [0, 2, 4, 6].map(i => groups.slice(i, i + 2).join(' ')).filter(Boolean).join('\n');
-  const printedUrl = verifyUrl.replace(/^https?:\/\//, '');
   const qr = useMemo(() => qrPath(verifyUrl), [verifyUrl]);
   const rtl = ARABIC.test(c.name);
   const dates = dateRange(c.eventStart, c.eventEnd);
-  const stats = c.points != null
-    ? `${c.points.toLocaleString('en-US')} points · ${c.solved ?? 0} challenge${c.solved === 1 ? '' : 's'} solved`
-    : null;
-
-  useEffect(() => {
-    if (document.querySelector(`link[href="${MONO_FONT}"]`)) return;
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = MONO_FONT;
-    document.head.appendChild(link);
-  }, []);
+  // A ranked player gets a stats row (team, points, solves); everyone gets the event row.
+  const ranked = !!c.teamName && c.points != null;
 
   // Fit now, and again once the fonts arrive: sizes measured in a fallback face are wrong.
   useLayoutEffect(() => {
@@ -168,9 +162,8 @@ const CertificateTemplate: React.FC<{ certificate: CertificateData; verifyUrl: s
           <div className="abs code"><div className="k">Verify</div><div className="code-groups">{codeLines}</div></div>
 
           {/* main column */}
-          <div className="abs main k meta">Verified credential · Capture the flag</div>
-          <div className="abs main title"><i /><span>{podium ? 'Certificate of Achievement' : 'Certificate of Participation'}</span></div>
-          <div className="abs main k awarded">Awarded to</div>
+          <div className="abs main title">Certificate of Achievement</div>
+          <div className="abs main awarded">Awarded to</div>
           <div className="abs main fitbox namebox">
             <div className="name" data-fit="46,32,22" {...(rtl ? { dir: 'rtl', lang: 'ar' } : {})}>{c.name}</div>
           </div>
@@ -180,16 +173,17 @@ const CertificateTemplate: React.FC<{ certificate: CertificateData; verifyUrl: s
           <div className="abs main rule" />
           <div className="abs main copy">for competing in</div>
           <div className="abs main fitbox eventbox"><div className="event" data-fit="19,15,12">{c.eventName}</div></div>
+          {/* One labelled cell per fact, in two aligned rows anchored to the bottom of the sheet. */}
           <div className="abs main fields">
-            {c.teamName && <div><div className="k">Team</div><div className="vbox"><div className="v" data-fit="11,8,8">{c.teamName}</div></div></div>}
-            {stats && <div><div className="k">Stats</div><div className="vbox"><div className="v" data-fit="11,8,8">{stats}</div></div></div>}
-            <div><div className="k">Hosted by</div><div className="vbox"><div className="v m" data-fit="10,8,8">{c.hostUniversityName}</div></div></div>
-            <div>
-              <div className="k">{dates ? 'Event dates · Issued' : 'Issued'}</div>
-              <div className="vbox"><div className="v m" data-fit="10,8,8">{dates ? `${dates} · ${longDate(c.issuedAt)}` : longDate(c.issuedAt)}</div></div>
-            </div>
+            {ranked && <>
+              <Cell label="Team" value={c.teamName!} />
+              <Cell label="Points" value={c.points!.toLocaleString('en-US')} />
+              <Cell label="Challenges solved" value={String(c.solved ?? 0)} />
+            </>}
+            <Cell label="Hosted by" value={c.hostUniversityName} muted />
+            {dates && <Cell label="Event dates" value={dates} muted />}
+            <Cell label="Issued" value={longDate(c.issuedAt)} muted />
           </div>
-          <div className="abs main urlline"><span className="k">Verify at</span><span data-field="verifyUrl">{printedUrl}</span></div>
         </div>
       </div>
     </div>
