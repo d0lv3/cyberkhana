@@ -637,6 +637,12 @@ export const submitCompetitionFlag = async (req: AuthRequest, res: Response) => 
     const { challengeId, flag } = req.body;
     const securityCode = normalizeSecurityCode(req.body.securityCode);
 
+    // Bound the flag before any work: without this a 50MB body is normalised and
+    // compared on every attempt. 4096 matches the event submission limit.
+    if (typeof flag !== 'string' || flag.length > 4096) {
+      return res.status(400).json({ error: 'Flag must be a string of at most 4096 characters' });
+    }
+
     const competition = await Competition.findById(id);
 
     if (!competition) {
@@ -875,6 +881,11 @@ export const submitCompetitionFlag = async (req: AuthRequest, res: Response) => 
       } else {
         res.status(400).json({ error: 'Incorrect flag' });
       }
+    } else {
+      // Admins and super-admins do not score. Without this branch the handler
+      // fell through and never sent a response, holding the socket open until
+      // the client timed out.
+      return res.status(403).json({ error: 'Only participants can submit flags' });
     }
   } catch (error) {
     res.status(500).json({ error: 'Error submitting flag' });

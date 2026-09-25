@@ -24,12 +24,6 @@ export interface ICompetitionBonusPoint {
   createdAt: Date;
 }
 
-export interface ILinuxCourseProgress {
-  completedLectures: string[];
-  solvedQuestions: string[];
-  updatedAt: Date;
-}
-
 export interface IUser extends Document {
   username: string;
   displayName?: string;
@@ -51,7 +45,6 @@ export interface IUser extends Document {
   penalties?: IPenalty[];
   competitionPenalties?: ICompetitionPenalty[];
   competitionBonusPoints?: ICompetitionBonusPoint[];
-  linuxCourseProgress?: ILinuxCourseProgress;
   /** When this user accepted the Terms of Service. Absent for accounts created
    *  before acceptance was recorded — they are gated until they accept. */
   termsAcceptedAt?: Date;
@@ -155,11 +148,6 @@ const UserSchema: Schema = new Schema({
   penalties: [PenaltySchema],
   competitionPenalties: [CompetitionPenaltySchema],
   competitionBonusPoints: [CompetitionBonusPointSchema],
-  linuxCourseProgress: {
-    completedLectures: [{ type: String }],
-    solvedQuestions: [{ type: String }],
-    updatedAt: { type: Date, default: Date.now }
-  },
   bonusPoints: {
     type: Number,
     default: 0

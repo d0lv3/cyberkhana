@@ -435,6 +435,12 @@ export const submitFlag = async (req: AuthRequest, res: Response) => {
     if (typeof flag !== 'string') {
       return res.status(400).json({ error: 'Flag must be provided as a string' });
     }
+    // No real flag is anywhere near this long. Without the cap, a 50MB body (the
+    // JSON limit) is normalised and compared on every attempt — cheap to send,
+    // not cheap to process. 4096 matches the event submission limit.
+    if (flag.length > 4096) {
+      return res.status(400).json({ error: 'Flag is too long' });
+    }
 
     const challenge = await Challenge.findById(id);
 

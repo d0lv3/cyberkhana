@@ -19,18 +19,6 @@ export const userService = {
   updateProfileIcon: (icon: string) =>
     apiService.patch('/users/profile-icon', { icon }),
 
-  getLinuxCourseProgress: () =>
-    apiService.get('/users/course-progress/linux'),
-
-  updateLinuxCourseProgress: (data: { completedLectures: string[]; solvedQuestions: string[] }) =>
-    apiService.put('/users/course-progress/linux', data),
-
-  getUserLinuxCourseProgressForAdmin: (userId: string) =>
-    apiService.get(`/users/${userId}/course-progress/linux`),
-
-  resetUserLinuxCourseProgress: (userId: string) =>
-    apiService.delete(`/users/${userId}/course-progress/linux`),
-
   banUser: (userId: string) =>
     apiService.post(`/users/ban/${userId}`),
 

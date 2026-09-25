@@ -97,6 +97,28 @@ export const getPublicProfile = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
+    // Tenant isolation. A profile carries a real name and a full solve history,
+    // so it may be read only by a super-admin, by someone from the same
+    // university, or by someone whose university shares a competition with the
+    // target — which is exactly the set of people who can already see them on a
+    // leaderboard (own university, or a rival on a shared competition's board).
+    // Without this, any signed-in user could read anyone's profile by guessing
+    // an id, across universities that never compete together.
+    const viewerCode = (req.user?.universityCode || '').toUpperCase();
+    const targetCode = (user.universityCode || '').toUpperCase();
+    if (req.user?.role !== 'super-admin' && viewerCode !== targetCode) {
+      const Competition = require('../models/Competition').default;
+      const shareCompetition = await Competition.exists({
+        $and: [
+          { $or: [{ universityCode: viewerCode }, { universityCodes: viewerCode }] },
+          { $or: [{ universityCode: targetCode }, { universityCodes: targetCode }] }
+        ]
+      });
+      if (!shareCompetition) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+
     // Get university info
     const University = require('../models/University').default;
     const university = await University.findOne({ code: user.universityCode });
@@ -457,151 +479,6 @@ export const updateProfileIcon = async (req: AuthRequest, res: Response) => {
     res.json({ message: 'Profile icon updated', profileIcon: icon });
   } catch (error) {
     res.status(500).json({ error: 'Error updating profile icon' });
-  }
-};
-
-const normalizeStringArray = (value: unknown): string[] => {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  return Array.from(
-    new Set(
-      value
-        .filter((item) => typeof item === 'string')
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0)
-    )
-  );
-};
-
-export const getLinuxCourseProgress = async (req: AuthRequest, res: Response) => {
-  try {
-    const user = await User.findById(req.user?.userId).select('linuxCourseProgress');
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const progress = user.linuxCourseProgress || {
-      completedLectures: [],
-      solvedQuestions: [],
-      updatedAt: new Date()
-    };
-
-    res.json({
-      completedLectures: progress.completedLectures || [],
-      solvedQuestions: progress.solvedQuestions || [],
-      updatedAt: progress.updatedAt || new Date()
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Error fetching Linux course progress' });
-  }
-};
-
-export const updateLinuxCourseProgress = async (req: AuthRequest, res: Response) => {
-  try {
-    const user = await User.findById(req.user?.userId);
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const completedLectures = normalizeStringArray(req.body.completedLectures);
-    const solvedQuestions = normalizeStringArray(req.body.solvedQuestions);
-
-    if (completedLectures.length > 5000 || solvedQuestions.length > 15000) {
-      return res.status(400).json({ error: 'Progress payload exceeds allowed limits' });
-    }
-
-    user.linuxCourseProgress = {
-      completedLectures,
-      solvedQuestions,
-      updatedAt: new Date()
-    };
-
-    await user.save();
-
-    res.json({
-      message: 'Linux course progress updated',
-      completedLectures: user.linuxCourseProgress.completedLectures,
-      solvedQuestions: user.linuxCourseProgress.solvedQuestions,
-      updatedAt: user.linuxCourseProgress.updatedAt
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Error updating Linux course progress' });
-  }
-};
-
-export const getUserLinuxCourseProgressAdmin = async (req: AuthRequest, res: Response) => {
-  try {
-    if (req.user?.role !== 'admin' && req.user?.role !== 'super-admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-
-    const { userId } = req.params;
-    const targetUser = await User.findById(userId).select('username universityCode linuxCourseProgress');
-
-    if (!targetUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    if (req.user?.role === 'admin' && targetUser.universityCode !== req.user?.universityCode) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    const progress = targetUser.linuxCourseProgress || {
-      completedLectures: [],
-      solvedQuestions: [],
-      updatedAt: new Date()
-    };
-
-    res.json({
-      userId,
-      username: targetUser.username,
-      universityCode: targetUser.universityCode,
-      completedLectures: progress.completedLectures || [],
-      solvedQuestions: progress.solvedQuestions || [],
-      updatedAt: progress.updatedAt || new Date()
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Error fetching user Linux course progress' });
-  }
-};
-
-export const resetUserLinuxCourseProgress = async (req: AuthRequest, res: Response) => {
-  try {
-    if (req.user?.role !== 'admin' && req.user?.role !== 'super-admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-
-    const { userId } = req.params;
-    const targetUser = await User.findById(userId).select('username universityCode linuxCourseProgress');
-
-    if (!targetUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    if (req.user?.role === 'admin' && targetUser.universityCode !== req.user?.universityCode) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    targetUser.linuxCourseProgress = {
-      completedLectures: [],
-      solvedQuestions: [],
-      updatedAt: new Date()
-    };
-
-    await targetUser.save();
-
-    res.json({
-      message: 'User Linux course progress reset successfully',
-      userId,
-      username: targetUser.username,
-      updatedAt: targetUser.linuxCourseProgress.updatedAt
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Error resetting user Linux course progress' });
   }
 };
 

@@ -9,10 +9,6 @@ import {
   demoteFromAdmin,
   updateProfile,
   updateProfileIcon,
-  getLinuxCourseProgress,
-  updateLinuxCourseProgress,
-  getUserLinuxCourseProgressAdmin,
-  resetUserLinuxCourseProgress,
   banUser,
   unbanUser,
   changeUserPassword,
@@ -27,16 +23,12 @@ import { authenticate, authenticateSuperAdmin, requireAdmin } from '../middlewar
 const router = express.Router();
 
 router.get('/me', authenticate, getUserProfile);
-router.get('/course-progress/linux', authenticate, getLinuxCourseProgress);
 router.get('/leaderboard', authenticate, getLeaderboard);
 router.get('/profile/:userId', authenticate, getPublicProfile);
 router.get('/', authenticate, requireAdmin, getUsers);
 router.get('/:userId/penalties', authenticate, requireAdmin, getUserPenalties);
-router.get('/:userId/course-progress/linux', authenticate, requireAdmin, getUserLinuxCourseProgressAdmin);
 router.patch('/profile', authenticate, updateProfile);
 router.patch('/profile-icon', authenticate, updateProfileIcon);
-router.put('/course-progress/linux', authenticate, updateLinuxCourseProgress);
-router.delete('/:userId/course-progress/linux', authenticate, requireAdmin, resetUserLinuxCourseProgress);
 router.post('/create-admin', authenticate, requireAdmin, createAdmin);
 router.post('/promote/:userId', authenticate, authenticateSuperAdmin, promoteToAdmin);
 router.post('/demote/:userId', authenticate, authenticateSuperAdmin, demoteFromAdmin);
