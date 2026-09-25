@@ -19,13 +19,16 @@ import {
   addPoints
 } from '../controllers/userController';
 import { authenticate, authenticateSuperAdmin, requireAdmin } from '../middleware/auth';
+import { heavyReadLimiter } from '../middleware/rateLimit';
 
 const router = express.Router();
 
+// The leaderboard, a public profile and the user list each load and re-score
+// every user in a university, so they carry a per-player read limit.
 router.get('/me', authenticate, getUserProfile);
-router.get('/leaderboard', authenticate, getLeaderboard);
-router.get('/profile/:userId', authenticate, getPublicProfile);
-router.get('/', authenticate, requireAdmin, getUsers);
+router.get('/leaderboard', authenticate, heavyReadLimiter, getLeaderboard);
+router.get('/profile/:userId', authenticate, heavyReadLimiter, getPublicProfile);
+router.get('/', authenticate, requireAdmin, heavyReadLimiter, getUsers);
 router.get('/:userId/penalties', authenticate, requireAdmin, getUserPenalties);
 router.patch('/profile', authenticate, updateProfile);
 router.patch('/profile-icon', authenticate, updateProfileIcon);

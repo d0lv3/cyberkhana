@@ -8,6 +8,7 @@ import User from '../models/User';
 import EventSubmission, { SUBMITTED_TEXT_LIMIT, SubmissionResult } from '../models/EventSubmission';
 import Certificate from '../models/Certificate';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
+import { heavyReadLimiter } from '../middleware/rateLimit';
 import { getIO } from '../services/socketService';
 import { assertEvent, EventError, EventState, EventTeam, Registration, eventAccess, eventDetails, eventId, eventLeaderboard, eventMetadata,
   eventOpen, eventOwner, eventPoints, eventRegistered, eventTeamFor, eventVisible, inviteCode, leaveEventTeam, mutateEvent, registrationOpen, canUnregister, teamLocked, teamScore, scoringContext, uniqueSolves,
@@ -186,7 +187,9 @@ export const dispatchEvent = async (req: AuthRequest, res: Response, next: NextF
         : void handleEvent(req, res, c);
       return eventAddressLimiter(req, res, () => (req.path === '/submit' ? eventFlagLimiter : eventWriteLimiter)(req, res, run));
     }
-    return await handleEvent(req, res, c);
+    // Event reads (leaderboard, activity, details) re-score the whole event on
+    // each call, so they carry the same per-player read ceiling as the rest.
+    return heavyReadLimiter(req, res, () => { void handleEvent(req, res, c); });
   } catch (error) { return fail(res, error); }
 };
 

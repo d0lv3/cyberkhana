@@ -20,17 +20,19 @@ import {
 } from '../controllers/competitionController';
 import { authenticate, requireAdmin } from '../middleware/auth';
 import rateLimit from 'express-rate-limit';
+import { perPlayerKey, flagAddressLimiter, heavyReadLimiter } from '../middleware/rateLimit';
 import { dispatchEvent, getEventInvitations } from '../controllers/eventCompetitionController';
 import { getPublicResults, publicPageLimiter, verifyCertificate } from '../controllers/eventPublicController';
 
 const router = express.Router();
 
-// Regular challenges have had a submission limiter since forever; the
-// competition route — the one that matters during a live event — had none, so
-// flag guessing was unbounded there.
+// Workshop flag submission: 50 per 10 minutes, keyed per player (with the
+// per-IP flagAddressLimiter as a backstop) so a shared campus address is not
+// one bucket — the same shape as the regular and event submission limits.
 const competitionFlagLimiter = rateLimit({
   windowMs: 10 * 60 * 1000,
   max: 50,
+  keyGenerator: perPlayerKey,
   message: { error: 'Too many flag submissions, please try again later after 10 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -59,15 +61,15 @@ router.use('/:id', authenticate, dispatchEvent);
 router.get('/:id', authenticate, getCompetition);
 router.get('/:id/details', authenticate, getCompetitionDetails);
 router.get('/:id/solved-challenges', authenticate, getSolvedChallenges);
-router.get('/:id/leaderboard', authenticate, getCompetitionLeaderboard);
-router.get('/:id/activity', authenticate, getCompetitionActivity);
+router.get('/:id/leaderboard', authenticate, heavyReadLimiter, getCompetitionLeaderboard);
+router.get('/:id/activity', authenticate, heavyReadLimiter, getCompetitionActivity);
 router.get('/:id/challenges/:challengeId/solvers', authenticate, getCompetitionChallengeSolvers);
 router.patch('/:id/status', authenticate, requireAdmin, updateCompetitionStatus);
 router.patch('/:id/start', authenticate, requireAdmin, updateCompetitionStartTime);
 router.post('/:id/challenges', authenticate, requireAdmin, addChallengeToCompetition);
 router.delete('/:id/challenges/:challengeId', authenticate, requireAdmin, removeChallengeFromCompetition);
 router.delete('/:id', authenticate, requireAdmin, deleteCompetition);
-router.post('/:id/submit', authenticate, competitionFlagLimiter, submitCompetitionFlag);
+router.post('/:id/submit', authenticate, flagAddressLimiter, competitionFlagLimiter, submitCompetitionFlag);
 router.post('/:id/challenges/:challengeId/publish-hint', authenticate, requireAdmin, publishCompetitionHint);
 router.post('/:id/challenges/:challengeId/buy-hint', authenticate, buyCompetitionHint);
 

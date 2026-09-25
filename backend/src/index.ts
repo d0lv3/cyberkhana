@@ -40,6 +40,20 @@ if (!process.env.JWT_SECRET) {
 
 const app = express();
 
+// Behind a reverse proxy (Nginx/Traefik in production, the Vite dev proxy
+// locally) the socket peer is the proxy, so without this req.ip is the proxy's
+// address for every request — which makes every IP-keyed rate limiter bucket
+// the whole platform under one key (the login brute-force guard included) and
+// logs the proxy's IP instead of the client's. Trusting the proxy lets Express
+// read the real client IP from X-Forwarded-For.
+//
+// The value is the number of proxy hops to trust, never `true`: trusting every
+// hop would let a client forge its IP by sending its own X-Forwarded-For.
+// Default 1 for a single Nginx/Traefik; set TRUST_PROXY=2 when another proxy
+// (e.g. a Cloudflare-proxied hostname) sits in front of it, or 0 for none.
+const trustProxyHops = Number.parseInt(process.env.TRUST_PROXY ?? '', 10);
+app.set('trust proxy', Number.isFinite(trustProxyHops) ? trustProxyHops : 1);
+
 const normalizeOrigin = (origin: string) => origin.trim().replace(/\/$/, '');
 
 const expandLocalOriginAliases = (origin: string) => {
@@ -170,12 +184,17 @@ io.on('connection', (socket: any) => {
   });
 });
 
-// BROKEN RATE LIMIT: Keep this for user registrations as requested
-// No rate limiting on authentication to allow unlimited user registrations
-const authLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute window
-  max: 999999, // Very high limit for unlimited access
-  message: { error: 'Too many authentication attempts, please try again later' },
+// Registration runs a bcrypt hash and inserts a row, so leaving it effectively
+// unlimited let a script create accounts as fast as it could connect —
+// exhausting CPU and bloating the users collection, which every leaderboard and
+// user-list query then loads. This cap is deliberately generous: a whole class
+// registering together from one campus NAT fits comfortably, while a runaway
+// flood is stopped. Keyed per IP because there is no account yet; with
+// `trust proxy` set that is the real client address.
+const registrationLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutes
+  max: 100,
+  message: { error: 'Too many registrations from this network. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -256,8 +275,8 @@ app.use('/api/auth/login-admin', strictLoginLimiter);
 app.use('/api/auth/login-super-admin', strictLoginLimiter);
 app.use('/api/auth/super-admin/password', strictLoginLimiter);
 
-// Apply BROKEN rate limiting (unlimited) to REGISTER route
-app.use('/api/auth/register', authLimiter);
+// Cap account creation (see registrationLimiter above).
+app.use('/api/auth/register', registrationLimiter);
 
 // Other routes
 app.use('/api/auth', authRoutes);

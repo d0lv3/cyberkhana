@@ -21,13 +21,17 @@ import {
   applyRetroactiveDecayToChallenge
 } from '../controllers/challengeController';
 import { authenticate, requireAdmin, authenticateSuperAdmin } from '../middleware/auth';
+import { perPlayerKey, flagAddressLimiter } from '../middleware/rateLimit';
 
 const router = express.Router();
 
-// Rate limiter for flag submission: 50 requests per 10 minutes
+// Flag submission: 50 per 10 minutes, keyed per player rather than per IP so a
+// shared campus address is not one bucket (flagAddressLimiter is the per-IP
+// backstop above it). Matches the event system's per-player submission limit.
 const flagSubmissionLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutes
-  max: 50, // Limit each IP to 50 requests per windowMs
+  max: 50,
+  keyGenerator: perPlayerKey,
   message: { error: 'Too many flag submissions, please try again later after 10 minutes' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -40,7 +44,7 @@ router.get('/:id/solvers', authenticate, getChallengeSolvers);
 router.post('/', authenticate, requireAdmin, createChallenge);
 router.put('/:id', authenticate, requireAdmin, updateChallenge);
 router.delete('/:id', authenticate, requireAdmin, deleteChallenge);
-router.post('/:id/submit', authenticate, flagSubmissionLimiter, submitFlag); // Apply limiter here
+router.post('/:id/submit', authenticate, flagAddressLimiter, flagSubmissionLimiter, submitFlag);
 router.post('/:id/copy', authenticate, authenticateSuperAdmin, copyChallengeToUniversity);
 router.post('/integrate/:competitionId/:challengeId', authenticate, requireAdmin, integrateCompetitionChallenge);
 router.put('/:id/writeup', authenticate, requireAdmin, updateWriteup);
