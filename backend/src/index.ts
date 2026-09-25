@@ -40,19 +40,42 @@ if (!process.env.JWT_SECRET) {
 
 const app = express();
 
-// Behind a reverse proxy (Nginx/Traefik in production, the Vite dev proxy
-// locally) the socket peer is the proxy, so without this req.ip is the proxy's
-// address for every request — which makes every IP-keyed rate limiter bucket
-// the whole platform under one key (the login brute-force guard included) and
-// logs the proxy's IP instead of the client's. Trusting the proxy lets Express
-// read the real client IP from X-Forwarded-For.
+// A request reaches this process through proxies (Cloudflare fronts every
+// CyberKhana hostname, then Coolify's Traefik on a private network; the Vite
+// dev proxy on loopback locally), so the socket peer is a proxy, not the user.
+// Without trusting them req.ip is the proxy's address for every request, which
+// collapses every IP-keyed rate limiter into one platform-wide bucket (the
+// login brute-force guard included) and logs the proxy instead of the client.
 //
-// The value is the number of proxy hops to trust, never `true`: trusting every
-// hop would let a client forge its IP by sending its own X-Forwarded-For.
-// Default 1 for a single Nginx/Traefik; set TRUST_PROXY=2 when another proxy
-// (e.g. a Cloudflare-proxied hostname) sits in front of it, or 0 for none.
-const trustProxyHops = Number.parseInt(process.env.TRUST_PROXY ?? '', 10);
-app.set('trust proxy', Number.isFinite(trustProxyHops) ? trustProxyHops : 1);
+// Trust EXACTLY those hops — the local proxy (loopback/private ranges) and
+// Cloudflare's own IP ranges — so req.ip is the real client from
+// X-Forwarded-For, while an attacker who reaches the origin directly from any
+// other address is not trusted and cannot forge their IP past the limiters.
+// This needs no per-deployment hop count; TRUST_PROXY still overrides it with a
+// hop count (or true/false) for a deployment that is not behind Cloudflare.
+const CLOUDFLARE_IP_RANGES = [
+  // IPv4 — https://www.cloudflare.com/ips-v4 (fetched 2026-09-26)
+  '173.245.48.0/20', '103.21.244.0/22', '103.22.200.0/22', '103.31.4.0/22',
+  '141.101.64.0/18', '108.162.192.0/18', '190.93.240.0/20', '188.114.96.0/20',
+  '197.234.240.0/22', '198.41.128.0/17', '162.158.0.0/15', '104.16.0.0/13',
+  '104.24.0.0/14', '172.64.0.0/13', '131.0.72.0/22',
+  // IPv6 — https://www.cloudflare.com/ips-v6 (fetched 2026-09-26)
+  '2400:cb00::/32', '2606:4700::/32', '2803:f800::/32', '2405:b500::/32',
+  '2405:8100::/32', '2a06:98c0::/29', '2c0f:f248::/32'
+];
+
+const trustProxyOverride = process.env.TRUST_PROXY?.trim();
+if (trustProxyOverride) {
+  const hops = Number.parseInt(trustProxyOverride, 10);
+  app.set('trust proxy', Number.isFinite(hops) ? hops
+    : trustProxyOverride === 'true' ? true
+      : trustProxyOverride === 'false' ? false
+        : trustProxyOverride);
+} else {
+  // 'loopback'/'linklocal'/'uniquelocal' cover the local reverse proxy on a
+  // private or loopback address; the Cloudflare ranges cover the edge in front.
+  app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal', ...CLOUDFLARE_IP_RANGES]);
+}
 
 const normalizeOrigin = (origin: string) => origin.trim().replace(/\/$/, '');
 
