@@ -1,9 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ContainerScroll } from '../components/ui/container-scroll-animation';
 import Button from '../components/ui/EnhancedButton';
 import Input from '../components/ui/input';
-import CyberMatrixHero from '../components/ui/cyber-matrix-hero';
 import { ArrowLeft, Shield, KeyRound, LogIn, School, Eye, EyeOff, UserPlus, Lock } from 'lucide-react';
 import BrandLogo from '../components/ui/BrandLogo';
 
@@ -12,13 +10,6 @@ interface RegisterPageProps {
 }
 
 const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
-  const [showShowcase, setShowShowcase] = useState(() => window.matchMedia('(min-width: 768px)').matches);
-  useEffect(() => {
-    const desktop = window.matchMedia('(min-width: 768px)');
-    const update = () => setShowShowcase(desktop.matches);
-    desktop.addEventListener('change', update);
-    return () => desktop.removeEventListener('change', update);
-  }, []);
   const [username, setUsername] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
@@ -102,64 +93,45 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
   };
 
   return (
-    <div className="bg-canvas app-min-shell">
-      <div className="md:hidden max-w-md mx-auto px-4 pt-4">
-        <Link to="/" className="inline-flex min-h-tap items-center gap-2 text-sm text-muted hover:text-brand">
-          <ArrowLeft size={16} /> Back to home
-        </Link>
-      </div>
-      {showShowcase && <>
-      <CyberMatrixHero onCTAClick={() => {
-        const registerForm = document.getElementById('register-form');
-        if (registerForm) {
-          registerForm.scrollIntoView({ behavior: 'smooth' });
-        }
+    <div className="bg-canvas app-min-shell flex items-center justify-center px-4 py-6 relative">
+      {/* Subtle background grid */}
+      <div className="absolute inset-0 opacity-[0.03]" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2300a859' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
       }} />
 
-      <ContainerScroll
-        titleComponent={
-          <div className="flex flex-col items-center gap-5">
-            <BrandLogo variant="text" loading="eager" className="h-14 md:h-20 w-auto object-contain" />
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-zinc-100 md:text-6xl tracking-tight">
-              Build Your Security Skills
-            </h1>
-          </div>
-        }
-      >
-        <img
-          src="/assets/dashboard-preview.png"
-          alt="CyberKhana Dashboard"
-          height={720}
-          width={1400}
-          className="mx-auto rounded-2xl object-cover h-full object-top"
-          draggable={false}
-        />
-      </ContainerScroll>
-      </>}
+      {/* Wider than the login card so the paired fields below fit side by
+          side, which keeps the whole form on one screen without scrolling. */}
+      <div className="w-full max-w-md sm:max-w-xl relative z-10">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-muted hover:text-brand transition-colors text-sm mb-4"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to home
+        </Link>
 
-      <div id="register-form" className="flex items-center justify-center pt-4 md:pt-0 md:-mt-[35rem] pb-12 md:pb-20 relative z-10 px-4">
-        <div className="w-full max-w-md">
-          <div className="bg-panel/95 border border-edge rounded-2xl shadow-2xl backdrop-blur-xl p-4 sm:p-8">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-brand/20 rounded-full mb-4">
-                <BrandLogo variant="mark" alt="" className="h-8 w-8 object-contain" />
-              </div>
-              <h2 className="text-3xl font-bold text-fg mb-2">
-                Create Account
-              </h2>
-              <p className="text-muted text-sm">
-                Register to start your CTF journey
-              </p>
+        <div className="bg-panel/95 border border-edge rounded-2xl shadow-2xl backdrop-blur-xl p-4 sm:p-8">
+          <div className="text-center mb-5">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-brand/20 rounded-full mb-2">
+              <BrandLogo variant="mark" alt="" className="h-7 w-7 object-contain" />
             </div>
+            <h1 className="text-3xl font-bold text-fg mb-1">
+              Create Account
+            </h1>
+            <p className="text-muted text-sm">
+              Register to start your CTF journey
+            </p>
+          </div>
 
-            {/* Kept mounted while submitting — see the note in LoginPage. */}
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {error && (
-                <div role="alert" className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-                  <p className="text-red-400 text-sm">{error}</p>
-                </div>
-              )}
+          {/* Kept mounted while submitting — see the note in LoginPage. */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div role="alert" className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
 
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label htmlFor="register-username" className="block text-sm font-medium text-dim">
                   Username
@@ -194,7 +166,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                   <Input
                     id="register-fullname"
                     type="text"
-                    placeholder="Enter your full name"
+                    placeholder="Your full name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     className="pl-10 h-12"
@@ -205,30 +177,32 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                   />
                 </div>
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <label htmlFor="register-university" className="block text-sm font-medium text-dim">
-                  University code
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <School className="h-5 w-5 text-faint" />
-                  </div>
-                  <Input
-                    id="register-university"
-                    type="text"
-                    placeholder="e.g., MIT123"
-                    value={universityCode}
-                    onChange={(e) => setUniversityCode(e.target.value.toUpperCase())}
-                    className="pl-10 h-12"
-                    autoComplete="off"
-                    autoCapitalize="characters"
-                    disabled={isRegistering}
-                    required
-                  />
+            <div className="space-y-2">
+              <label htmlFor="register-university" className="block text-sm font-medium text-dim">
+                University code
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <School className="h-5 w-5 text-faint" />
                 </div>
+                <Input
+                  id="register-university"
+                  type="text"
+                  placeholder="e.g., MIT123"
+                  value={universityCode}
+                  onChange={(e) => setUniversityCode(e.target.value.toUpperCase())}
+                  className="pl-10 h-12"
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  disabled={isRegistering}
+                  required
+                />
               </div>
+            </div>
 
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label htmlFor="register-password" className="block text-sm font-medium text-dim">
                   Password
@@ -272,7 +246,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                   <Input
                     id="register-confirm"
                     type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="Confirm your password"
+                    placeholder="Repeat password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     className="pl-10 pr-12 h-12"
@@ -292,65 +266,65 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onRegister }) => {
                   </button>
                 </div>
               </div>
+            </div>
 
-              {/* The acceptance record starts here. The server re-checks this
-                  on /auth/register, so posting past the form does not create an
-                  account without it. */}
-              <div className="pt-1">
-                <label
-                  htmlFor="register-terms"
-                  className="flex items-start gap-3 cursor-pointer text-sm leading-relaxed text-fg-soft"
-                >
-                  <input
-                    id="register-terms"
-                    type="checkbox"
-                    checked={acceptedTerms}
-                    onChange={(e) => setAcceptedTerms(e.target.checked)}
-                    disabled={isRegistering}
-                    className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-edge-light bg-canvas accent-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon"
-                    required
-                  />
-                  <span>
-                    I have read and agree to the{' '}
-                    <Link
-                      to="/terms"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-brand hover:text-brand-neon underline underline-offset-4"
-                    >
-                      Terms of Service
-                    </Link>
-                    . I am at least 13 years old, and if I am under 18 I have my parent or
-                    guardian’s permission.
-                  </span>
-                </label>
-                <p className="mt-2 ml-8 text-xs leading-relaxed text-faint">
-                  You may only use what you learn here against the targets CyberKhana names for
-                  you. Anywhere else is a crime.
-                </p>
-              </div>
-
-              <Button
-                type="submit"
-                fullWidth
-                size="lg"
-                className="mt-6 h-12"
-                isLoading={isRegistering}
-                leftIcon={<LogIn className="w-5 h-5" />}
+            {/* The acceptance record starts here. The server re-checks this
+                on /auth/register, so posting past the form does not create an
+                account without it. */}
+            <div className="pt-1">
+              <label
+                htmlFor="register-terms"
+                className="flex items-start gap-3 cursor-pointer text-sm leading-relaxed text-fg-soft"
               >
-                {isRegistering ? 'Creating your account…' : 'Create Account'}
-              </Button>
-            </form>
-          </div>
+                <input
+                  id="register-terms"
+                  type="checkbox"
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  disabled={isRegistering}
+                  className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded border-edge-light bg-canvas accent-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon"
+                  required
+                />
+                <span>
+                  I have read and agree to the{' '}
+                  <Link
+                    to="/terms"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand hover:text-brand-neon underline underline-offset-4"
+                  >
+                    Terms of Service
+                  </Link>
+                  . I am at least 13 years old, and if I am under 18 I have my parent or
+                  guardian’s permission.
+                </span>
+              </label>
+              <p className="mt-2 ml-8 text-xs leading-relaxed text-faint">
+                You may only use what you learn here against the targets CyberKhana names for
+                you. Anywhere else is a crime.
+              </p>
+            </div>
 
-          <div className="mt-6 text-center">
-            <p className="text-muted text-sm">
-              Already have an account?{' '}
-              <Link to="/login" className="text-brand hover:text-[#17c66f] font-medium transition-colors">
-                Sign in
-              </Link>
-            </p>
-          </div>
+            <Button
+              type="submit"
+              fullWidth
+              size="lg"
+              className="mt-2 h-12"
+              isLoading={isRegistering}
+              leftIcon={<LogIn className="w-5 h-5" />}
+            >
+              {isRegistering ? 'Creating your account…' : 'Create Account'}
+            </Button>
+          </form>
+        </div>
+
+        <div className="mt-4 text-center">
+          <p className="text-muted text-sm">
+            Already have an account?{' '}
+            <Link to="/login" className="text-brand hover:text-[#17c66f] font-medium transition-colors">
+              Sign in
+            </Link>
+          </p>
         </div>
       </div>
     </div>
