@@ -62,22 +62,36 @@ A comprehensive Capture The Flag (CTF) competition platform with university-base
 │   │   ├── middleware/   # Auth & filters
 │   │   ├── models/       # Database models
 │   │   ├── routes/       # API routes
+│   │   ├── services/     # Scoring, scheduling, certificates, mail, sockets
 │   │   ├── types/        # TypeScript types
 │   │   ├── utils/        # Helper functions
 │   │   └── index.ts      # Server entry point
 │   ├── package.json
 │   └── tsconfig.json
-├── src/                  # React frontend
-│   ├── components/       # Reusable components
-│   ├── pages/            # Page components
-│   │   ├── admin/        # Admin panel pages
-│   │   ├── LoginPage.tsx
-│   │   ├── NewDashboardPage.tsx
-│   │   ├── ChallengesPage.tsx
-│   │   ├── CompetitionPage.tsx
-│   │   └── ...
-│   ├── types.ts          # TypeScript types
+│
+│   # React frontend: lives at the repo root, not in src/
+├── index.html            # Vite entry, loads index.tsx
+├── index.tsx             # Mounts <App /> into #root
+├── App.tsx               # Routes
+├── index.css             # Tailwind layers and global styles
+├── types.ts              # Shared TypeScript types
+├── components/           # Components by area: ui/, admin/, competition/, landing/, profile/, ...
+├── pages/                # Route pages
+│   ├── admin/            # Management pages
+│   ├── legal/            # Terms and ambassador agreement
+│   ├── public/           # Event results and certificate verification
+│   ├── LandingPage.tsx
+│   ├── LoginPage.tsx
+│   ├── NewDashboardPage.tsx
+│   ├── EnhancedChallengesPage.tsx
+│   ├── CompetitionPage.tsx
 │   └── ...
+├── services/             # API clients
+├── utils/                # Frontend helpers
+├── data/                 # Static page content (terms, agreements)
+├── src/                  # A few shared modules: socket and confirmation contexts, hooks, toasts, decay scoring
+├── public/               # Static assets, copied into dist/ as-is
+├── scripts/              # branding-check.mjs (npm run check:branding)
 └── package.json
 ```
 
