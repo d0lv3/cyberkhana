@@ -1,8 +1,10 @@
 import { Response } from 'express';
+import { isValidObjectId } from 'mongoose';
 import User from '../models/User';
 import { AuthRequest } from '../middleware/auth';
 import { hashPassword } from '../utils/auth';
 import Announcement from '../models/Announcement';
+import { competitionRecord, drewFirstBlood } from '../services/profileRecord';
 
 const toValidTimestamp = (value: unknown): number | null => {
   if (!value) return null;
@@ -87,36 +89,74 @@ const calculateGeneralStats = (user: any, regularChallengeMap: Map<string, any>)
   };
 };
 
+/* What a profile shows of each practice solve beyond its score: the
+   challenge's difficulty, whether this player drew first blood on it, and
+   whether it is still on the range, since coverage counts only what is
+   published now. Newest first. */
+const describeProfileSolves = (solvedDetails: any[], userId: string, regularChallengeMap: Map<string, any>) =>
+  solvedDetails
+    .map((solve: any) => {
+      const challenge = regularChallengeMap.get(solve.challengeId);
+      return {
+        ...solve,
+        difficulty: challenge?.difficulty || null,
+        firstBlood: drewFirstBlood(challenge?.solvers, userId),
+        published: !!challenge?.isPublished
+      };
+    })
+    .sort((a: any, b: any) => new Date(b.solvedAt).getTime() - new Date(a.solvedAt).getTime());
+
+/* How many published practice challenges each category holds, so a profile
+   can show how much of each discipline a player has covered. */
+const publishedCategoryTotals = (challenges: any[]) => {
+  const totals: Record<string, number> = {};
+  for (const challenge of challenges) {
+    if (challenge.isPublished) totals[challenge.category] = (totals[challenge.category] || 0) + 1;
+  }
+  return totals;
+};
+
+const sumTotals = (totals: Record<string, number>) =>
+  Object.values(totals).reduce((sum, count) => sum + count, 0);
+
+/* Tenant isolation. A profile carries a real name and a full solve history,
+   so it may be read only by a super-admin, by someone from the same
+   university, or by someone whose university shares a competition with the
+   target — which is exactly the set of people who can already see them on a
+   leaderboard (own university, or a rival on a shared competition's board).
+   Without this, any signed-in user could read anyone's profile by guessing
+   an id, across universities that never compete together. */
+const canViewProfile = async (viewer: AuthRequest['user'], target: any): Promise<boolean> => {
+  const viewerCode = (viewer?.universityCode || '').toUpperCase();
+  const targetCode = (target.universityCode || '').toUpperCase();
+  if (viewer?.role === 'super-admin' || viewerCode === targetCode) return true;
+
+  const Competition = require('../models/Competition').default;
+  const shareCompetition = await Competition.exists({
+    $and: [
+      { $or: [{ universityCode: viewerCode }, { universityCodes: viewerCode }] },
+      { $or: [{ universityCode: targetCode }, { universityCodes: targetCode }] }
+    ]
+  });
+  return !!shareCompetition;
+};
+
 // Get public profile by user ID (for leaderboard profile views)
 export const getPublicProfile = async (req: AuthRequest, res: Response) => {
   try {
     const { userId } = req.params;
+    if (!isValidObjectId(userId)) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     const user = await User.findById(userId).select('-password');
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Tenant isolation. A profile carries a real name and a full solve history,
-    // so it may be read only by a super-admin, by someone from the same
-    // university, or by someone whose university shares a competition with the
-    // target — which is exactly the set of people who can already see them on a
-    // leaderboard (own university, or a rival on a shared competition's board).
-    // Without this, any signed-in user could read anyone's profile by guessing
-    // an id, across universities that never compete together.
-    const viewerCode = (req.user?.universityCode || '').toUpperCase();
-    const targetCode = (user.universityCode || '').toUpperCase();
-    if (req.user?.role !== 'super-admin' && viewerCode !== targetCode) {
-      const Competition = require('../models/Competition').default;
-      const shareCompetition = await Competition.exists({
-        $and: [
-          { $or: [{ universityCode: viewerCode }, { universityCodes: viewerCode }] },
-          { $or: [{ universityCode: targetCode }, { universityCodes: targetCode }] }
-        ]
-      });
-      if (!shareCompetition) {
-        return res.status(403).json({ error: 'Access denied' });
-      }
+    if (!(await canViewProfile(req.user, user))) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
     // Get university info
@@ -161,6 +201,7 @@ export const getPublicProfile = async (req: AuthRequest, res: Response) => {
     })).sort((a, b) => b.points - a.points);
 
     const rank = allUsersStats.findIndex(u => u.id === userId) + 1;
+    const categoryTotals = publishedCategoryTotals(regularChallenges);
 
     res.json({
       _id: user._id,
@@ -178,10 +219,9 @@ export const getPublicProfile = async (req: AuthRequest, res: Response) => {
       totalUsers: allUsers.length,
       totalSolved: user.solvedChallenges.length,
       regularSolvedCount: stats.solvedCount,
-      // We pass the solved details sorted
-      regularSolvedChallenges: stats.solvedDetails.sort((a: any, b: any) =>
-        new Date(b.solvedAt).getTime() - new Date(a.solvedAt).getTime()
-      ),
+      regularSolvedChallenges: describeProfileSolves(stats.solvedDetails, userId, regularChallengeMap),
+      categoryTotals,
+      totalChallenges: sumTotals(categoryTotals),
       createdAt: user.createdAt
     });
   } catch (error) {
@@ -273,7 +313,9 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
       points: calculateGeneralStats(u, regularChallengeMap).points
     })).sort((a, b) => b.points - a.points);
 
-    const rank = allUsersStats.findIndex(u => u.id === (user as any)._id.toString()) + 1;
+    const userId = (user as any)._id.toString();
+    const rank = allUsersStats.findIndex(u => u.id === userId) + 1;
+    const categoryTotals = publishedCategoryTotals(regularChallenges);
 
     res.json({
       ...user.toJSON(),
@@ -282,11 +324,54 @@ export const getUserProfile = async (req: AuthRequest, res: Response) => {
       rank,
       totalUsers: allUsers.length,
       solvedChallengesCount: user.solvedChallenges.length,
-      universityName: university?.name || user.universityCode
+      universityName: university?.name || user.universityCode,
+      // The practice range as the profile page draws it, matching the public profile.
+      regularSolvedCount: stats.solvedCount,
+      regularSolvedChallenges: describeProfileSolves(stats.solvedDetails, userId, regularChallengeMap),
+      categoryTotals,
+      totalChallenges: sumTotals(categoryTotals)
     });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error fetching user profile' });
+  }
+};
+
+// The competitions, events and certificates on the signed-in player's own profile.
+export const getMyCompetitionRecord = async (req: AuthRequest, res: Response) => {
+  try {
+    const user = await User.findById(req.user?.userId).select('solvedChallengesDetails competitionBonusPoints');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    res.json(await competitionRecord(user));
+  } catch (error) {
+    console.error('Error fetching competition record:', error);
+    res.status(500).json({ error: 'Error fetching competition record' });
+  }
+};
+
+// The same record on someone else's profile, limited to what the viewer could open themselves.
+export const getPublicCompetitionRecord = async (req: AuthRequest, res: Response) => {
+  try {
+    const { userId } = req.params;
+    if (!isValidObjectId(userId)) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = await User.findById(userId).select('universityCode solvedChallengesDetails competitionBonusPoints');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!(await canViewProfile(req.user, user))) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    res.json(await competitionRecord(user, req.user?.userId === userId ? undefined : req.user));
+  } catch (error) {
+    console.error('Error fetching competition record:', error);
+    res.status(500).json({ error: 'Error fetching competition record' });
   }
 };
 

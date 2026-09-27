@@ -576,6 +576,15 @@ export const artKindFor = (category?: string): ArtKind =>
 /** The one colour that stands for a category, wherever it is named. */
 export const categoryAccent = (category?: string): string => ART_ACCENT[artKindFor(category)];
 
+const ART_LABEL: Record<ArtKind, string> = {
+  all: 'All', web: 'Web', pwn: 'Pwn', crypto: 'Crypto', reversing: 'Reversing', forensics: 'Forensics',
+  social: 'Social', osint: 'OSINT', network: 'Network', fullpwn: 'Full Pwn', misc: 'Misc',
+};
+
+/** The short name a category goes by on screen, as on the Challenges tabs. An unknown category keeps its own. */
+export const categoryLabel = (category?: string): string =>
+  category && ART_FOR_CATEGORY[category] ? ART_LABEL[ART_FOR_CATEGORY[category]] : category || 'Misc';
+
 const ChallengeArt: React.FC<ChallengeArtProps> = ({
   kind,
   className = '',

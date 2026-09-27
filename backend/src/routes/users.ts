@@ -16,18 +16,23 @@ import {
   purchaseHint,
   deductPoints,
   getUserPenalties,
-  addPoints
+  addPoints,
+  getMyCompetitionRecord,
+  getPublicCompetitionRecord
 } from '../controllers/userController';
 import { authenticate, authenticateSuperAdmin, requireAdmin } from '../middleware/auth';
 import { heavyReadLimiter } from '../middleware/rateLimit';
 
 const router = express.Router();
 
-// The leaderboard, a public profile and the user list each load and re-score
-// every user in a university, so they carry a per-player read limit.
+// The leaderboard, a public profile, a competition record and the user list
+// each load and re-score every user in a university, so they carry a
+// per-player read limit.
 router.get('/me', authenticate, getUserProfile);
+router.get('/me/competitions', authenticate, heavyReadLimiter, getMyCompetitionRecord);
 router.get('/leaderboard', authenticate, heavyReadLimiter, getLeaderboard);
 router.get('/profile/:userId', authenticate, heavyReadLimiter, getPublicProfile);
+router.get('/profile/:userId/competitions', authenticate, heavyReadLimiter, getPublicCompetitionRecord);
 router.get('/', authenticate, requireAdmin, heavyReadLimiter, getUsers);
 router.get('/:userId/penalties', authenticate, requireAdmin, getUserPenalties);
 router.patch('/profile', authenticate, updateProfile);

@@ -7,24 +7,13 @@ import { AuthRequest } from '../middleware/auth';
 import { SocketEvents } from '../services/socketService';
 import { createEventCompetition } from './eventCompetitionController';
 import { eventMetadata, eventVisible } from '../services/eventCompetition';
+import { getCompetitionUniversityCodes, workshopStandings } from '../services/workshopStandings';
 
 const normalizeSecurityCode = (value: unknown): string =>
   typeof value === 'string' ? value.trim() : '';
 
 const normalizeUniversityCode = (value: unknown): string =>
   typeof value === 'string' ? value.trim().toUpperCase() : '';
-
-const getCompetitionUniversityCodes = (competition: any): string[] => {
-  const codes = Array.isArray(competition?.universityCodes) ? competition.universityCodes : [];
-
-  return Array.from(
-    new Set(
-      [competition?.universityCode, ...codes]
-        .map(normalizeUniversityCode)
-        .filter(Boolean)
-    )
-  );
-};
 
 /**
  * Removes everything a player is not entitled to from a competition challenge:
@@ -1001,119 +990,30 @@ export const getCompetitionLeaderboard = async (req: AuthRequest, res: Response)
       isBanned: { $ne: true }
     }).select('username fullName displayName universityCode points solvedChallenges solvedChallengesDetails profileIcon competitionPenalties competitionBonusPoints unlockedHints');
 
-    // Get integrated challenges for this competition
+    // Practice-range copies of this competition's challenges count toward it too.
     const Challenge = require('../models/Challenge').default;
     const integratedChallenges = await Challenge.find({
       fromCompetition: true,
       competitionId: id
-    });
+    }).select('_id');
+    const integratedChallengeIds = new Set<string>(integratedChallenges.map((c: any) => c._id.toString()));
 
-    // Create a map of integrated challenge IDs to their details
-    const integratedChallengeMap = new Map();
-    integratedChallenges.forEach((c: any) => {
-      integratedChallengeMap.set(c._id.toString(), c);
-    });
-
-    // Filter users who have solved at least one competition challenge OR have bonus points
-    const leaderboard = users
-      .filter((user: any) => {
-        // Check if user has bonus points for this competition
-        const hasBonusPoints = user.competitionBonusPoints?.some((bp: any) => bp.competitionId === id);
-
-        // Check if user has solved any competition challenge or integrated challenge
-        const hasSolves = user.solvedChallengesDetails?.some((solve: any) =>
-          competition.challenges.some((c: any) => c._id?.toString() === solve.challengeId?.toString()) ||
-          integratedChallengeMap.has(solve.challengeId?.toString())
-        );
-
-        return hasBonusPoints || hasSolves;
-      })
-      .map((user: any) => {
-        // Get competition-related solves with timestamps
-        const competitionSolves = user.solvedChallengesDetails
-          ?.filter((solve: any) =>
-            competition.challenges.some((c: any) => c._id?.toString() === solve.challengeId?.toString()) ||
-            integratedChallengeMap.has(solve.challengeId?.toString())
-          ) || [];
-
-        // Calculate points from competition challenges and integrated challenges
-        let competitionPoints = competitionSolves
-          .reduce((total: number, solve: any) => total + (solve.points || 0), 0) || 0;
-
-        // Add bonus points for this specific competition
-        const bonusPoints = (user.competitionBonusPoints || [])
-          .filter((bp: any) => bp.competitionId === id)
-          .reduce((total: number, bp: any) => total + (bp.amount || 0), 0);
-
-        competitionPoints += bonusPoints;
-
-        // Deduct penalties for this specific competition
-        const competitionPenalties = (user.competitionPenalties || [])
-          .filter((penalty: any) => penalty.competitionId === id)
-          .reduce((total: number, penalty: any) => total + (penalty.amount || 0), 0);
-
-        // Deduct cost of hints bought for this competition
-        const hintCosts = (user.unlockedHints || [])
-          .map((hintKey: string) => {
-            const parts = hintKey.split('_');
-            // Format: competitionId_challengeId_hintIndex
-            if (parts.length !== 3 || parts[0] !== id) return 0;
-
-            const hintChallengeId = parts[1];
-            const hintIndex = parseInt(parts[2], 10);
-
-            // Find the challenge in the competition
-            const challenge = competition.challenges.find((c: any) => c._id.toString() === hintChallengeId);
-
-            if (challenge && challenge.hints && challenge.hints[hintIndex]) {
-              return challenge.hints[hintIndex].cost || 0;
-            }
-            return 0;
-          })
-          .reduce((total: number, cost: number) => total + cost, 0);
-
-        competitionPoints = Math.max(0, competitionPoints - competitionPenalties - hintCosts);
-
-        const competitionSolvedCount = competitionSolves.length || 0;
-
-        // Get the last solve timestamp for tiebreaker
-        // If bonus points were the last "activity", we might want to use that timestamp, but keeping it simple for now:
-        // Use last solve time. If no solves but bonus points, maybe null or last bonus time?
-        // Let's stick to last solve time for now as it's the primary tiebreaker for skills.
-        const lastSolveTime = competitionSolves.length > 0
-          ? new Date(Math.max(...competitionSolves.map((s: any) => new Date(s.solvedAt).getTime())))
-          : null;
-
-        return {
-          _id: user._id,
-          username: user.username,
-          fullName: user.fullName,
-          displayName: user.displayName,
-          profileIcon: user.profileIcon,
-          points: competitionPoints,
-          solvedChallenges: competitionSolvedCount,
-          universityCode: user.universityCode,
-          universityName: universityNameByCode.get(normalizeUniversityCode(user.universityCode)) || user.universityCode,
-          lastSolveTime,
-          solvedDetails: competitionSolves,
-          penaltyPoints: competitionPenalties,
-          bonusPoints
-        };
-      })
-      .sort((a: any, b: any) => {
-        // Primary sort by points (descending)
-        if (b.points !== a.points) {
-          return b.points - a.points;
-        }
-        // Secondary sort by last solve time (earlier is better) - tiebreaker
-        if (a.lastSolveTime && b.lastSolveTime) {
-          return new Date(a.lastSolveTime).getTime() - new Date(b.lastSolveTime).getTime();
-        }
-        // If only one has solved, they come first
-        if (a.lastSolveTime) return -1;
-        if (b.lastSolveTime) return 1;
-        return 0;
-      });
+    const leaderboard = workshopStandings(competition, users, integratedChallengeIds)
+      .map(({ user, ...standing }) => ({
+        _id: user._id,
+        username: user.username,
+        fullName: user.fullName,
+        displayName: user.displayName,
+        profileIcon: user.profileIcon,
+        points: standing.points,
+        solvedChallenges: standing.solvedChallenges,
+        universityCode: user.universityCode,
+        universityName: universityNameByCode.get(normalizeUniversityCode(user.universityCode)) || user.universityCode,
+        lastSolveTime: standing.lastSolveTime,
+        solvedDetails: standing.solvedDetails,
+        penaltyPoints: standing.penaltyPoints,
+        bonusPoints: standing.bonusPoints
+      }));
 
     // Include total challenges count in the response
     res.json({

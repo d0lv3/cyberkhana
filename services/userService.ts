@@ -7,6 +7,13 @@ export const userService = {
   getPublicProfile: (userId: string) =>
     apiService.get(`/users/profile/${userId}`),
 
+  /** Competitions, events and certificates, for the profile's record tabs. */
+  getMyCompetitionRecord: () =>
+    apiService.get('/users/me/competitions'),
+
+  getCompetitionRecord: (userId: string) =>
+    apiService.get(`/users/profile/${userId}/competitions`),
+
   getUsers: (universityCode?: string) =>
     apiService.get('/users', universityCode ? { universityCode } : undefined),
 

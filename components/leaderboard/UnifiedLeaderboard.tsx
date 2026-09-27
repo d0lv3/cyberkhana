@@ -30,8 +30,9 @@ interface UnifiedLeaderboardProps {
 }
 
 /* Podium tiers. The three finishing places are the only thing on this page
-   that colour encodes, so nothing else here is tinted. */
-const TIERS: Record<1 | 2 | 3, { label: string; accent: string }> = {
+   that colour encodes, so nothing else here is tinted. Profiles colour a
+   podium placing the same way. */
+export const TIERS: Record<1 | 2 | 3, { label: string; accent: string }> = {
   1: { label: 'Gold', accent: '#f3c84b' },
   2: { label: 'Silver', accent: '#c0cadf' },
   3: { label: 'Bronze', accent: '#d6a55a' },
