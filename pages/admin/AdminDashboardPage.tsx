@@ -57,7 +57,7 @@ const AdminDashboardPage: React.FC = () => {
       setLoading(true);
       const [users, challenges, competitions, leaderboardData] = await Promise.all([
         userService.getUsers(),
-        challengeService.getChallenges(true), // include unpublished
+        challengeService.getChallenges(undefined, true), // include unpublished
         competitionService.getCompetitions(),
         userService.getLeaderboard(),
       ]);
