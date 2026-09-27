@@ -21,6 +21,7 @@ interface Competition {
   universityCode: string;
   startTime: string;
   endTime: string;
+  hasTimeLimit?: boolean;
   status: 'pending' | 'active' | 'ended';
   challenges: any[];
 }

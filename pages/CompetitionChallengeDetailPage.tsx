@@ -431,7 +431,7 @@ const CompetitionChallengeDetailPage: React.FC = () => {
                       </div>
                     </div>
                     <Button
-                      variant="outline"
+                      variant="secondary"
                       onClick={() => navigate(`/competition/${id}/leaderboard`)}
                       className="w-full border-edge hover:border-edge-light"
                     >

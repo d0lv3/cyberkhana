@@ -175,7 +175,9 @@ export const DialogCard: React.FC<{ title: string; description?: React.ReactNode
 export const Segmented = <T extends string>({ value, options, onChange, label }: {
   value: T;
   options: Array<{ value: T; label: React.ReactNode; count?: number }>;
-  onChange: (value: T) => void;
+  // NoInfer: T comes from value/options. A useState setter handed straight in
+  // would otherwise be an inference site too, and widen T to plain string.
+  onChange: (value: NoInfer<T>) => void;
   label: string;
 }) => (
   <div role="group" aria-label={label} className="inline-flex rounded-lg border border-edge bg-inset p-0.5">

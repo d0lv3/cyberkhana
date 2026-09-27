@@ -64,6 +64,8 @@ export interface User {
   id: string;
   _id: string;
   username: string;
+  fullName?: string;
+  displayName?: string;
   role: 'user' | 'admin' | 'super-admin';
   universityCode: string;
   points: number;

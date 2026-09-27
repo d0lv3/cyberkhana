@@ -156,14 +156,12 @@ const AdminAnnouncementsPage: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <Button
                     variant="ghost"
-                    size="sm"
                     onClick={() => openModal(announcement)}
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="ghost"
-                    size="sm"
                     onClick={() => handleDelete(announcement._id)}
                     className="text-red-400 hover:text-red-300"
                   >

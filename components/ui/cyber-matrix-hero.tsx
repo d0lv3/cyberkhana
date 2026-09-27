@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { ArrowDown } from 'lucide-react';
 import BrandLogo from './BrandLogo';
 
@@ -92,7 +92,7 @@ const CyberMatrixHero = ({ onCTAClick }: { onCTAClick: () => void }) => {
 
     }, [isClient]);
 
-    const fadeUpVariants = {
+    const fadeUpVariants: Variants = {
         hidden: { opacity: 0, y: 20 },
         visible: (i: number) => ({
             opacity: 1,

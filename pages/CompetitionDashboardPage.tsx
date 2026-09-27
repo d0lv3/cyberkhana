@@ -240,7 +240,7 @@ const CompetitionDashboardPage: React.FC = () => {
     }
   };
 
-  const categories = ['all', ...Array.from(new Set(competition?.challenges?.map((c: CompetitionChallenge) => c.category) || []))];
+  const categories = ['all', ...Array.from(new Set<string>(competition?.challenges?.map((c: CompetitionChallenge) => c.category) || []))];
 
   const filteredChallenges = selectedCategory === 'all'
     ? competition?.challenges || []

@@ -560,7 +560,6 @@ const AdminUsersPage: React.FC = () => {
                   <div className="relative">
                     <Button
                       variant="ghost"
-                      size="sm"
                       onClick={() => setActionMenuOpen(actionMenuOpen === user._id ? null : user._id)}
                     >
                       <MoreVertical className="w-5 h-5" />

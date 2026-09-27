@@ -11,7 +11,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
-  const displayName = user.fullName || user.displayName || user.username || user.name;
+  const displayName = user.fullName || user.displayName || user.username;
 
   return (
     <header className="app-header flex-shrink-0 bg-canvas/95 border-b border-edge-strong backdrop-blur-md sticky top-0 z-30">
