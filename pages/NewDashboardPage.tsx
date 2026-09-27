@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import { userService } from '../services/userService';
 import { activityService } from '../services/activityService';
-import { categoryAccent } from '../components/challenges/ChallengeArt';
+import { categoryAccent, categoryLabel } from '../components/challenges/ChallengeArt';
+import { disciplinesOf, focusOf, toProfileData } from '../components/profile/profileData';
 import BrandLogo from '../components/ui/BrandLogo';
 
 /* ── Colour on this page ──
@@ -24,13 +25,16 @@ import BrandLogo from '../components/ui/BrandLogo';
 
 interface UserStats {
   points: number;
+  /** Practice flags: the count the leaderboard and profile show, and what the points are scored from. */
   solvedCount: number;
   rank?: number;
   totalUsers?: number;
-  streak?: number;
-  favoriteCategory?: string;
+  /** The discipline most of their own captures are in, and how much of it they have cleared. */
+  focus?: { category: string; solved: number; total: number };
 }
 
+/* The university's latest solves, for the activity log only. It is everyone's,
+   so nothing about this player is read from it. */
 interface RecentActivity {
   id: string;
   challengeTitle: string;
@@ -38,24 +42,6 @@ interface RecentActivity {
   points: number;
   solvedAt: string;
 }
-
-/** Most-frequent category across recent solves — the real "focus area". */
-const computeFavoriteCategory = (activities: RecentActivity[]): string | undefined => {
-  if (!activities || activities.length === 0) return undefined;
-  const counts: Record<string, number> = {};
-  for (const a of activities) {
-    if (a.category) counts[a.category] = (counts[a.category] || 0) + 1;
-  }
-  let best: string | undefined;
-  let bestN = 0;
-  for (const [cat, n] of Object.entries(counts)) {
-    if (n > bestN) {
-      best = cat;
-      bestN = n;
-    }
-  }
-  return best;
-};
 
 const NewDashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -82,15 +68,20 @@ const NewDashboardPage: React.FC = () => {
           activityService.getRecentActivity(),
         ]);
 
-        // Derive the focus area from real recent activity rather than a placeholder.
-        const favoriteCategory = computeFavoriteCategory(activityData);
+        // Focus and coverage come from the player's own practice solves, read the
+        // same way the profile reads them, so the two pages always agree.
+        const own = toProfileData(profile);
+        const focus = focusOf(own.solves);
+        const focusCoverage = focus ? disciplinesOf(own).find((d) => d.category === focus) : undefined;
 
         setStats({
           points: profile.points || 0,
-          solvedCount: profile.solvedChallenges?.length || 0,
+          solvedCount: own.solves.length,
           rank: profile.rank,
           totalUsers: profile.totalUsers,
-          favoriteCategory,
+          focus: focus
+            ? { category: focus, solved: focusCoverage?.solved ?? 0, total: focusCoverage?.total ?? 0 }
+            : undefined,
         });
         setRecentActivity(activityData);
 
@@ -143,22 +134,17 @@ const NewDashboardPage: React.FC = () => {
 
   const displayName = user?.fullName || user?.displayName || user?.username || 'Operator';
 
+  // A rank on no points is an accident of sort order, not a standing, so it is
+  // shown as unranked, as on the profile.
+  const ranked = stats.points > 0 && !!stats.rank && !!stats.totalUsers;
   // Real percentile from rank/total (e.g. rank 3 of 60 → "Top 5%").
-  const topPercent =
-    stats.rank && stats.totalUsers && stats.totalUsers > 0
-      ? Math.max(1, Math.round((stats.rank / stats.totalUsers) * 100))
-      : null;
+  const topPercent = ranked ? Math.max(1, Math.round((stats.rank! / stats.totalUsers!) * 100)) : null;
   const rankBarPct = topPercent !== null ? Math.min(100, Math.max(4, 100 - topPercent)) : 0;
 
-  // Specialization = share of the focus category among recent solves.
-  const specializationPct =
-    stats.favoriteCategory && recentActivity.length > 0
-      ? Math.round(
-          (recentActivity.filter((a) => a.category === stats.favoriteCategory).length /
-            recentActivity.length) *
-            100
-        )
-      : 0;
+  // Specialisation = how much of their focus discipline they have cleared, counted
+  // against the challenges published in it now, as on the profile's Disciplines panel.
+  const specialisationPct =
+    stats.focus && stats.focus.total > 0 ? Math.round((stats.focus.solved / stats.focus.total) * 100) : 0;
 
   return (
     <div className="text-fg-soft pb-6 px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -190,7 +176,7 @@ const NewDashboardPage: React.FC = () => {
           <div className="relative z-10 flex gap-4 w-full md:w-auto">
             <div className="flex-1 md:w-32 bg-inset border border-edge rounded-xl p-4 text-center">
               <p className="text-xs font-semibold text-dim mb-1">Global rank</p>
-              <p className="text-2xl font-black text-fg">#{stats.rank || '–'}</p>
+              <p className="text-2xl font-black text-fg">{ranked ? `#${stats.rank}` : '–'}</p>
             </div>
             <div className="flex-1 md:w-32 bg-inset border border-edge rounded-xl p-4 text-center">
               <p className="text-xs font-semibold text-dim mb-1">Total score</p>
@@ -208,11 +194,11 @@ const NewDashboardPage: React.FC = () => {
             { label: 'Percentile', value: topPercent !== null ? `Top ${topPercent}%` : '–', icon: Activity },
             {
               label: 'Focus area',
-              value: stats.favoriteCategory ? stats.favoriteCategory.split(' ')[0] : '–',
+              value: stats.focus ? categoryLabel(stats.focus.category) : '–',
               icon: Target,
               // The only tile that names a discipline, so the only one that
               // gets to carry that discipline's colour.
-              dot: stats.favoriteCategory ? categoryAccent(stats.favoriteCategory) : undefined,
+              dot: stats.focus ? categoryAccent(stats.focus.category) : undefined,
             },
           ].map((stat, i) => {
             const Icon = stat.icon;
@@ -333,16 +319,20 @@ const NewDashboardPage: React.FC = () => {
                 </div>
                 <div>
                   <div className="flex justify-between gap-2 text-xs font-semibold text-dim mb-1.5">
-                    <span className="truncate">Specialisation: {stats.favoriteCategory || '–'}</span>
-                    {stats.favoriteCategory && <span className="text-fg-soft">{specializationPct}%</span>}
+                    <span className="truncate">Specialisation: {stats.focus ? categoryLabel(stats.focus.category) : '–'}</span>
+                    {stats.focus && stats.focus.total > 0 && (
+                      <span className="shrink-0 text-fg-soft" dir="ltr">
+                        {stats.focus.solved}/{stats.focus.total} cleared
+                      </span>
+                    )}
                   </div>
                   <div className="h-1.5 rounded-full bg-inset overflow-hidden">
                     {/* Category hue: this bar names a discipline, not a score. */}
                     <div
                       className="h-full transition-all"
                       style={{
-                        width: `${specializationPct}%`,
-                        backgroundColor: categoryAccent(stats.favoriteCategory),
+                        width: `${specialisationPct}%`,
+                        backgroundColor: categoryAccent(stats.focus?.category),
                       }}
                     />
                   </div>
