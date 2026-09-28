@@ -7,10 +7,11 @@ import University from '../models/University';
 import User from '../models/User';
 import EventSubmission, { SUBMITTED_TEXT_LIMIT, SubmissionResult } from '../models/EventSubmission';
 import Certificate from '../models/Certificate';
+import Announcement from '../models/Announcement';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { heavyReadLimiter } from '../middleware/rateLimit';
 import { getIO } from '../services/socketService';
-import { deriveOnce, readActor, readEvent, signalEventChanged } from '../services/eventLive';
+import { deriveOnce, forgetEvent, readActor, readEvent, signalEventChanged } from '../services/eventLive';
 import { assertEvent, EventError, EventState, EventTeam, Registration, eventAccess, eventDetails, eventId, eventLeaderboard, eventMetadata,
   eventOpen, eventOwner, eventPoints, eventRegistered, eventTeamFor, eventVisible, inviteCode, leaveEventTeam, mutateEvent, registrationOpen, canUnregister, teamLocked, teamScore, scoringContext, uniqueSolves,
   isReleased, freezeCutoff, scoreboardView, flagMatches } from '../services/eventCompetition';
@@ -153,6 +154,38 @@ export function notifyEvent(c: any) {
   signalEventChanged(id);
 }
 
+/**
+ * A host may delete an event that has never started. Nothing has been played, so there is
+ * no score history, standings or certificate to lose; it is how a mistaken or test event goes.
+ * Once an event starts it is permanent and ending it is the only way to close it, because its
+ * record belongs to every university that played in it.
+ */
+async function deleteUnstartedEvent(c: any, u: AuthRequest['user'] & {}) {
+  assertEvent(eventOwner(c, u), 'Only the host can delete this event', 403);
+  assertEvent(c.status === 'pending' && !c.eventState.solves.length, 'An event can only be deleted before it starts. End it instead.', 409);
+  // Guarded on the revision it was checked against, so an event that starts (by hand or on
+  // schedule) or takes any other change in the meantime is left alone.
+  const { deletedCount } = await Competition.deleteOne({ _id: c._id, type: 'event', status: 'pending', eventRevision: c.eventRevision });
+  assertEvent(deletedCount === 1, 'This event changed while it was being deleted. Reload and try again.', 409);
+  const id = String(c._id);
+  // Blocked flag attempts are logged even before the start; announcements are keyed by the event.
+  await Promise.all([EventSubmission.deleteMany({ competitionId: c._id }), Announcement.deleteMany({ competitionId: id })]);
+  forgetEvent(id);
+  listedAs.delete(id);
+  try {
+    const io = getIO();
+    // Open event pages reload and find it gone; competitions lists and pending invitations refresh.
+    io.to(`competition:${id}`).emit('eventChanged', { competitionId: id });
+    io.in(`competition:${id}`).socketsLeave(`competition:${id}`);
+    const invited = c.eventState.invitations as Array<{ universityCode: string; status: string }>;
+    for (const code of new Set([c.universityCode, ...invited.filter(i => i.status === 'accepted').map(i => i.universityCode)])) {
+      io.to(`university:${code}`).emit('eventRegistrationChanged', { competitionId: id, registrationCount: 0 });
+    }
+    for (const i of invited.filter(i => i.status === 'pending')) io.to(`university-admin:${i.universityCode}`).emit('eventInvitation', { competitionId: id, name: c.name });
+  } catch { /* The deletion stands if realtime is unavailable; pages catch up on their next load. */ }
+  return { success: true };
+}
+
 export const createEventCompetition = async (req: AuthRequest, res: Response) => {
   try {
     const body = req.body;
@@ -273,6 +306,7 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
       }
       throw new EventError(404, 'Event endpoint not found');
     }
+    if (method === 'DELETE' && route === '/') return res.json(await deleteUnstartedEvent(initial, u));
 
     const body = req.body || {};
     // A source challenge is read outside CAS; the immutable copy is added inside the commit.

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, Copy, Flag, GraduationCap, KeyRound, Mail, Plus, Search, Target, Ticket, Trash2, Trophy, Users } from 'lucide-react';
+import { Archive, ArchiveRestore, ArrowRight, Copy, Flag, GraduationCap, KeyRound, Mail, Plus, Search, Target, Ticket, Trash2, Trophy, Users } from 'lucide-react';
 import { competitionService } from '../../services/competitionService';
 import { universityService } from '../../services/universityService';
 import { useSocket } from '../../src/contexts/SocketContext';
@@ -11,7 +11,8 @@ import EventInvitations from '../../components/competition/EventInvitations';
 import CreateCompetitionModal from '../../components/competition/CreateCompetitionModal';
 import { Chip, ConsoleButton, EmptyState, LifecycleState, Segmented, StatusPill, TypeBadge, formatDateTime, formatSpan, inputClass, lifecycleOf } from '../../components/competition/console/ui';
 
-type StateFilter = 'all' | LifecycleState;
+/** `archived` sits with the statuses: an archived competition is out of every other view. */
+type StateFilter = 'all' | LifecycleState | 'archived';
 type TypeFilter = 'all' | 'event' | 'workshop';
 
 const ORDER: Record<LifecycleState, number> = { live: 0, upcoming: 1, ended: 2 };
@@ -24,7 +25,10 @@ const scheduleLine = (c: any, state: LifecycleState, now: number) => {
   return 'Not started · you start it from the console';
 };
 
-const CompetitionRow: React.FC<{ c: any; now: number; universityName: (code: string) => string; onDelete: (c: any) => void }> = ({ c, now, universityName, onDelete }) => {
+const CompetitionRow: React.FC<{
+  c: any; now: number; universityName: (code: string) => string;
+  onDelete: (c: any) => void; onArchive: (c: any, archived: boolean) => void;
+}> = ({ c, now, universityName, onDelete, onArchive }) => {
   const [copied, setCopied] = useState(false);
   const state = lifecycleOf(c, now);
   const isEvent = c.type === 'event';
@@ -83,8 +87,14 @@ const CompetitionRow: React.FC<{ c: any; now: number; universityName: (code: str
             {copied ? 'Copied' : c.securityCode}
           </button>
         )}
-        {!isEvent && (
-          <ConsoleButton tone="ghost" size="sm" aria-label={`Delete ${c.name}`} icon={<Trash2 size={15} />} onClick={() => onDelete(c)} />
+        {c.archived ? (
+          <ConsoleButton tone="ghost" size="sm" aria-label={`Unarchive ${c.name}`} title="Move back to your list" icon={<ArchiveRestore size={15} />} onClick={() => onArchive(c, false)} />
+        ) : c.status === 'ended' && (
+          <ConsoleButton tone="ghost" size="sm" aria-label={`Archive ${c.name}`} title="Archive" icon={<Archive size={15} />} onClick={() => onArchive(c, true)} />
+        )}
+        {/* An event can be deleted only before it starts; after that its record is permanent. */}
+        {(!isEvent || c.status === 'pending') && (
+          <ConsoleButton tone="ghost" size="sm" aria-label={`Delete ${c.name}`} title="Delete" icon={<Trash2 size={15} />} onClick={() => onDelete(c)} />
         )}
         <span className="hidden items-center gap-1 text-sm font-semibold text-muted transition-colors group-hover:text-brand-neon sm:inline-flex">
           Console <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
@@ -130,11 +140,15 @@ const AdminCompetitionsPage: React.FC = () => {
   }, [socket, load]);
 
   const universityName = (code: string) => universities.find(u => u.code === code)?.name || code;
+  // Archived competitions leave the everyday list and are counted only under Archived.
   const withState = competitions.map(c => ({ c, state: lifecycleOf(c, now) }));
-  const counts = { all: withState.length, live: 0, upcoming: 0, ended: 0 } as Record<StateFilter, number>;
-  for (const { state } of withState) counts[state] += 1;
+  const counts = { all: 0, live: 0, upcoming: 0, ended: 0, archived: 0 } as Record<StateFilter, number>;
+  for (const { c, state } of withState) {
+    if (c.archived) { counts.archived += 1; continue; }
+    counts.all += 1; counts[state] += 1;
+  }
   const visible = withState
-    .filter(({ c, state }) => (stateFilter === 'all' || state === stateFilter)
+    .filter(({ c, state }) => (stateFilter === 'archived' ? c.archived : !c.archived && (stateFilter === 'all' || state === stateFilter))
       && (typeFilter === 'all' || (typeFilter === 'event') === (c.type === 'event'))
       && c.name.toLowerCase().includes(search.trim().toLowerCase()))
     .sort((a, b) => ORDER[a.state] - ORDER[b.state]
@@ -143,15 +157,29 @@ const AdminCompetitionsPage: React.FC = () => {
         : Date.parse(b.c.createdAt || b.c.startTime || 0) - Date.parse(a.c.createdAt || a.c.startTime || 0)));
 
   const remove = async (c: any) => {
-    if (!await confirm(`Delete "${c.name}"? Every player's progress in it is lost. This cannot be undone.`, {
-      type: 'danger', title: 'Delete workshop', confirmText: 'Delete', isDestructive: true,
+    const isEvent = c.type === 'event';
+    const message = isEvent
+      ? `Delete "${c.name}"? Its registrations, teams and invitations go with it. This cannot be undone.`
+      : `Delete "${c.name}"? Every player's progress in it is lost. This cannot be undone.`;
+    if (!await confirm(message, {
+      type: 'danger', title: isEvent ? 'Delete event' : 'Delete workshop', confirmText: 'Delete', isDestructive: true,
     })) return;
     try {
       await competitionService.deleteCompetition(c._id);
-      toast('success', 'Workshop deleted');
+      toast('success', isEvent ? 'Event deleted' : 'Workshop deleted');
       await load();
     } catch (e: any) {
-      toast('error', e.message || 'Could not delete the workshop');
+      toast('error', e.message || `Could not delete the ${isEvent ? 'event' : 'workshop'}`);
+    }
+  };
+
+  const archive = async (c: any, archived: boolean) => {
+    try {
+      await competitionService.setArchived(c._id, archived);
+      toast('success', archived ? `"${c.name}" archived` : `"${c.name}" is back in your list`);
+      await load();
+    } catch (e: any) {
+      toast('error', e.message || 'Could not update the archive');
     }
   };
 
@@ -181,6 +209,7 @@ const AdminCompetitionsPage: React.FC = () => {
             { value: 'live', label: 'Live', count: counts.live },
             { value: 'upcoming', label: 'Not started', count: counts.upcoming },
             { value: 'ended', label: 'Ended', count: counts.ended },
+            { value: 'archived', label: 'Archived', count: counts.archived },
           ]} />
           <Segmented<TypeFilter> label="Format" value={typeFilter} onChange={setTypeFilter} options={[
             { value: 'all', label: 'All formats' },
@@ -198,12 +227,13 @@ const AdminCompetitionsPage: React.FC = () => {
         </div>
       ) : visible.length ? (
         <div className="space-y-3">
-          {visible.map(({ c }) => <CompetitionRow key={c._id} c={c} now={now} universityName={universityName} onDelete={remove} />)}
+          {visible.map(({ c }) => <CompetitionRow key={c._id} c={c} now={now} universityName={universityName} onDelete={remove} onArchive={archive} />)}
         </div>
       ) : (
         <div className="rounded-xl border border-edge bg-panel">
-          <EmptyState icon={<Trophy size={20} />} title={competitions.length ? 'Nothing matches these filters' : 'No competitions yet'}>
-            {competitions.length ? 'Clear the search or choose another status.' : (
+          <EmptyState icon={stateFilter === 'archived' ? <Archive size={20} /> : <Trophy size={20} />}
+            title={stateFilter === 'archived' && !counts.archived ? 'Nothing archived' : competitions.length ? 'Nothing matches these filters' : 'No competitions yet'}>
+            {stateFilter === 'archived' && !counts.archived ? 'Archive an ended competition from its row to move it here.' : competitions.length ? 'Clear the search or choose another status.' : (
               <>
                 <p>Create a CTF event for teams, or a workshop for a class.</p>
                 <ConsoleButton tone="primary" icon={<Plus size={15} />} className="mt-4" onClick={() => setCreating(true)}>New competition</ConsoleButton>

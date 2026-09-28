@@ -15,6 +15,7 @@ import {
   publishCompetitionHint,
   buyCompetitionHint,
   deleteCompetition,
+  setCompetitionArchived,
   removeChallengeFromCompetition,
   validateSecurityCode
 } from '../controllers/competitionController';
@@ -57,6 +58,9 @@ router.get('/', authenticate, getCompetitions);
 router.get('/invitations', authenticate, requireAdmin, getEventInvitations);
 router.post('/validate-code', authenticate, securityCodeLimiter, validateSecurityCode);
 router.post('/', authenticate, requireAdmin, createCompetition);
+// Before the event dispatcher, so one handler files events and workshops alike.
+router.post('/:id/archive', authenticate, requireAdmin, setCompetitionArchived);
+router.delete('/:id/archive', authenticate, requireAdmin, setCompetitionArchived);
 router.use('/:id', authenticate, dispatchEvent);
 router.get('/:id', authenticate, getCompetition);
 router.get('/:id/details', authenticate, getCompetitionDetails);

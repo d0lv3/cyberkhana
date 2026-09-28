@@ -31,6 +31,10 @@ export const competitionService = {
   deleteCompetition: (id: string) =>
     apiService.delete(`/competitions/${id}`),
 
+  /** Files an ended competition out of this admin's list, or brings it back. */
+  setArchived: (id: string, archived: boolean) =>
+    archived ? apiService.post(`/competitions/${id}/archive`, {}) : apiService.delete(`/competitions/${id}/archive`),
+
   updateCompetitionStatus: (id: string, status: string) =>
     apiService.patch(`/competitions/${id}/status`, { status }),
 

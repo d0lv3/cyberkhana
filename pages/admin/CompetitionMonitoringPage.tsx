@@ -121,6 +121,13 @@ const CompetitionMonitoringPage: React.FC = () => {
   useEffect(() => { universityService.getUniversities().then(setUniversities).catch(() => setUniversities([])); }, []);
 
   // Realtime: every relevant socket event collapses into one quiet reload, skipped while paused.
+  // Changes made while the connection was down were never announced, so catch up on its return.
+  const wasConnected = useRef(isConnected);
+  useEffect(() => {
+    if (isConnected && !wasConnected.current && liveRef.current) void load(true);
+    wasConnected.current = isConnected;
+  }, [isConnected, load]);
+
   useEffect(() => {
     if (!id) return;
     if (isConnected) joinCompetition(id);
@@ -244,9 +251,12 @@ const CompetitionMonitoringPage: React.FC = () => {
             title={live ? 'Pause live updates' : 'Resume live updates'}
             className="inline-flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold text-muted transition-colors hover:bg-surface-hover hover:text-fg touch:min-h-tap"
           >
-            <span className={`h-2 w-2 rounded-full ${live ? 'animate-pulse bg-brand-neon' : 'bg-amber'}`} />
-            {live ? 'Live' : 'Paused'}
-            <span className="font-normal text-faint">· {formatAgo(new Date(updatedAt), now)}</span>
+            {/* No "updated … ago" here. It counted from this page's last fetch, so it restarted
+                on every visit and read like a broken clock; a live page is current by definition.
+                How old paused numbers are is in the banner below, and the event's own clock is
+                the timeline. */}
+            <span className={`h-2 w-2 rounded-full ${live && isConnected ? 'animate-pulse bg-brand-neon' : 'bg-amber'}`} />
+            {!live ? 'Paused' : isConnected ? 'Live' : 'Connecting…'}
           </button>
           <ConsoleButton tone="ghost" aria-label="Refresh" icon={<RefreshCw size={15} className={refreshing ? 'animate-spin' : ''} />} onClick={() => void load(true)} disabled={refreshing} />
           <ConsoleButton icon={<Monitor size={15} />} onClick={() => navigate(`/competition/${id}/leaderboard?present=1`)}>Present scoreboard</ConsoleButton>

@@ -126,6 +126,8 @@ export const eventMetadata = (c: any, u?: IJWTPayload) => ({
   scoreboardFreezeAt: c.scoreboardFreezeAt || null, scoreboardRevealedAt: c.scoreboardRevealedAt || null, scoreboardFrozen: !!freezeCutoff(c),
   resultsPublished: !!c.resultsPublishedAt, certificatesIssued: !!c.certificatesIssuedAt,
   ...(eventOwner(c, u) ? { pendingInvitations: c.eventState.invitations.filter((i: any) => i.status === 'pending').length } : {}),
+  // How this admin's university files it; players have no archive, so they are not told.
+  ...(u && u.role !== 'user' ? { archived: (c.archivedFor || []).includes(String(u.universityCode || '').trim().toUpperCase()) } : {}),
 });
 
 /** The next wave players are waiting for: when, and how many challenges. Titles stay hidden. */

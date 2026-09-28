@@ -59,6 +59,8 @@ export interface ICompetition extends Document {
   registrationDeadline?: Date;
   capacity?: number;
   eventRevision?: number;
+  /** University codes whose admins moved this ended competition out of their list. Players are unaffected. */
+  archivedFor?: string[];
   eventState?: import('../services/eventCompetition').EventState;
   name: string;
   securityCode?: string; // Made optional
@@ -185,6 +187,7 @@ const CompetitionSchema: Schema = new Schema({
   registrationDeadline: Date,
   capacity: { type: Number, min: 1, max: 10000 },
   eventRevision: { type: Number, default: 0 },
+  archivedFor: { type: [String], default: [] },
   eventState: { type: Schema.Types.Mixed },
   name: {
     type: String,

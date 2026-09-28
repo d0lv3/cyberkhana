@@ -556,3 +556,32 @@ test('published results and certificates are public, final and minimal', async (
   await request(host, 'DELETE', `/competitions/${id}/results/publish`);
   await publicGet(`/competitions/${id}/results`, 404);
 });
+
+test('a host deletes an event only before it starts, and archives it only after it ends', async () => {
+  const listed = async (user, id) => (await request(user, 'GET', '/competitions')).data.find(c => c._id === id);
+
+  const draft = await createEvent();
+  await request(invitedAdmin, 'POST', `/competitions/${draft}/invitation`, { status: 'accepted' });
+  await request(invitedAdmin, 'DELETE', `/competitions/${draft}`, undefined, 403);
+  await request(students[0], 'DELETE', `/competitions/${draft}`, undefined, 403);
+  await request(admin, 'POST', `/competitions/${draft}/archive`, undefined, 409);
+  await request(admin, 'DELETE', `/competitions/${draft}`);
+  assert.equal(await listed(admin, draft), undefined);
+  assert.equal((await request(admin, 'GET', `/competitions/${draft}`, undefined, null)).status, 404);
+
+  const played = await createEvent();
+  await request(admin, 'POST', `/competitions/${played}/challenges`, { challengeId: String(challenges[0]._id) });
+  await request(admin, 'PATCH', `/competitions/${played}/status`, { status: 'active' });
+  await request(admin, 'DELETE', `/competitions/${played}`, undefined, 409);
+  await request(admin, 'POST', `/competitions/${played}/archive`, undefined, 409);
+  await request(admin, 'PATCH', `/competitions/${played}/status`, { status: 'ended' });
+  await request(admin, 'DELETE', `/competitions/${played}`, undefined, 409);
+
+  assert.equal((await listed(admin, played)).archived, false);
+  await request(invitedAdmin, 'POST', `/competitions/${played}/archive`, undefined, 403);
+  await request(admin, 'POST', `/competitions/${played}/archive`);
+  assert.equal((await listed(admin, played)).archived, true);
+  assert.equal((await request(admin, 'GET', `/competitions/${played}/leaderboard`)).status, 200, 'archiving changes nothing else');
+  await request(admin, 'DELETE', `/competitions/${played}/archive`);
+  assert.equal((await listed(admin, played)).archived, false);
+});

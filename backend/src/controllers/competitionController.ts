@@ -6,7 +6,9 @@ import University from '../models/University';
 import { AuthRequest } from '../middleware/auth';
 import { SocketEvents } from '../services/socketService';
 import { createEventCompetition } from './eventCompetitionController';
-import { eventMetadata, eventVisible } from '../services/eventCompetition';
+import { eventMetadata, eventOwner, eventVisible } from '../services/eventCompetition';
+import { forgetEvent } from '../services/eventLive';
+import { isValidObjectId } from 'mongoose';
 import { getCompetitionUniversityCodes, workshopStandings } from '../services/workshopStandings';
 
 const normalizeSecurityCode = (value: unknown): string =>
@@ -68,6 +70,37 @@ const userHasCompetitionAccess = (competition: any, user?: AuthRequest['user']) 
 
   const userUniversityCode = normalizeUniversityCode(user.universityCode);
   return getCompetitionUniversityCodes(competition).includes(userUniversityCode);
+};
+
+/**
+ * Files an ended competition away from an admin's list (POST), or brings it back (DELETE).
+ * The archive belongs to the admin's university: other universities' lists and every player's
+ * view are unchanged, and nothing about the competition itself is touched.
+ */
+export const setCompetitionArchived = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    if (!isValidObjectId(id)) return res.status(404).json({ error: 'Competition not found' });
+    const archive = req.method === 'POST';
+    const competition: any = await Competition.findById(id).select('type status universityCode universityCodes').lean();
+    if (!competition) return res.status(404).json({ error: 'Competition not found' });
+    // An event appears in its host's list only, so only its host files it.
+    const allowed = competition.type === 'event' ? eventOwner(competition, req.user) : userHasCompetitionAccess(competition, req.user);
+    if (!allowed) return res.status(403).json({ error: 'Access denied' });
+    if (archive && competition.status !== 'ended') return res.status(409).json({ error: 'Only an ended competition can be archived' });
+
+    // The revision bump makes an event write that read the document before this one retry,
+    // instead of writing the old archive list back over it.
+    await Competition.updateOne({ _id: id }, {
+      [archive ? '$addToSet' : '$pull']: { archivedFor: normalizeUniversityCode(req.user?.universityCode) },
+      $inc: { eventRevision: 1 },
+    });
+    if (competition.type === 'event') forgetEvent(id);
+    res.json({ success: true, archived: archive });
+  } catch (error) {
+    console.error('Error archiving competition:', error);
+    res.status(500).json({ error: 'Could not update the archive' });
+  }
 };
 
 // Get solvers for a competition challenge
@@ -238,6 +271,9 @@ export const getCompetitions = async (req: AuthRequest, res: Response) => {
     const competitions = (await Competition.find(buildCompetitionAccessQuery(universityCode)))
       .filter(c => c.type !== 'event' || eventVisible(c, req.user));
 
+    const isAdmin = req.user?.role === 'admin' || req.user?.role === 'super-admin';
+    const ownCode = normalizeUniversityCode(req.user?.universityCode);
+
     // Calculate dynamic points for each competition's challenges
     const { calculateDynamicScore } = require('../models/Challenge');
     const competitionsWithDynamicPoints = await Promise.all(
@@ -266,8 +302,11 @@ export const getCompetitions = async (req: AuthRequest, res: Response) => {
           })
         );
 
+        // The archive is an admin's filing; players are not sent it.
+        const { archivedFor, ...plain } = competition.toObject ? competition.toObject() : competition;
         return {
-          ...competition.toObject ? competition.toObject() : competition,
+          ...plain,
+          ...(isAdmin ? { archived: (archivedFor || []).includes(ownCode) } : {}),
           challenges: challengesWithDynamicPoints
         };
       })
