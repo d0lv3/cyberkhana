@@ -6,7 +6,7 @@ import University from '../models/University';
 import { AuthRequest } from '../middleware/auth';
 import { SocketEvents } from '../services/socketService';
 import { createEventCompetition } from './eventCompetitionController';
-import { eventMetadata, eventOwner, eventVisible } from '../services/eventCompetition';
+import { eventMetadata, eventOwner, eventRegistered, eventVisible } from '../services/eventCompetition';
 import { forgetEvent } from '../services/eventLive';
 import { isValidObjectId } from 'mongoose';
 import { getCompetitionUniversityCodes, workshopStandings } from '../services/workshopStandings';
@@ -268,8 +268,11 @@ export const getCompetitions = async (req: AuthRequest, res: Response) => {
       ? req.query.universityCode as string
       : req.user?.universityCode;
 
+    // A finished event is listed only to the players who registered for it: nobody else can
+    // open it, so to them it is only clutter. Admins still see it, to manage it.
     const competitions = (await Competition.find(buildCompetitionAccessQuery(universityCode)))
-      .filter(c => c.type !== 'event' || eventVisible(c, req.user));
+      .filter(c => c.type !== 'event' || (eventVisible(c, req.user)
+        && !(req.user?.role === 'user' && c.status === 'ended' && !eventRegistered(c, req.user.userId))));
 
     const isAdmin = req.user?.role === 'admin' || req.user?.role === 'super-admin';
     const ownCode = normalizeUniversityCode(req.user?.universityCode);

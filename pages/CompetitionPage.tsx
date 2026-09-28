@@ -1,4 +1,6 @@
 import EventCard from '../components/competition/EventCard';
+import PastCompetitionCard, { PastEntry } from '../components/competition/PastCompetitionCard';
+import { userService } from '../services/userService';
 import EventInvitations from '../components/competition/EventInvitations';
 import { useSocket } from '../src/contexts/SocketContext';
 import React, { useState, useEffect } from 'react';
@@ -97,7 +99,7 @@ const CompetitionCard: React.FC<{
           open();
         }
       }}
-      className={`group relative flex h-72 flex-col overflow-hidden rounded-2xl border border-edge bg-panel transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${
+      className={`group relative flex h-full min-h-[20rem] flex-col overflow-hidden rounded-2xl border border-edge bg-panel transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${
         actionable ? 'cursor-pointer hover:-translate-y-1 hover:border-edge-light hover:shadow-lg hover:shadow-black/40' : ''
       }`}
     >
@@ -299,6 +301,7 @@ const CompetitionPage: React.FC = () => {
   const [securityCode, setSecurityCode] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [past, setPast] = useState<PastEntry[]>([]);
 
   // A minute is enough to keep the Live / Past buckets honest; the per-card
   // countdowns tick at their own, finer rate.
@@ -320,7 +323,14 @@ const CompetitionPage: React.FC = () => {
     try {
       setLoading(true);
       const universityCode = currentUser?.universityCode;
-      const data = await competitionService.getCompetitions(universityCode);
+      const [data, record] = await Promise.all([
+        competitionService.getCompetitions(universityCode),
+        // A player's own finished competitions come from their record, which knows who took part.
+        isAdmin ? Promise.resolve([]) : userService.getMyCompetitionRecord().catch(() => []),
+      ]);
+      setPast((Array.isArray(record) ? record : [])
+        .filter((e: PastEntry) => e.status === 'ended')
+        .sort((a: PastEntry, b: PastEntry) => Date.parse(b.endTime || '') - Date.parse(a.endTime || '')));
       setCompetitions(
         data.sort((a: Competition, b: Competition) =>
           new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
@@ -368,9 +378,11 @@ const CompetitionPage: React.FC = () => {
   };
 
   // Derived lists
+  // Finished competitions leave this page. A player finds the ones they took part in under
+  // "Your past competitions"; nobody else could open them anyway. Hosts keep theirs in Management.
   const activeComps    = competitions.filter(c => c.status === 'active' && !isCompetitionOver(c, listNow));
-  const upcomingComps  = competitions.filter(c => c.status === 'pending' || (c.status === 'active' && Date.now() < new Date(c.startTime).getTime()));
-  const pastComps      = competitions.filter(c => c.status === 'ended' || isCompetitionOver(c, listNow));
+  const upcomingComps  = competitions.filter(c => !isCompetitionOver(c, listNow) && (c.status === 'pending' || (c.status === 'active' && Date.now() < new Date(c.startTime).getTime())));
+  const endedEvents    = competitions.filter(c => c.type === 'event' && isCompetitionOver(c, listNow)).length;
 
   // ── Loading ──
   if (loading) {
@@ -449,9 +461,22 @@ const CompetitionPage: React.FC = () => {
         </div>
 
         <EventInvitations onChange={fetchCompetitions} />
+        {competitions.some(c => c.type === 'event' && !isCompetitionOver(c, listNow)) && (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {competitions.filter(c => c.type === 'event' && !isCompetitionOver(c, listNow)).map(comp => (
+              <EventCard key={comp._id} event={comp} onChange={fetchCompetitions} />
+            ))}
+          </div>
+        )}
+        {endedEvents > 0 && (
+          <p className="text-xs text-faint">
+            Ended events are not listed here. The ones you host are in{' '}
+            <button type="button" onClick={() => navigate('/admin/competitions')} className="font-semibold text-brand hover:text-brand-neon">Management → Competitions</button>.
+          </p>
+        )}
         {competitions.length > 0 ? (
           <div className="space-y-3">
-            {competitions.map((comp) => comp.type === 'event' ? <EventCard key={comp._id} event={comp} onChange={fetchCompetitions} /> : (
+            {competitions.filter(c => c.type !== 'event').map((comp) => (
               <AdminCompetitionRow
                 key={comp._id}
                 competition={comp}
@@ -503,7 +528,7 @@ const CompetitionPage: React.FC = () => {
             <span className="w-2 h-2 rounded-full bg-brand-neon animate-pulse" />
             <h2 className="text-sm font-bold text-fg">Live now</h2>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             {activeComps.map((c, i) => (
               c.type === 'event' ? <EventCard key={c._id} event={c} onChange={fetchCompetitions} /> : <CompetitionCard key={c._id} competition={c} onEnter={(id) => navigate(`/competition/${id}`)} delay={i * 0.05} />
             ))}
@@ -518,7 +543,7 @@ const CompetitionPage: React.FC = () => {
             <Calendar size={14} className="text-amber" />
             <h2 className="text-sm font-bold text-fg">Upcoming</h2>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2">
             {upcomingComps.map((c, i) => (
               c.type === 'event' ? <EventCard key={c._id} event={c} onChange={fetchCompetitions} /> : <CompetitionCard key={c._id} competition={c} onEnter={() => {}} delay={i * 0.05} />
             ))}
@@ -526,23 +551,21 @@ const CompetitionPage: React.FC = () => {
         </section>
       )}
 
-      {/* Past */}
-      {pastComps.length > 0 && (
+      {/* Past: only the ones this player took part in, with how they did */}
+      {past.length > 0 && (
         <section>
           <div className="flex items-center gap-2 mb-4">
             <Trophy size={14} className="text-muted" />
-            <h2 className="text-sm font-bold text-fg">Past competitions</h2>
+            <h2 className="text-sm font-bold text-fg">Your past competitions</h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {pastComps.map((c, i) => (
-              c.type === 'event' ? <EventCard key={c._id} event={c} onChange={fetchCompetitions} /> : <CompetitionCard key={c._id} competition={c} onEnter={() => {}} delay={i * 0.05} />
-            ))}
+            {past.map(entry => <PastCompetitionCard key={entry.id} entry={entry} />)}
           </div>
         </section>
       )}
 
       {/* Empty */}
-      {competitions.length === 0 && (
+      {activeComps.length === 0 && upcomingComps.length === 0 && past.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <div className="w-16 h-16 rounded-full bg-surface border border-edge flex items-center justify-center mb-4">
             <Trophy size={28} className="text-faint" />

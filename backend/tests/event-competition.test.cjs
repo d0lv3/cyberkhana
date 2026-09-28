@@ -574,8 +574,11 @@ test('a host deletes an event only before it starts, and archives it only after 
   await request(admin, 'PATCH', `/competitions/${played}/status`, { status: 'active' });
   await request(admin, 'DELETE', `/competitions/${played}`, undefined, 409);
   await request(admin, 'POST', `/competitions/${played}/archive`, undefined, 409);
+  assert.ok(await listed(students[0], played), 'a live event is listed to its universities');
   await request(admin, 'PATCH', `/competitions/${played}/status`, { status: 'ended' });
   await request(admin, 'DELETE', `/competitions/${played}`, undefined, 409);
+  assert.equal(await listed(students[0], played), undefined, 'an ended event is listed only to its players');
+  assert.ok(await listed(admin, played), 'its host still sees it');
 
   assert.equal((await listed(admin, played)).archived, false);
   await request(invitedAdmin, 'POST', `/competitions/${played}/archive`, undefined, 403);
