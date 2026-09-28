@@ -2,6 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from 'crypto';
 import Competition from '../models/Competition';
 import { calculateDynamicScore } from '../models/Challenge';
 import { IJWTPayload } from '../types';
+import { rememberEvent } from './eventLive';
 
 export interface Registration { userId: string; username: string; universityCode: string; registeredAt: string }
 export interface EventTeam {
@@ -155,7 +156,9 @@ export const eventDetails = (c: any, u: IJWTPayload) => {
       const id = String(ch._id), solved = ownSolves.find(s => s.challengeId === id), solvers = solves.filter(s => s.challengeId === id);
       return { ...safe, ...(owner ? { flag, flags } : {}), points: ctx.values.get(id), currentPoints: ctx.values.get(id),
         solves: solvers.length,
-        solvers: solvers.map(s => ({ username: s.username, teamId: s.teamId, solvedAt: s.solvedAt, isFirstBlood: s.firstBlood })),
+        // First blood only. Pages show no more than that here, and the full list grew every
+        // player's refresh with each solve in the event; it has its own `/solvers` endpoint.
+        solvers: solvers.slice(0, 1).map(s => ({ username: s.username, teamId: s.teamId, solvedAt: s.solvedAt, isFirstBlood: s.firstBlood })),
         solvedBy: solved?.username, solvedByTeammate: !!solved && solved.userId !== u.userId,
         hints: (ch.hints || []).map((h: any, index: number) => ({ cost: h.cost, isPublished: !!h.isPublished,
           text: owner || h.isPublished || team?.hints.some(p => p.challengeId === id && p.index === index) ? h.text : 'LOCKED' })),
@@ -221,7 +224,7 @@ export async function mutateEvent(id: string, action: (c: any) => Promise<any> |
     const { _id, __v, createdAt, updatedAt, eventRevision, ...fields } = c;
     const committed = await Competition.findOneAndUpdate({ _id, type: 'event', eventRevision: revision, status },
       { $set: fields, $inc: { eventRevision: 1 } }, { new: true, runValidators: true }).lean();
-    if (committed) return { competition: committed, result };
+    if (committed) { rememberEvent(committed); return { competition: committed, result }; }
   }
   throw new EventError(409, 'This event is busy. Please try again.');
 }

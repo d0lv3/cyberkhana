@@ -5,6 +5,7 @@ import { AuthRequest } from '../middleware/auth';
 import { hashPassword } from '../utils/auth';
 import Announcement from '../models/Announcement';
 import { competitionRecord, drewFirstBlood } from '../services/profileRecord';
+import { shortCache } from '../utils/shortCache';
 
 const toValidTimestamp = (value: unknown): number | null => {
   if (!value) return null;
@@ -375,128 +376,136 @@ export const getPublicCompetitionRecord = async (req: AuthRequest, res: Response
   }
 };
 
+/**
+ * Every open leaderboard page refetches when anyone in the university solves, and
+ * each fetch loads and scores every student. The answer is the same for whoever
+ * asks within a university, so a wave of refetches shares one computation.
+ */
+const leaderboards = shortCache<{ leaderboard: any[]; analysis: any }>(3000, 500);
+
+const buildLeaderboard = async (universityCode: string | undefined) => {
+  const users = await User.find({ universityCode, isBanned: { $ne: true } })
+    .select('username fullName displayName points solvedChallenges solvedChallengesDetails profileIcon universityCode penalties unlockedHints bonusPoints');
+
+  // Get university name
+  const University = require('../models/University').default;
+  const university = await University.findOne({ code: universityCode });
+
+  // Fetch all regular challenges
+  const Challenge = require('../models/Challenge').default;
+  const regularChallenges = await Challenge.find({
+    universityCode,
+    fromCompetition: { $ne: true }
+  });
+
+  const regularChallengeMap = new Map();
+  regularChallenges.forEach((c: any) => {
+    regularChallengeMap.set(c._id.toString(), c);
+  });
+
+  // Calculate stats for all users
+  const usersWithStats = users.map((user: any) => {
+    const stats = calculateGeneralStats(user, regularChallengeMap);
+
+    return {
+      ...user.toObject(),
+      nonCompetitionPoints: stats.points,
+      nonCompetitionSolvedCount: stats.solvedCount,
+      nonCompetitionSolvedDetails: stats.solvedDetails,
+      penaltyPoints: stats.penalties
+    };
+  });
+
+  usersWithStats.sort((a, b) => {
+    if (b.nonCompetitionPoints !== a.nonCompetitionPoints) {
+      return b.nonCompetitionPoints - a.nonCompetitionPoints;
+    }
+
+    const aSolveTimes = a.nonCompetitionSolvedDetails
+      .map((d: any) => toValidTimestamp(d?.solvedAt))
+      .filter((time: number | null): time is number => time !== null);
+    const bSolveTimes = b.nonCompetitionSolvedDetails
+      .map((d: any) => toValidTimestamp(d?.solvedAt))
+      .filter((time: number | null): time is number => time !== null);
+
+    const aLastSolve = aSolveTimes.length > 0 ? Math.max(...aSolveTimes) : null;
+    const bLastSolve = bSolveTimes.length > 0 ? Math.max(...bSolveTimes) : null;
+
+    if (aLastSolve && bLastSolve) {
+      return aLastSolve - bLastSolve;
+    } else if (aLastSolve) {
+      return -1;
+    } else if (bLastSolve) {
+      return 1;
+    }
+
+    return 0;
+  });
+
+  // Get all published challenges count for the university
+  const publishedChallengesCount = await Challenge.countDocuments({
+    universityCode,
+    isPublished: true,
+    fromCompetition: { $ne: true } // Exclude competition challenges
+  });
+
+  // Return ALL users, not just top 10
+  const allUsers = usersWithStats.map((user, index) => {
+    const solveTimes = user.nonCompetitionSolvedDetails
+      .map((d: any) => toValidTimestamp(d?.solvedAt))
+      .filter((time: number | null): time is number => time !== null);
+
+    const firstSolve = solveTimes.length > 0 ? new Date(Math.min(...solveTimes)) : null;
+    const lastSolve = solveTimes.length > 0 ? new Date(Math.max(...solveTimes)) : null;
+
+    const totalTime = firstSolve && lastSolve
+      ? Math.floor((lastSolve.getTime() - firstSolve.getTime()) / 1000 / 60 / 60)
+      : 0;
+
+    const averageSolveTime = user.nonCompetitionSolvedDetails.length > 0 && firstSolve && lastSolve
+      ? Math.floor(totalTime / user.nonCompetitionSolvedDetails.length)
+      : 0;
+
+    return {
+      rank: index + 1,
+      _id: user._id,
+      username: user.username,
+      fullName: user.fullName,
+      displayName: user.displayName || user.username,
+      points: user.nonCompetitionPoints,
+      solvedChallenges: user.nonCompetitionSolvedCount,
+      solvedDetails: user.nonCompetitionSolvedDetails,
+      firstSolveTime: firstSolve,
+      lastSolveTime: lastSolve,
+      totalTimeHours: totalTime,
+      averageSolveTimeHours: averageSolveTime,
+      profileIcon: user.profileIcon || 'default',
+      universityCode: user.universityCode,
+      universityName: university?.name || user.universityCode
+    };
+  });
+
+  const analysis = {
+    totalParticipants: usersWithStats.length,
+    totalPoints: usersWithStats.reduce((sum: number, u: any) => sum + u.nonCompetitionPoints, 0),
+    averagePoints: usersWithStats.length > 0
+      ? Math.floor(usersWithStats.reduce((sum: number, u: any) => sum + u.nonCompetitionPoints, 0) / usersWithStats.length)
+      : 0,
+    topSolver: allUsers[0] || null,
+    fastestAverageSolver: allUsers.filter(u => u.averageSolveTimeHours > 0).sort((a, b) => a.averageSolveTimeHours - b.averageSolveTimeHours)[0] || null,
+    totalChallenges: publishedChallengesCount
+  };
+
+  return { leaderboard: allUsers, analysis };
+};
+
 export const getLeaderboard = async (req: AuthRequest, res: Response) => {
   try {
     const universityCode = req.user?.role === 'super-admin'
       ? req.query.universityCode as string
       : req.user?.universityCode;
 
-    const users = await User.find({ universityCode, isBanned: { $ne: true } })
-      .select('username fullName displayName points solvedChallenges solvedChallengesDetails profileIcon universityCode penalties unlockedHints bonusPoints');
-
-    // Get university name
-    const University = require('../models/University').default;
-    const university = await University.findOne({ code: universityCode });
-
-    // Fetch all regular challenges
-    const Challenge = require('../models/Challenge').default;
-    const regularChallenges = await Challenge.find({
-      universityCode,
-      fromCompetition: { $ne: true }
-    });
-
-    const regularChallengeMap = new Map();
-    regularChallenges.forEach((c: any) => {
-      regularChallengeMap.set(c._id.toString(), c);
-    });
-
-    // Calculate stats for all users
-    const usersWithStats = users.map((user: any) => {
-      const stats = calculateGeneralStats(user, regularChallengeMap);
-
-      return {
-        ...user.toObject(),
-        nonCompetitionPoints: stats.points,
-        nonCompetitionSolvedCount: stats.solvedCount,
-        nonCompetitionSolvedDetails: stats.solvedDetails,
-        penaltyPoints: stats.penalties
-      };
-    });
-
-    usersWithStats.sort((a, b) => {
-      if (b.nonCompetitionPoints !== a.nonCompetitionPoints) {
-        return b.nonCompetitionPoints - a.nonCompetitionPoints;
-      }
-
-      const aSolveTimes = a.nonCompetitionSolvedDetails
-        .map((d: any) => toValidTimestamp(d?.solvedAt))
-        .filter((time: number | null): time is number => time !== null);
-      const bSolveTimes = b.nonCompetitionSolvedDetails
-        .map((d: any) => toValidTimestamp(d?.solvedAt))
-        .filter((time: number | null): time is number => time !== null);
-
-      const aLastSolve = aSolveTimes.length > 0 ? Math.max(...aSolveTimes) : null;
-      const bLastSolve = bSolveTimes.length > 0 ? Math.max(...bSolveTimes) : null;
-
-      if (aLastSolve && bLastSolve) {
-        return aLastSolve - bLastSolve;
-      } else if (aLastSolve) {
-        return -1;
-      } else if (bLastSolve) {
-        return 1;
-      }
-
-      return 0;
-    });
-
-    // Get all published challenges count for the university
-    const publishedChallengesCount = await Challenge.countDocuments({
-      universityCode,
-      isPublished: true,
-      fromCompetition: { $ne: true } // Exclude competition challenges
-    });
-
-    // Return ALL users, not just top 10
-    const allUsers = usersWithStats.map((user, index) => {
-      const solveTimes = user.nonCompetitionSolvedDetails
-        .map((d: any) => toValidTimestamp(d?.solvedAt))
-        .filter((time: number | null): time is number => time !== null);
-
-      const firstSolve = solveTimes.length > 0 ? new Date(Math.min(...solveTimes)) : null;
-      const lastSolve = solveTimes.length > 0 ? new Date(Math.max(...solveTimes)) : null;
-
-      const totalTime = firstSolve && lastSolve
-        ? Math.floor((lastSolve.getTime() - firstSolve.getTime()) / 1000 / 60 / 60)
-        : 0;
-
-      const averageSolveTime = user.nonCompetitionSolvedDetails.length > 0 && firstSolve && lastSolve
-        ? Math.floor(totalTime / user.nonCompetitionSolvedDetails.length)
-        : 0;
-
-      return {
-        rank: index + 1,
-        _id: user._id,
-        username: user.username,
-        fullName: user.fullName,
-        displayName: user.displayName || user.username,
-        points: user.nonCompetitionPoints,
-        solvedChallenges: user.nonCompetitionSolvedCount,
-        solvedDetails: user.nonCompetitionSolvedDetails,
-        firstSolveTime: firstSolve,
-        lastSolveTime: lastSolve,
-        totalTimeHours: totalTime,
-        averageSolveTimeHours: averageSolveTime,
-        profileIcon: user.profileIcon || 'default',
-        universityCode: user.universityCode,
-        universityName: university?.name || user.universityCode
-      };
-    });
-
-    const analysis = {
-      totalParticipants: usersWithStats.length,
-      totalPoints: usersWithStats.reduce((sum: number, u: any) => sum + u.nonCompetitionPoints, 0),
-      averagePoints: usersWithStats.length > 0
-        ? Math.floor(usersWithStats.reduce((sum: number, u: any) => sum + u.nonCompetitionPoints, 0) / usersWithStats.length)
-        : 0,
-      topSolver: allUsers[0] || null,
-      fastestAverageSolver: allUsers.filter(u => u.averageSolveTimeHours > 0).sort((a, b) => a.averageSolveTimeHours - b.averageSolveTimeHours)[0] || null,
-      totalChallenges: publishedChallengesCount
-    };
-
-    res.json({
-      leaderboard: allUsers,
-      analysis
-    });
+    res.json(await leaderboards.get(String(universityCode), () => buildLeaderboard(universityCode)));
   } catch (error) {
     console.error('Error in getLeaderboard:', error);
     res.status(500).json({ error: 'Error fetching leaderboard' });

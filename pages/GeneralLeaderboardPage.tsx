@@ -4,6 +4,7 @@ import { universityService } from '../services/universityService';
 import UnifiedLeaderboard, { UnifiedLeaderboardEntry } from '../components/leaderboard/UnifiedLeaderboard';
 import ProfileSlidePanel from '../components/ui/ProfileSlidePanel';
 import { useSocket } from '../src/contexts/SocketContext';
+import { staggered } from '../utils/staggered';
 
 interface LeaderboardRow {
   _id: string;
@@ -103,9 +104,11 @@ const GeneralLeaderboardPage: React.FC = () => {
   useEffect(() => {
     if (!socket || !isConnected) return;
 
-    const refresh = () => {
+    // Every open leaderboard in the university hears each solve at once; each refetches at
+    // its own moment, and a run of solves becomes one refetch.
+    const refresh = staggered(() => {
       fetchLeaderboard();
-    };
+    });
 
     socket.on('leaderboardUpdate', refresh);
     socket.on('flagSubmitted', refresh);
@@ -113,6 +116,7 @@ const GeneralLeaderboardPage: React.FC = () => {
     return () => {
       socket.off('leaderboardUpdate', refresh);
       socket.off('flagSubmitted', refresh);
+      refresh.cancel();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, isConnected, selectedUniversity, isSuperAdmin]);

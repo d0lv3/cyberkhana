@@ -1,9 +1,10 @@
 import { Response } from 'express';
 import Announcement from '../models/Announcement';
 import { AuthRequest } from '../middleware/auth';
-import { SocketEvents, getIO } from '../services/socketService';
+import { SocketEvents } from '../services/socketService';
 import Competition from '../models/Competition';
 import { eventAccess, eventOwner } from '../services/eventCompetition';
+import { readEvent, signalEventChanged } from '../services/eventLive';
 
 const normalizeUniversityCode = (value: unknown): string =>
   typeof value === 'string' ? value.trim().toUpperCase() : '';
@@ -147,9 +148,9 @@ export const getCompetitionAnnouncements = async (req: AuthRequest, res: Respons
   try {
     const { competitionId } = req.params;
 
-    // Verify the competition exists and user has access
-    const Competition = require('../models/Competition').default;
-    const competition = await Competition.findById(competitionId);
+    // Verify the competition exists and user has access. Every open event dashboard asks for
+    // this on each refresh, so it shares the event's recent read-only copy with the other reads.
+    const competition = await readEvent(competitionId);
 
     if (!competition) {
       return res.status(404).json({ error: 'Competition not found' });
@@ -202,7 +203,7 @@ export const createCompetitionAnnouncement = async (req: AuthRequest, res: Respo
     await announcement.save();
 
     // Emit real-time event for new competition announcement
-    if (competition.type === 'event') getIO().to(`competition:${competitionId}`).emit('eventChanged', { competitionId });
+    if (competition.type === 'event') signalEventChanged(String(competitionId));
     else SocketEvents.emitAnnouncement(getCompetitionUniversityCodes(competition), announcement);
 
     res.status(201).json(announcement);

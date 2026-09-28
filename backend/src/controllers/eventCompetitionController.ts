@@ -10,6 +10,7 @@ import Certificate from '../models/Certificate';
 import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { heavyReadLimiter } from '../middleware/rateLimit';
 import { getIO } from '../services/socketService';
+import { deriveOnce, readActor, readEvent, signalEventChanged } from '../services/eventLive';
 import { assertEvent, EventError, EventState, EventTeam, Registration, eventAccess, eventDetails, eventId, eventLeaderboard, eventMetadata,
   eventOpen, eventOwner, eventPoints, eventRegistered, eventTeamFor, eventVisible, inviteCode, leaveEventTeam, mutateEvent, registrationOpen, canUnregister, teamLocked, teamScore, scoringContext, uniqueSolves,
   isReleased, freezeCutoff, scoreboardView, flagMatches } from '../services/eventCompetition';
@@ -130,15 +131,26 @@ async function submissionLog(c: any, query: any) {
   };
 }
 
+/** What the competitions list shows of an event. Its pages are only told when one of these moves. */
+const listedAs = new Map<string, string>();
+const listing = (c: any) => JSON.stringify([c.eventState.registrations.length, c.status, c.name, c.startTime, c.endTime,
+  c.registrationDeadline, c.capacity, c.eventState.invitations.filter((i: any) => i.status === 'accepted').map((i: any) => i.universityCode)]);
+
 export function notifyEvent(c: any) {
-  try {
-    const io = getIO(), id = String(c._id);
-    // Counts contain no challenge data; challenge changes use a payload-free invalidation.
-    for (const i of c.eventState.invitations.filter((i: any) => i.status === 'accepted')) {
-      io.to(`university:${i.universityCode}`).emit('eventRegistrationChanged', { competitionId: id, registrationCount: c.eventState.registrations.length });
-    }
-    io.to(`competition:${id}`).emit('eventChanged', { competitionId: id });
-  } catch { /* A committed write remains successful if realtime is temporarily unavailable. */ }
+  const id = String(c._id), listed = listing(c);
+  // Every university's competitions page listens for this, so a solve (which changes nothing
+  // the list shows) must not wake them all. Counts contain no challenge data.
+  if (listedAs.get(id) !== listed) {
+    listedAs.set(id, listed);
+    try {
+      const io = getIO();
+      for (const i of c.eventState.invitations.filter((i: any) => i.status === 'accepted')) {
+        io.to(`university:${i.universityCode}`).emit('eventRegistrationChanged', { competitionId: id, registrationCount: c.eventState.registrations.length });
+      }
+    } catch { /* A committed write remains successful if realtime is temporarily unavailable. */ }
+  }
+  // Challenge changes use a payload-free invalidation, spaced so a burst of solves is one refresh.
+  signalEventChanged(id);
 }
 
 export const createEventCompetition = async (req: AuthRequest, res: Response) => {
@@ -179,7 +191,8 @@ export const getEventInvitations = async (req: AuthRequest, res: Response) => {
 export const dispatchEvent = async (req: AuthRequest, res: Response, next: NextFunction) => {
   if (!isValidObjectId(req.params.id)) return next();
   try {
-    const c: any = await Competition.findById(req.params.id).lean();
+    // Reads share one recent copy of the event; writes always start from the database.
+    const c: any = req.method === 'GET' ? await readEvent(req.params.id) : await Competition.findById(req.params.id).lean();
     if (c?.type !== 'event') return next();
     if (req.method !== 'GET') {
       const run = () => req.user?.role !== 'user'
@@ -196,7 +209,8 @@ export const dispatchEvent = async (req: AuthRequest, res: Response, next: NextF
 async function handleEvent(req: AuthRequest, res: Response, initial: any) {
   try {
     const id = String(initial._id), u = req.user!, route = req.path.replace(/\/$/, '') || '/', method = req.method;
-    const actor = u.role === 'super-admin' ? null : await User.findById(u.userId).select('isBanned role universityCode').lean();
+    const actor = u.role === 'super-admin' ? null
+      : method === 'GET' ? await readActor(u.userId) : await User.findById(u.userId).select('isBanned role universityCode').lean();
     assertEvent(u.role === 'super-admin' || (actor && !actor.isBanned && actor.role === u.role && actor.universityCode === u.universityCode), 'Access denied', 403);
     if (method === 'GET') {
       assertEvent(eventVisible(initial, u), 'Access denied', 403);
@@ -216,7 +230,9 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
       if (route === '/leaderboard') {
         // Hosts read live standings, but can ask for what players see, e.g. to put it on a projector.
         const asPlayer = !eventOwner(initial, u) || req.query.view === 'public';
-        return res.json(eventLeaderboard(initial, req.query.mode === 'individual', { frozenAt: asPlayer ? freezeCutoff(initial) : null, releasedOnly: asPlayer }));
+        const individual = req.query.mode === 'individual', frozenAt = asPlayer ? freezeCutoff(initial) : null;
+        return res.json(deriveOnce(initial, `leaderboard:${individual}:${frozenAt}:${asPlayer}`,
+          () => eventLeaderboard(initial, individual, { frozenAt, releasedOnly: asPlayer })));
       }
       if (route === '/solved-challenges') {
         const requested = typeof req.query.userId === 'string' ? req.query.userId : u.userId;
@@ -225,13 +241,16 @@ async function handleEvent(req: AuthRequest, res: Response, initial: any) {
         return res.json(uniqueSolves(initial, true).filter(s => s.teamId === team?.id).map(s => s.challengeId));
       }
       if (route === '/activity') {
-        const ctx = scoringContext(scoreboardView(initial, u).view);
-        const teamName = (teamId: string) => initial.eventState.teams.find((t: EventTeam) => t.id === teamId)?.name;
-        return res.json(ctx.solves.slice(-30).reverse().map(s => ({ type: s.firstBlood ? 'first_blood' : 'solve', timestamp: s.solvedAt,
-        userId: s.userId, challengeId: s.challengeId, teamId: s.teamId, teamName: teamName(s.teamId), points: ctx.solveValue(s),
-        category: initial.challenges.find((ch: any) => String(ch._id) === s.challengeId)?.category,
-        username: s.username, challengeTitle: initial.challenges.find((ch: any) => String(ch._id) === s.challengeId)?.title,
-        data: { username: s.username, challengeId: s.challengeId, teamId: s.teamId } })));
+        const { view, frozenAt } = scoreboardView(initial, u);
+        return res.json(deriveOnce(initial, `activity:${frozenAt}`, () => {
+          const ctx = scoringContext(view);
+          const teamName = (teamId: string) => initial.eventState.teams.find((t: EventTeam) => t.id === teamId)?.name;
+          return ctx.solves.slice(-30).reverse().map(s => ({ type: s.firstBlood ? 'first_blood' : 'solve', timestamp: s.solvedAt,
+          userId: s.userId, challengeId: s.challengeId, teamId: s.teamId, teamName: teamName(s.teamId), points: ctx.solveValue(s),
+          category: initial.challenges.find((ch: any) => String(ch._id) === s.challengeId)?.category,
+          username: s.username, challengeTitle: initial.challenges.find((ch: any) => String(ch._id) === s.challengeId)?.title,
+          data: { username: s.username, challengeId: s.challengeId, teamId: s.teamId } }));
+        }));
       }
       const solvers = route.match(/^\/challenges\/([a-f\d]{24})\/solvers$/i);
       if (solvers) {

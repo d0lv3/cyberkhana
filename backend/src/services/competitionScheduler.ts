@@ -1,6 +1,7 @@
 import Competition from '../models/Competition';
-import { getIO, SocketEvents } from './socketService';
+import { SocketEvents } from './socketService';
 import { logger } from '../utils/logger';
+import { forgetEvent, signalEventChanged } from './eventLive';
 
 /**
  * Closes competitions whose end time has passed.
@@ -40,6 +41,7 @@ export const closeExpiredCompetitions = async (): Promise<number> => {
     );
 
     if (result.modifiedCount === 0) continue;
+    forgetEvent(id);
 
     const codes = competition.type === 'event' ? (competition.eventState?.invitations || []).filter(i => i.status === 'accepted').map(i => i.universityCode) : Array.from(
       new Set(
@@ -56,7 +58,7 @@ export const closeExpiredCompetitions = async (): Promise<number> => {
     });
 
     try {
-      if (competition.type === 'event') getIO().to(`competition:${id}`).emit('eventChanged', { competitionId: id });
+      if (competition.type === 'event') signalEventChanged(id);
       SocketEvents.emitCompetitionUpdate(codes, {
         competitionId: id,
         type: 'ended',
@@ -109,12 +111,13 @@ export const startScheduledEvents = async (): Promise<number> => {
     );
     if (result.modifiedCount === 0) continue;
     started++;
+    forgetEvent(id);
 
     logger.info('competition.auto_started', { competitionId: id, name: event.name, startTime: event.startTime });
 
     try {
       const codes = (event.eventState?.invitations || []).filter(i => i.status === 'accepted').map(i => i.universityCode);
-      getIO().to(`competition:${id}`).emit('eventChanged', { competitionId: id });
+      signalEventChanged(id);
       SocketEvents.emitCompetitionUpdate(codes, { competitionId: id, type: 'started', message: `Competition "${event.name}" has started` });
     } catch (error) {
       logger.error('competition.auto_start.emit_failed', { competitionId: id, error });

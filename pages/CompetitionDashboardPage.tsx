@@ -9,6 +9,7 @@ import { refreshCompetitionDashboard } from '../services/competitionRefreshServi
 import { announcementService } from '../services/announcementService';
 import Button from '../components/ui/button';
 import Input from '../components/ui/input';
+import { staggered } from '../utils/staggered';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trophy, Clock, Users, ArrowLeft, TrendingUp, Activity, CheckCircle,
@@ -131,12 +132,14 @@ const CompetitionDashboardPage: React.FC = () => {
     if (!id || competition?.type !== 'event') return;
     if (isConnected) joinCompetition(id);
     const refresh = () => { void fetchCompetition(); void fetchLeaderboardAndActivity(); void fetchAnnouncements(); };
-    const changed = (data: any) => { if (data.competitionId === id) refresh(); };
+    // Every player's dashboard hears a broadcast at once; each refetches at its own moment, once per burst.
+    const soon = staggered(refresh);
+    const changed = (data: any) => { if (data.competitionId === id) soon(); };
     const revoked = (data: any) => { if (data.competitionId === id) { ++version.current; setCompetition(null); setLeaderboard([]); setError('Your event registration has been removed.'); setLoading(false); } };
     socket?.on('eventChanged', changed); socket?.on('eventAccessRevoked', revoked);
     window.addEventListener('focus', refresh);
     if (isConnected) refresh();
-    return () => { leaveCompetition(id); socket?.off('eventChanged', changed); socket?.off('eventAccessRevoked', revoked); window.removeEventListener('focus', refresh); };
+    return () => { soon.cancel(); leaveCompetition(id); socket?.off('eventChanged', changed); socket?.off('eventAccessRevoked', revoked); window.removeEventListener('focus', refresh); };
   }, [id, competition?.type, socket, isConnected, joinCompetition, leaveCompetition]);
 
   const getStoredSecurityCode = (): string | null =>

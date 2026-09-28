@@ -13,6 +13,7 @@ import Modal from '../components/ui/Modal';
 import { ArrowLeft, Trophy, Users, CheckCircle, XCircle, HelpCircle, Download, Lock, ExternalLink, Clock, Tag, Star, Zap, Target } from 'lucide-react';
 import ChallengeTargetCard from '../components/challenges/ChallengeTargetCard';
 import { targetKind } from '../utils/challengeTarget';
+import { staggered } from '../utils/staggered';
 
 interface CompetitionChallenge {
   _id: string;
@@ -168,12 +169,14 @@ const CompetitionChallengeDetailPage: React.FC = () => {
   useEffect(() => {
     if (competition?.type !== 'event' || !id) return;
     if (isConnected) joinCompetition(id);
-    const refresh = (data: any) => { if (data.competitionId === id) void fetchData(); };
+    // Every open challenge hears a broadcast at once; each refetches at its own moment, once per burst.
+    const soon = staggered(() => { void fetchData(); });
+    const refresh = (data: any) => { if (data.competitionId === id) soon(); };
     const revoked = (data: any) => { if (data.competitionId === id) { ++fetchVersion.current; setChallenge(null); setCompetition(null); navigate('/competition'); } };
     const reconnect = () => { void fetchData(); };
     socket?.on('eventChanged', refresh); socket?.on('eventAccessRevoked', revoked);
     socket?.on('connect', reconnect); window.addEventListener('focus', reconnect);
-    return () => { leaveCompetition(id); socket?.off('eventChanged', refresh); socket?.off('eventAccessRevoked', revoked); socket?.off('connect', reconnect); window.removeEventListener('focus', reconnect); };
+    return () => { soon.cancel(); leaveCompetition(id); socket?.off('eventChanged', refresh); socket?.off('eventAccessRevoked', revoked); socket?.off('connect', reconnect); window.removeEventListener('focus', reconnect); };
   }, [socket, isConnected, competition?.type, id, challengeId]);
 
   const handleSubmit = async (e: React.FormEvent) => {

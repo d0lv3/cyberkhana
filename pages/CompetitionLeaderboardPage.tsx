@@ -5,6 +5,7 @@ import { Maximize, Minimize, ArrowLeft, Snowflake } from 'lucide-react';
 import { competitionService } from '../services/competitionService';
 import { eventService } from '../services/eventService';
 import { useSocket } from '../src/contexts/SocketContext';
+import { staggered } from '../utils/staggered';
 import UnifiedLeaderboard from '../components/leaderboard/UnifiedLeaderboard';
 import ProfileSlidePanel from '../components/ui/ProfileSlidePanel';
 import { ConsoleButton, Segmented } from '../components/competition/console/ui';
@@ -43,11 +44,14 @@ const CompetitionLeaderboardPage: React.FC = () => {
   useEffect(() => { void refresh(); return () => { ++version.current; }; }, [refresh]);
   useEffect(() => {
     if (isConnected) { joinCompetition(id); void refresh(); }
-    const changed = (data: any) => { if (!data?.competitionId || data.competitionId === id) void refresh(); };
+    // Every open board hears a broadcast at once; each refetches at its own moment, once per burst.
+    const soon = staggered(() => { void refresh(); });
+    const changed = (data: any) => { if (!data?.competitionId || data.competitionId === id) soon(); };
     const revoked = (data: any) => { if (data.competitionId === id) { ++version.current; setRows([]); setCompetition(null); setLoading(false); setError('Your event registration has been removed.'); } };
     for (const name of ['competitionActivity', 'leaderboardUpdate', 'flagSubmitted', 'eventChanged']) socket?.on(name, changed);
     socket?.on('eventAccessRevoked', revoked); window.addEventListener('focus', refresh);
     return () => {
+      soon.cancel();
       leaveCompetition(id);
       for (const name of ['competitionActivity', 'leaderboardUpdate', 'flagSubmitted', 'eventChanged']) socket?.off(name, changed);
       socket?.off('eventAccessRevoked', revoked); window.removeEventListener('focus', refresh);
