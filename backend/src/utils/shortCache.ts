@@ -9,6 +9,11 @@
  * their own.
  *
  * A failed load is forgotten at once, so an error is never served from memory.
+ *
+ * `load` may return any thenable. A Mongoose query is one, but it is not a
+ * promise: it runs each time `then` or `catch` is called on it and throws if
+ * asked to run twice. It is adopted into a real promise here, so it runs once
+ * however many requests wait on it.
  */
 export function shortCache<T>(ttlMs: number, maxEntries = 5000) {
   const entries = new Map<string, { at: number; value: Promise<T> }>();
@@ -18,12 +23,12 @@ export function shortCache<T>(ttlMs: number, maxEntries = 5000) {
   };
 
   return {
-    get(key: string, load: () => Promise<T>): Promise<T> {
+    get(key: string, load: () => PromiseLike<T>): Promise<T> {
       const now = Date.now();
       const hit = entries.get(key);
       if (hit && now - hit.at < ttlMs) return hit.value;
       if (entries.size >= maxEntries) prune(now);
-      const value = load();
+      const value = Promise.resolve(load());
       entries.set(key, { at: now, value });
       value.catch(() => { if (entries.get(key)?.value === value) entries.delete(key); });
       return value;

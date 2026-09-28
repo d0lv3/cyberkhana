@@ -13,7 +13,8 @@
     "seed-mock:dry": "tsx scripts/seed-mock-data.ts --dry-run",
     "fix-upload-urls": "tsx scripts/fix-upload-urls.ts",
     "test:events": "npm run build && node --test tests/event-competition.test.cjs",
-    "test:profile": "npm run build && node --test tests/profile-record.test.cjs"
+    "test:profile": "npm run build && node --test tests/profile-record.test.cjs",
+    "test:cache": "npm run build && node --test tests/short-cache.test.cjs"
   },
   "dependencies": {
     "@types/multer": "^2.1.0",

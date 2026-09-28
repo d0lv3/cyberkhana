@@ -34,13 +34,22 @@ const actors = shortCache<any>(READ_TTL_MS);
  *
  * The returned object is shared between requests and must never be mutated.
  */
-export const readEvent = (id: string) => eventReads.get(id, () => Competition.findById(id).lean());
-export const rememberEvent = (competition: any) => eventReads.set(String(competition._id), competition);
+export const readEvent = (id: string) => eventReads.get(id, () => Competition.findById(id).lean().exec());
+
+/** The newest revision each event has cached, so a slower commit cannot replace a newer one. */
+const newest = new Map<string, number>();
+export const rememberEvent = (competition: any) => {
+  const id = String(competition._id), revision = Number(competition.eventRevision) || 0;
+  // Two commits can return out of order; the older one must not overwrite what the newer cached.
+  if (revision < (newest.get(id) ?? -1)) return;
+  newest.set(id, revision);
+  eventReads.set(id, competition);
+};
 export const forgetEvent = (id: string) => eventReads.delete(id);
 
 /** The requesting user's ban, role and university, as checked on every event request. */
 export const readActor = (userId: string) =>
-  actors.get(userId, () => User.findById(userId).select('isBanned role universityCode').lean());
+  actors.get(userId, () => User.findById(userId).select('isBanned role universityCode').lean().exec());
 
 const derived = new WeakMap<object, Map<string, unknown>>();
 /**
